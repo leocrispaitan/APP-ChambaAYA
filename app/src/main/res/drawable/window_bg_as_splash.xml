@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Fondo blanco -->
-    <item android:drawable="@color/white" />
+    <!-- Fondo Azul Brand -->
+    <item android:drawable="@color/brand_color" />
 
-    <!-- Logo de ChambAYA centrado -->
+    <!-- Logo Blanco en el centro -->
     <item
         android:width="120dp"
         android:height="120dp"

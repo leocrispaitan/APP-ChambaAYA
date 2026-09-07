@@ -54,9 +54,9 @@ fun SplashScreen(onTimeout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(Color(0xFF2E6FF3))
     ) {
-        // Logo centrado (como Facebook en la imagen)
+        // Logo centrado (con colores invertidos para fondo azul)
         Image(
             painter = painterResource(id = R.drawable.splash_logo_white_bg),
             contentDescription = "ChambAYA",
@@ -75,14 +75,14 @@ fun SplashScreen(onTimeout: () -> Unit) {
         ) {
             Text(
                 text = "from",
-                color = Color(0xFF94A3B8),
+                color = Color(0xB3FFFFFF),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Normal
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "ChambAYA",
-                color = Color(0xFF2E6FF3),
+                color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp
