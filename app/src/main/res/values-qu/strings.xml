@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ChambAYA</string>
+    <string name="action_change_language">Simi t\'ikray</string>
+    <string name="welcome_slide_1_title">Allin hamuy ChambAYAman!</string>
+    <string name="welcome_slide_1_subtitle">Sapa p\'unchaw llamk\'aynikita aswan fácil\nchaylla ruwanaykipaq app allinnin</string>
+    <string name="welcome_slide_2_title">Qayllaykipi chambakunata tariy</string>
+    <string name="welcome_slide_2_subtitle">Confiable chambakunata qayllaykipi tarinki\nchukcha tocochuwan postulay</string>
+    <string name="welcome_slide_3_title">Llaqtaykipaq llamk\'ay</string>
+    <string name="welcome_slide_3_subtitle">Mapapi oportunidadkunata qhaway\np\'unchawniykipaq aswan allin ñanta akllay</string>
+    <string name="welcome_slide_4_title">Parley chambata tariy</string>
+    <string name="welcome_slide_4_subtitle">Contratantewan directo parlay, detalles confirmay\nconfianzawan qallariy</string>
+    <string name="welcome_skip">Saqiy</string>
+    <string name="welcome_next">Qatiy</string>
+    <string name="welcome_get_started">Qallariy</string>
+    <string name="welcome_account_prompt">¿Cuentaykiña kanchu? </string>
+    <string name="access_options_title">Aswan allin chambakunata\nAyacuchopi tariy</string>
+    <string name="access_btn_signup">Registrakukuy</string>
+    <string name="access_btn_login">Yaykuy</string>
+    <string name="auth_email_label">Correo electrónico</string>
+    <string name="auth_email_hint">Correo electrónicoykita qillqay</string>
+    <string name="auth_password_label">Contraseña</string>
+    <string name="auth_password_hint">Contraseñaykita qillqay</string>
+    <string name="auth_show_password">Contraseñata rikuchiy</string>
+    <string name="auth_hide_password">Contraseñata pakay</string>
+    <string name="auth_forgot_password">Contraseñaykita qunqarqankichu?</string>
+    <string name="auth_signin">Yaykuy</string>
+    <string name="auth_signup">Registrakukuy</string>
+    <string name="auth_or_continue">ichataq kaywan qatiy</string>
+    <string name="auth_continue_google">Googlewan qatiy</string>
+    <string name="auth_no_account">Cuentayki kanchu? </string>
+    <string name="auth_back">Kutiy</string>
+    <string name="auth_login_subtitle">Cuentaykiman yaykuy</string>
+    <string name="auth_error_empty_email">Correo electrónicoykita qillqay</string>
+    <string name="auth_error_empty_password">Contraseñaykita qillqay</string>
+    <string name="auth_wip_message">Karupiraq</string>
+    <string name="lang_spanish">Español</string>
+    <string name="lang_english">English</string>
+    <string name="lang_quechua">Runasimi</string>
+    <string name="lang_spanish_native">Español</string>
+    <string name="lang_english_native">English</string>
+    <string name="lang_quechua_native">Runasimi</string>
+    <string name="lang_selected">Akllasqa</string>
+</resources>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Flag background (white) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0h32v32H0z" />
+
+    <!-- Top red stripe -->
+    <path
+        android:fillColor="#C60B1E"
+        android:pathData="M0,0h32v8H0z" />
+
+    <!-- Bottom red stripe -->
+    <path
+        android:fillColor="#C60B1E"
+        android:pathData="M0,24h32v8H0z" />
+
+    <!-- Yellow middle stripe -->
+    <path
+        android:fillColor="#FFC400"
+        android:pathData="M0,8h32v16H0z" />
+
+    <!-- Coat of arms simplified (small shield) -->
+    <path
+        android:fillColor="#C60B1E"
+        android:pathData="M13,11h6v4H13z" />
+    <path
+        android:fillColor="#FFC400"
+        android:pathData="M13,15h6v2H13z" />
+    <path
+        android:fillColor="#C60B1E"
+        android:pathData="M13,17h6v2H13z" />
+
+    <!-- Rounded corners mask -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M16,0 A16,16 0 1,1 16,32 A16,16 0 1,1 16,0 Z" />
+</vector>
