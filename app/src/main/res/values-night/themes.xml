@@ -6,6 +6,6 @@
     </style>
 
     <style name="Theme.ChambAYA.Splash" parent="Theme.ChambAYA">
-        <item name="android:windowBackground">@color/brand_color</item>
+        <item name="android:windowBackground">@drawable/window_bg_as_splash</item>
     </style>
 </resources>
