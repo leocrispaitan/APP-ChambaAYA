@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mantenemos los colores del splash siempre idénticos al tema claro incluso en Modo Oscuro -->
+    <color name="white">#FFFFFF</color>
+    <color name="brand_color">#2E6FF3</color>
+</resources>

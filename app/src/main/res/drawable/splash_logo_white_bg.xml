@@ -7,26 +7,26 @@
 
     <!-- Fondo izquierdo azul -->
     <path
-        android:fillColor="@color/brand_color"
+        android:fillColor="#2E6FF3"
         android:pathData="M32,18h27v84H32c-12.7,0 -23,-10.3 -23,-23V41c0,-12.7 10.3,-23 23,-23z" />
 
     <!-- Panel izquierdo blanco interior -->
     <path
-        android:fillColor="@color/white"
+        android:fillColor="#FFFFFF"
         android:pathData="M34,30h13v60H34c-7.2,0 -13,-5.8 -13,-13V43c0,-7.2 5.8,-13 13,-13z" />
 
     <!-- Punto izquierdo azul -->
     <path
-        android:fillColor="@color/brand_color"
+        android:fillColor="#2E6FF3"
         android:pathData="M39,46a10,10 0,1 1,0.1 0z" />
 
     <!-- Fondo derecho azul -->
     <path
-        android:fillColor="@color/brand_color"
+        android:fillColor="#2E6FF3"
         android:pathData="M68,18h20c12.7,0 23,10.3 23,23v38c0,12.7 -10.3,23 -23,23H68z" />
 
     <!-- Punto derecho blanco -->
     <path
-        android:fillColor="@color/white"
+        android:fillColor="#FFFFFF"
         android:pathData="M89,62a10,10 0,1 1,0.1 0z" />
 </vector>
