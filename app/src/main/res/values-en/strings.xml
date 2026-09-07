@@ -41,4 +41,18 @@
     <string name="auth_error_empty_email">Enter your email address</string>
     <string name="auth_error_empty_password">Enter your password</string>
     <string name="auth_wip_message">Feature in development</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_jobs">Jobs</string>
+    <string name="nav_map">Maps</string>
+    <string name="nav_publish">Publish</string>
+    <string name="nav_chat">Messages</string>
+    <string name="nav_profile">My Profile</string>
+
+    <!-- Secciones (contenido base) -->
+    <string name="section_welcome_chambas">Welcome to Jobs</string>
+    <string name="section_welcome_mapas">Welcome to Maps</string>
+    <string name="section_welcome_publicar">Welcome to Publish</string>
+    <string name="section_welcome_mensajes">Welcome to Messages</string>
+    <string name="section_welcome_perfil">Welcome to My Profile</string>
 </resources>

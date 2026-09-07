@@ -41,4 +41,18 @@
     <string name="lang_english_native">English</string>
     <string name="lang_quechua_native">Runasimi</string>
     <string name="lang_selected">Akllasqa</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_jobs">Chambaskuna</string>
+    <string name="nav_map">Mapa</string>
+    <string name="nav_publish">Publicay</string>
+    <string name="nav_chat">Willakuykuna</string>
+    <string name="nav_profile">Perfilniy</string>
+
+    <!-- Secciones (contenido base) -->
+    <string name="section_welcome_chambas">Chambaskunaman allin hamuy</string>
+    <string name="section_welcome_mapas">Mapaman allin hamuy</string>
+    <string name="section_welcome_publicar">Publicayman allin hamuy</string>
+    <string name="section_welcome_mensajes">Willakuykunaman allin hamuy</string>
+    <string name="section_welcome_perfil">Perfilniykiman allin hamuy</string>
 </resources>

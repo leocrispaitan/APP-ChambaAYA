@@ -44,9 +44,14 @@ class OpcionesAccesoActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         btnLanguage.setOnClickListener { showLanguagePopup() }
-        btnGetStarted.setOnClickListener { /* Navegación al modo invitado: se implementará luego */ }
+        btnGetStarted.setOnClickListener { openMain() }
         btnSignup.setOnClickListener { /* Registro: se implementará en un paso posterior */ }
         btnLogin.setOnClickListener { openLogin() }
+    }
+
+    private fun openMain() {
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
     }
 
     private fun openLogin() {

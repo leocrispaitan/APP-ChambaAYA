@@ -11,4 +11,5 @@
     <color name="text_muted">#94A3B8</color>
     <color name="login_hint">#A9A9A9</color>
     <color name="login_text_secondary">#666666</color>
+    <color name="background_light">#F5F7FF</color>
 </resources>

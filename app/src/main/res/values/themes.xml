@@ -1,13 +1,63 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.ChambAYA" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Brand Colors -->
+        <item name="colorPrimary">@color/brand_color</item>
+        <item name="colorPrimaryDark">@color/brand_color</item>
+        <item name="colorSecondary">@color/brand_color</item>
+        <item name="android:statusBarColor">@color/surface_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/surface_light</item>
+        <item name="colorSurface">@color/surface_light</item>
+        <item name="android:colorBackground">@color/background_light</item>
     </style>
 
     <style name="Theme.ChambAYA" parent="Base.Theme.ChambAYA" />
 
     <style name="Theme.ChambAYA.Splash" parent="Theme.ChambAYA">
         <item name="android:windowBackground">@drawable/window_bg_as_splash</item>
+    </style>
+
+    <!-- Bottom Navigation Style (ChambAYA-APP) -->
+    <style name="Widget.ChambAYA.BottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="itemBackground">@null</item>
+        <item name="itemIconTint">@color/bottom_nav_icon_selector</item>
+        <item name="itemTextColor">@color/bottom_nav_color_selector</item>
+        <item name="itemIconSize">24dp</item>
+        <item name="itemPaddingTop">6dp</item>
+        <item name="itemPaddingBottom">6dp</item>
+        <item name="activeIndicatorLabelPadding">4dp</item>
+        <item name="itemRippleColor">@color/bottom_nav_ripple_selector</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.ChambAYA.BottomNav.Active</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.ChambAYA.BottomNav.Inactive</item>
+        <item name="itemTextAppearanceActiveBoldEnabled">true</item>
+        <item name="labelMaxLines">1</item>
+        <item name="elevation">12dp</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.ChambAYA.BottomNav.ActiveIndicator</item>
+    </style>
+
+    <style name="Widget.ChambAYA.BottomNav.ActiveIndicator" parent="">
+        <item name="android:width">64dp</item>
+        <item name="android:height">32dp</item>
+        <item name="marginHorizontal">0dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.ChambAYA.BottomNav.ActiveIndicator</item>
+        <item name="android:color">@color/brand_container</item>
+    </style>
+
+    <style name="ShapeAppearance.ChambAYA.BottomNav.ActiveIndicator" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="TextAppearance.ChambAYA.BottomNav.Active" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">12sp</item>
+        <item name="fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="TextAppearance.ChambAYA.BottomNav.Inactive" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">11sp</item>
+        <item name="fontFamily">sans-serif</item>
     </style>
 </resources>

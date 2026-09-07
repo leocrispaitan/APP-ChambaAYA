@@ -40,4 +40,18 @@
     <string name="auth_error_empty_email">Ingresa tu correo electronico</string>
     <string name="auth_error_empty_password">Ingresa tu contrasena</string>
     <string name="auth_wip_message">Funcion en desarrollo</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_jobs">Chambas</string>
+    <string name="nav_map">Mapas</string>
+    <string name="nav_publish">Publicar</string>
+    <string name="nav_chat">Mensajes</string>
+    <string name="nav_profile">Mi Perfil</string>
+
+    <!-- Secciones (contenido base) -->
+    <string name="section_welcome_chambas">Bienvenido a Chambas</string>
+    <string name="section_welcome_mapas">Bienvenido a Mapas</string>
+    <string name="section_welcome_publicar">Bienvenido a Publicar</string>
+    <string name="section_welcome_mensajes">Bienvenido a Mensajes</string>
+    <string name="section_welcome_perfil">Bienvenido a Mi Perfil</string>
 </resources>
