@@ -2,7 +2,7 @@
 <!--
     fragmento_chambas.xml — Home Screen de ChambAYA
     Diseño con AppBarLayout y CollapsingToolbarLayout / LinearLayout para
-    asegurar que la barra de búsqueda quede contenida perfectamente dentro del fondo rojo.
+    asegurar que la barra de búsqueda quede contenida perfectamente dentro del fondo brand_color.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -15,13 +15,13 @@
     tools:context=".ui.jobs.FragmentoChambas">
 
     <!-- ════════════════════════════════════════════════════════
-         CABECERA ROJA (Header con ubicación + buscador)
+         CABECERA (Header con ubicación + buscador) — color brand_color
          ════════════════════════════════════════════════════════ -->
     <LinearLayout
         android:id="@+id/headerContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_header_red"
+        android:background="@drawable/bg_header_brand"
         android:orientation="vertical"
         android:clipToPadding="false"
         android:paddingStart="20dp"
@@ -202,7 +202,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
                     android:text="@string/home_see_all"
-                    android:textColor="@color/home_red"
+                    android:textColor="@color/brand_color"
                     android:textSize="13sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -396,7 +396,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
                     android:text="@string/home_see_all"
-                    android:textColor="@color/home_red"
+                    android:textColor="@color/brand_color"
                     android:textSize="13sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -600,7 +600,7 @@
                         android:layout_marginStart="4dp"
                         android:fontFamily="sans-serif-medium"
                         android:text="@string/home_flash_time"
-                        android:textColor="@color/home_red"
+                        android:textColor="@color/brand_color"
                         android:textSize="13sp" />
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
@@ -721,7 +721,7 @@
                             <FrameLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="120dp"
-                                android:background="@color/home_red_light">
+                                android:background="@color/brand_container">
 
                                 <!-- Icono grande de categoría centrado -->
                                 <ImageView
@@ -788,7 +788,7 @@
                                     android:layout_marginTop="2dp"
                                     android:fontFamily="sans-serif-medium"
                                     android:text="S/ 80/día"
-                                    android:textColor="@color/home_red"
+                                    android:textColor="@color/brand_color"
                                     android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
@@ -888,7 +888,7 @@
                                     android:layout_marginTop="2dp"
                                     android:fontFamily="sans-serif-medium"
                                     android:text="S/ 50/día"
-                                    android:textColor="@color/home_red"
+                                    android:textColor="@color/brand_color"
                                     android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>

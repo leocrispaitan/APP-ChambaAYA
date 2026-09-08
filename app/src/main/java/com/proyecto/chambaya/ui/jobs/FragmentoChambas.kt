@@ -55,7 +55,7 @@ class FragmentoChambas : Fragment() {
 
 override fun onResume() {
         super.onResume()
-        BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.home_red))
+        BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.brand_color))
     }
     
     override fun onDestroyView() {
