@@ -23,11 +23,11 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_header_red"
         android:orientation="vertical"
-        android:fitsSystemWindows="true"
+        android:clipToPadding="false"
         android:paddingStart="20dp"
         android:paddingTop="36dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="24dp">
+        android:paddingBottom="28dp">
 
         <!-- Fila 1: Ubicación + Campana -->
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -158,13 +158,18 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fillViewport="true"
-        android:overScrollMode="never">
+        android:fillViewport="false"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:fadeScrollbars="false"
+        android:isScrollContainer="true"
+        android:scrollbarStyle="insideOverlay">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:animateLayoutChanges="false"
             android:paddingBottom="24dp">
 
             <!-- ──────────────────────────────────────────
@@ -608,7 +613,8 @@
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp"
                 android:scrollbars="none"
-                android:overScrollMode="never">
+                android:overScrollMode="never"
+                android:fillViewport="false">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -796,7 +802,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:layout_marginTop="24dp"
                     android:orientation="vertical">
 
                     <!-- Job Card 2 -->
