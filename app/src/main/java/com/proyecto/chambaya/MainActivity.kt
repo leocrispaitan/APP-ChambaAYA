@@ -43,8 +43,8 @@ class MainActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            // Only pad top, left, right. Bottom remains 0 to allow edge-to-edge drawing over nav bar
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            // No pad top: each view draws its own background behind the status bar
+            v.setPadding(systemBars.left, 0, systemBars.right, 0)
             insets
         }
 

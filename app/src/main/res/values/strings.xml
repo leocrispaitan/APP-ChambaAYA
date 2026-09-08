@@ -48,6 +48,31 @@
     <string name="nav_chat">Mensajes</string>
     <string name="nav_profile">Mi Perfil</string>
 
+    <!-- Home / Chambas Screen -->
+    <string name="home_location_label">Ubicación</string>
+    <string name="home_location_value">Ayacucho, Perú</string>
+    <string name="home_search_hint">Buscar chambas…</string>
+    <string name="home_special_title">#EspecialParaTi</string>
+    <string name="home_see_all">Ver todo</string>
+    <string name="home_banner_badge">¡Por tiempo limitado!</string>
+    <string name="home_banner_title">Consigue la Oferta Especial</string>
+    <string name="home_banner_subtitle">Hasta un</string>
+    <string name="home_banner_percent">40%</string>
+    <string name="home_banner_legal">Todos los servicios disponibles | T&amp;C Aplicados</string>
+    <string name="home_banner_cta">Postular</string>
+    <string name="home_category_title">Categorías</string>
+    <string name="home_cat_construccion">Construcción</string>
+    <string name="home_cat_limpieza">Limpieza</string>
+    <string name="home_cat_delivery">Delivery</string>
+    <string name="home_cat_tecnico">Técnico</string>
+    <string name="home_flash_title">Chambas Nuevas</string>
+    <string name="home_flash_closing">Publicado hace:</string>
+    <string name="home_flash_time">02 : 12 : 56</string>
+    <string name="home_filter_all">Todos</string>
+    <string name="home_filter_newest">Recientes</string>
+    <string name="home_filter_popular">Populares</string>
+    <string name="home_filter_construction">Construcción</string>
+
     <!-- Secciones (contenido base) -->
     <string name="section_welcome_chambas">Bienvenido a Chambas</string>
     <string name="section_welcome_mapas">Bienvenido a Mapas</string>
