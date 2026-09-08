@@ -352,18 +352,18 @@
                     android:layout_width="10dp"
                     android:layout_height="8dp"
                     android:layout_marginEnd="5dp"
-                    android:background="@drawable/bg_indicator_active" />
+                    android:background="@drawable/bg_carousel_dot_active" />
 
                 <View
                     android:layout_width="8dp"
                     android:layout_height="8dp"
                     android:layout_marginEnd="5dp"
-                    android:background="@drawable/bg_indicator_inactive" />
+                    android:background="@drawable/bg_carousel_dot_inactive" />
 
                 <View
                     android:layout_width="8dp"
                     android:layout_height="8dp"
-                    android:background="@drawable/bg_indicator_inactive" />
+                    android:background="@drawable/bg_carousel_dot_inactive" />
             </LinearLayout>
 
             <!-- ──────────────────────────────────────────
