@@ -1,154 +1,163 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     fragmento_chambas.xml — Home Screen de ChambAYA
-    Diseño con AppBarLayout y CollapsingToolbarLayout / LinearLayout para
-    asegurar que la barra de búsqueda quede contenida perfectamente dentro del fondo brand_color.
+    Diseño optimizado con CoordinatorLayout para scroll fluido y rendimiento mejorado.
 -->
-<LinearLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F7F8FA"
-    android:orientation="vertical"
     tools:context=".ui.jobs.FragmentoChambas">
 
     <!-- ════════════════════════════════════════════════════════
          CABECERA (Header con ubicación + buscador) — color brand_color
          ════════════════════════════════════════════════════════ -->
-    <LinearLayout
-        android:id="@+id/headerContainer"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_header_brand"
-        android:orientation="vertical"
-        android:clipToPadding="false"
-        android:paddingStart="20dp"
-        android:paddingTop="36dp"
-        android:paddingEnd="20dp"
-        android:paddingBottom="28dp">
+        app:elevation="0dp">
 
-        <!-- Fila 1: Ubicación + Campana -->
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
+            android:id="@+id/headerContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp">
+            android:orientation="vertical"
+            android:clipToPadding="false"
+            android:paddingStart="20dp"
+            android:paddingTop="36dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="28dp">
 
-            <!-- Label "Ubicación" -->
-            <TextView
-                android:id="@+id/tvLocationLabel"
-                android:layout_width="wrap_content"
+            <!-- Fila 1: Ubicación + Campana -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
-                android:text="@string/home_location_label"
-                android:textColor="#CCFFFFFF"
-                android:textSize="11sp"
-                android:letterSpacing="0.04"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:layout_marginBottom="16dp">
 
-            <!-- Pin + Nombre de ciudad + Chevron -->
-            <LinearLayout
-                android:id="@+id/llLocation"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvLocationLabel">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:src="@drawable/ic_home_location"
-                    android:contentDescription="@null" />
-
+                <!-- Label "Ubicación" -->
                 <TextView
-                    android:id="@+id/tvLocationValue"
+                    android:id="@+id/tvLocationLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="@string/home_location_value"
-                    android:textColor="@color/white"
-                    android:textSize="16sp" />
+                    android:fontFamily="sans-serif"
+                    android:text="@string/home_location_label"
+                    android:textColor="#CCFFFFFF"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.04"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="2dp"
-                    android:src="@drawable/ic_home_chevron_down"
-                    android:contentDescription="@null" />
-            </LinearLayout>
+                <!-- Pin + Nombre de ciudad + Chevron -->
+                <LinearLayout
+                    android:id="@+id/llLocation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tvLocationLabel">
 
-            <!-- Botón campana circular semitransparente -->
-            <ImageButton
-                android:id="@+id/btnNotifications"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="@drawable/bg_bell_circle"
-                android:src="@drawable/ic_home_bell"
-                android:contentDescription="Notificaciones"
-                android:scaleType="center"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:src="@drawable/ic_home_location"
+                        android:contentDescription="@null" />
 
-        <!-- Fila 2: Buscador + Filtros -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/tvLocationValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/home_location_value"
+                        android:textColor="@color/white"
+                        android:textSize="16sp" />
 
-            <!-- Barra de búsqueda -->
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="2dp"
+                        android:src="@drawable/ic_home_chevron_down"
+                        android:contentDescription="@null" />
+                </LinearLayout>
+
+                <!-- Botón campana circular semitransparente -->
+                <ImageButton
+                    android:id="@+id/btnNotifications"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_bell_circle"
+                    android:src="@drawable/ic_home_bell"
+                    android:contentDescription="Notificaciones"
+                    android:scaleType="center"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Fila 2: Buscador + Filtros -->
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp">
+                android:orientation="horizontal">
 
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_home_search"
-                    android:contentDescription="@null" />
-
-                <EditText
-                    android:id="@+id/etSearch"
+                <!-- Barra de búsqueda -->
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@null"
-                    android:fontFamily="sans-serif"
-                    android:hint="@string/home_search_hint"
-                    android:textColorHint="#AAAAAA"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:paddingStart="10dp"
-                    android:inputType="text"
-                    android:imeOptions="actionSearch"
-                    android:singleLine="true" />
-            </LinearLayout>
+                    android:background="@drawable/bg_search_bar"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="8dp">
 
-            <!-- Botón filtro cuadrado redondeado -->
-            <ImageButton
-                android:id="@+id/btnFilter"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_marginStart="10dp"
-                android:background="@drawable/bg_filter_button"
-                android:src="@drawable/ic_home_filter"
-                android:contentDescription="Filtros"
-                android:scaleType="center" />
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_home_search"
+                        android:contentDescription="@null" />
+
+                    <EditText
+                        android:id="@+id/etSearch"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:fontFamily="sans-serif"
+                        android:hint="@string/home_search_hint"
+                        android:textColorHint="#AAAAAA"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:paddingStart="10dp"
+                        android:inputType="text"
+                        android:imeOptions="actionSearch"
+                        android:singleLine="true" />
+                </LinearLayout>
+
+                <!-- Botón filtro cuadrado redondeado -->
+                <ImageButton
+                    android:id="@+id/btnFilter"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/bg_filter_button"
+                    android:src="@drawable/ic_home_filter"
+                    android:contentDescription="Filtros"
+                    android:scaleType="center" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/transparent" />
+    </com.google.android.material.appbar.AppBarLayout>
 
     <!-- ════════════════════════════════════════════════════════
          SCROLL PRINCIPAL (todo el contenido debajo del header)
@@ -156,21 +165,14 @@
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollMain"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="false"
-        android:overScrollMode="never"
-        android:scrollbars="none"
-        android:fadeScrollbars="false"
-        android:isScrollContainer="true"
-        android:scrollbarStyle="insideOverlay">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:animateLayoutChanges="false"
-            android:paddingBottom="24dp">
+            android:paddingBottom="80dp">
 
             <!-- ──────────────────────────────────────────
                  SECCIÓN: #EspecialParaTi + Banner
@@ -612,9 +614,7 @@
                 android:layout_marginTop="14dp"
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp"
-                android:scrollbars="none"
-                android:overScrollMode="never"
-                android:fillViewport="false">
+                android:scrollbars="none">
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -684,220 +684,22 @@
             </HorizontalScrollView>
 
             <!-- ──────────────────────────────────────────
-                 LISTA DE JOB CARDS (2 columnas)
+                 LISTA DE JOB CARDS (RecyclerView optimizado)
                  ────────────────────────────────────────── -->
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvJobs"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                android:orientation="horizontal"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp">
-
-                <!-- Columna izquierda -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="6dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <!-- Job Card 1 -->
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/cardJob1"
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp"
-                        android:layout_marginBottom="12dp"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:cardBackgroundColor="@color/white">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="vertical">
-
-                            <!-- Imagen de la chamba (placeholder con color) -->
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="120dp"
-                                android:background="@color/brand_container">
-
-                                <!-- Icono grande de categoría centrado -->
-                                <ImageView
-                                    android:layout_width="56dp"
-                                    android:layout_height="56dp"
-                                    android:layout_gravity="center"
-                                    android:src="@drawable/ic_cat_construccion"
-                                    android:contentDescription="@null" />
-
-                                <!-- Corazón favorito -->
-                                <ImageButton
-                                    android:layout_width="32dp"
-                                    android:layout_height="32dp"
-                                    android:layout_gravity="top|end"
-                                    android:layout_margin="8dp"
-                                    android:background="@null"
-                                    android:src="@drawable/ic_heart_outline"
-                                    android:contentDescription="Guardar" />
-                            </FrameLayout>
-
-                            <!-- Info del trabajo -->
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="10dp">
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:text="Maestro Albañil"
-                                    android:textColor="@color/text_primary"
-                                    android:textSize="12sp"
-                                    android:maxLines="1"
-                                    android:ellipsize="end" />
-
-                                <LinearLayout
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="center_vertical"
-                                    android:layout_marginTop="4dp"
-                                    android:orientation="horizontal">
-
-                                    <ImageView
-                                        android:layout_width="12dp"
-                                        android:layout_height="12dp"
-                                        android:src="@drawable/ic_star_filled"
-                                        android:contentDescription="@null" />
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginStart="3dp"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:text="4.8"
-                                        android:textColor="@color/text_primary"
-                                        android:textSize="11sp" />
-                                </LinearLayout>
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:text="S/ 80/día"
-                                    android:textColor="@color/brand_color"
-                                    android:textSize="12sp" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-
-                </LinearLayout>
-
-                <!-- Columna derecha -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <!-- Job Card 2 -->
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/cardJob2"
-                        android:layout_width="match_parent"
-                        android:layout_height="200dp"
-                        android:layout_marginBottom="12dp"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="2dp"
-                        app:cardBackgroundColor="@color/white">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="vertical">
-
-                            <!-- Imagen de la chamba -->
-                            <FrameLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="120dp"
-                                android:background="#E3F2FD">
-
-                                <ImageView
-                                    android:layout_width="56dp"
-                                    android:layout_height="56dp"
-                                    android:layout_gravity="center"
-                                    android:src="@drawable/ic_cat_limpieza"
-                                    android:contentDescription="@null" />
-
-                                <ImageButton
-                                    android:layout_width="32dp"
-                                    android:layout_height="32dp"
-                                    android:layout_gravity="top|end"
-                                    android:layout_margin="8dp"
-                                    android:background="@null"
-                                    android:src="@drawable/ic_heart_outline"
-                                    android:contentDescription="Guardar" />
-                            </FrameLayout>
-
-                            <!-- Info del trabajo -->
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:padding="10dp">
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:text="Limpieza de hogar"
-                                    android:textColor="@color/text_primary"
-                                    android:textSize="12sp"
-                                    android:maxLines="1"
-                                    android:ellipsize="end" />
-
-                                <LinearLayout
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="center_vertical"
-                                    android:layout_marginTop="4dp"
-                                    android:orientation="horizontal">
-
-                                    <ImageView
-                                        android:layout_width="12dp"
-                                        android:layout_height="12dp"
-                                        android:src="@drawable/ic_star_filled"
-                                        android:contentDescription="@null" />
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginStart="3dp"
-                                        android:fontFamily="sans-serif-medium"
-                                        android:text="4.6"
-                                        android:textColor="@color/text_primary"
-                                        android:textSize="11sp" />
-                                </LinearLayout>
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:fontFamily="sans-serif-medium"
-                                    android:text="S/ 50/día"
-                                    android:textColor="@color/brand_color"
-                                    android:textSize="12sp" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
-
-                </LinearLayout>
-            </LinearLayout>
+                android:paddingEnd="16dp"
+                android:nestedScrollingEnabled="false"
+                android:clipToPadding="false"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="2"
+                tools:listitem="@layout/item_job_card" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
