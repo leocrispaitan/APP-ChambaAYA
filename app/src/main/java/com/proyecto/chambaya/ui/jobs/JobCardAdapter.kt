@@ -15,7 +15,7 @@ import com.google.android.material.card.MaterialCardView
 import com.proyecto.chambaya.R
 
 /**
- * Adapter optimizado para el RecyclerView de Job Cards
+ * Adapter optimizado para el RecyclerView de Job Cards (Estilo Instagram)
  * Usa ListAdapter con DiffUtil para máximo rendimiento
  */
 class JobCardAdapter(
@@ -34,7 +34,7 @@ class JobCardAdapter(
     }
 
     /**
-     * ViewHolder optimizado con ViewBinding manual para mejor rendimiento
+     * ViewHolder rediseñado al estilo publicación de Instagram
      */
     class JobCardViewHolder(
         itemView: View,
@@ -42,36 +42,73 @@ class JobCardAdapter(
         private val onFavoriteClick: (JobCard) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
 
+        // Vistas de cabecera (header)
         private val cardJob: MaterialCardView = itemView.findViewById(R.id.cardJob)
+        private val tvProfileName: TextView = itemView.findViewById(R.id.tvProfileName)
+        private val tvLocation: TextView = itemView.findViewById(R.id.tvLocation)
+        private val tvTimeAgo: TextView = itemView.findViewById(R.id.tvTimeAgo)
+        private val btnPostular: TextView = itemView.findViewById(R.id.btnPostular)
+
+        // Descripción del trabajo
+        private val tvJobDescription: TextView = itemView.findViewById(R.id.tvJobDescription)
+
+        // Área de imagen / info card
         private val frameJobImage: FrameLayout = itemView.findViewById(R.id.frameJobImage)
+        private val ivJobImage: ImageView = itemView.findViewById(R.id.ivJobImage)
+        private val layoutJobInfoCard: View = itemView.findViewById(R.id.layoutJobInfoCard)
         private val ivCategoryIcon: ImageView = itemView.findViewById(R.id.ivCategoryIcon)
-        private val btnFavorite: ImageButton = itemView.findViewById(R.id.btnFavorite)
         private val tvJobTitle: TextView = itemView.findViewById(R.id.tvJobTitle)
-        private val tvJobRating: TextView = itemView.findViewById(R.id.tvJobRating)
+        private val tvJobCategory: TextView = itemView.findViewById(R.id.tvJobCategory)
         private val tvJobPrice: TextView = itemView.findViewById(R.id.tvJobPrice)
 
+        // Barra de interacciones
+        private val btnFavorite: ImageButton = itemView.findViewById(R.id.btnFavorite)
+        private val btnComment: ImageButton = itemView.findViewById(R.id.btnComment)
+        private val btnShare: ImageButton = itemView.findViewById(R.id.btnShare)
+        private val btnBookmark: ImageButton = itemView.findViewById(R.id.btnBookmark)
+
+        // Pie de tarjeta
+        private val tvLikesCount: TextView = itemView.findViewById(R.id.tvLikesCount)
+        private val tvJobRating: TextView = itemView.findViewById(R.id.tvJobRating)
+
         fun bind(jobCard: JobCard) {
-            // Configurar título
-            tvJobTitle.text = jobCard.titulo
+            // ── Cabecera ──────────────────────────────────
+            // Nombre de perfil (usamos la categoría como nombre del publicador si no hay campo)
+            tvProfileName.text = jobCard.empleador.ifEmpty { "Empleador ChambAYA" }
+            tvLocation.text = jobCard.distrito.ifEmpty { "Ayacucho" }
+            tvTimeAgo.text = jobCard.tiempoPublicado.ifEmpty { "Hace 2h" }
 
-            // Configurar rating
-            tvJobRating.text = String.format("%.1f", jobCard.rating)
+            // ── Descripción del trabajo ────────────────────
+            tvJobDescription.text = jobCard.descripcion.ifEmpty {
+                "${jobCard.empleador.ifEmpty { "Se busca" }} para ${jobCard.titulo}"
+            }
 
-            // Configurar precio
-            tvJobPrice.text = jobCard.precio
+            // ── Imagen / Info Card ─────────────────────────
+            // Si no hay imagen, mostrar la tarjeta de info con gradiente
+            ivJobImage.visibility = View.GONE
+            layoutJobInfoCard.visibility = View.VISIBLE
 
-            // Configurar icono de categoría
-            ivCategoryIcon.setImageResource(jobCard.iconoCategoria)
-
-            // Configurar color de fondo del frame
+            // Color de fondo del área de imagen
             try {
                 frameJobImage.setBackgroundColor(Color.parseColor(jobCard.colorFondo))
             } catch (e: IllegalArgumentException) {
-                // Color por defecto si el parsing falla
-                frameJobImage.setBackgroundColor(Color.parseColor("#E3F2FD"))
+                frameJobImage.setBackgroundColor(Color.parseColor("#1E3A5F"))
             }
 
-            // Configurar botón de favorito
+            // Ícono de categoría
+            ivCategoryIcon.setImageResource(jobCard.iconoCategoria)
+
+            // Título del puesto
+            tvJobTitle.text = jobCard.titulo
+
+            // Categoría como badge
+            tvJobCategory.text = jobCard.categoria
+
+            // Precio/sueldo destacado
+            tvJobPrice.text = jobCard.precio
+
+            // ── Interacciones ─────────────────────────────
+            // Ícono de favorito / corazón
             val iconoFavorito = if (jobCard.isFavorito) {
                 R.drawable.ic_heart_filled
             } else {
@@ -79,21 +116,35 @@ class JobCardAdapter(
             }
             btnFavorite.setImageResource(iconoFavorito)
 
-            // Click en la card completa
-            cardJob.setOnClickListener {
-                onJobClick(jobCard)
-            }
+            // Contador de likes (simulado)
+            val likesSimulados = (jobCard.rating * 720).toInt()
+            tvLikesCount.text = "${formatLikes(likesSimulados)} Me gusta"
 
-            // Click en el botón de favorito
+            // Rating + tiempo
+            tvJobRating.text = String.format("%.1f · %s · Ver más",
+                jobCard.rating,
+                jobCard.tiempoPublicado.ifEmpty { "Hace 2h" })
+
+            // ── Clicks ────────────────────────────────────
+            cardJob.setOnClickListener { onJobClick(jobCard) }
+
+            btnPostular.setOnClickListener { onJobClick(jobCard) }
+
             btnFavorite.setOnClickListener {
                 jobCard.isFavorito = !jobCard.isFavorito
-                val nuevoIcono = if (jobCard.isFavorito) {
-                    R.drawable.ic_heart_filled
-                } else {
-                    R.drawable.ic_heart_outline
-                }
+                val nuevoIcono = if (jobCard.isFavorito) R.drawable.ic_heart_filled
+                                 else R.drawable.ic_heart_outline
                 btnFavorite.setImageResource(nuevoIcono)
                 onFavoriteClick(jobCard)
+            }
+
+            btnBookmark.setOnClickListener { onJobClick(jobCard) }
+        }
+
+        private fun formatLikes(count: Int): String {
+            return when {
+                count >= 1000 -> String.format("%.1f K", count / 1000.0)
+                else -> count.toString()
             }
         }
     }

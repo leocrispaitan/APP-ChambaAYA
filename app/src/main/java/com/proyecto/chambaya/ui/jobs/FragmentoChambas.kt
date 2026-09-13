@@ -101,79 +101,111 @@ class FragmentoChambas : Fragment() {
     }
 
     private fun loadSampleData() {
-        // Datos de ejemplo basados en el diseño original
+        // Datos de ejemplo con campos de estilo Instagram
         val sampleJobs = listOf(
             JobCard(
                 id = "1",
                 titulo = "Maestro Albañil",
                 categoria = "Construcción",
                 rating = 4.8f,
-                precio = "S/ 80/día",
+                precio = "S/ 80 / día",
                 iconoCategoria = R.drawable.ic_cat_construccion,
-                colorFondo = "#FFF3E0"
+                colorFondo = "#1E3A5F",
+                empleador = "Carlos Quispe",
+                distrito = "Ayacucho Centro",
+                tiempoPublicado = "Hace 2h",
+                descripcion = "Se necesita maestro albañil con experiencia en construcción de viviendas. Obra en el centro de Ayacucho, trabajo inmediato."
             ),
             JobCard(
                 id = "2",
-                titulo = "Limpieza de hogar",
+                titulo = "Limpieza de Hogar",
                 categoria = "Limpieza",
                 rating = 4.6f,
-                precio = "S/ 50/día",
+                precio = "S/ 50 / día",
                 iconoCategoria = R.drawable.ic_cat_limpieza,
-                colorFondo = "#E3F2FD"
+                colorFondo = "#2D5A8E",
+                empleador = "María Flores",
+                distrito = "Carmen Alto",
+                tiempoPublicado = "Hace 5h",
+                descripcion = "Necesito persona responsable para limpieza profunda de departamento. Se paga al finalizar el día. Llevar implementos propios."
             ),
             JobCard(
                 id = "3",
                 titulo = "Delivery Express",
                 categoria = "Delivery",
                 rating = 4.9f,
-                precio = "S/ 40/día",
+                precio = "S/ 40 / día",
                 iconoCategoria = R.drawable.ic_cat_delivery,
-                colorFondo = "#E8F5E9"
+                colorFondo = "#1A6B4A",
+                empleador = "Restaurante El Inca",
+                distrito = "Jesús Nazareno",
+                tiempoPublicado = "Hace 1h",
+                descripcion = "Buscamos repartidores con moto propia para delivery de comida. Horario flexible de lunes a domingo. Pago diario."
             ),
             JobCard(
                 id = "4",
                 titulo = "Técnico Electricista",
                 categoria = "Técnico",
                 rating = 4.7f,
-                precio = "S/ 100/día",
+                precio = "S/ 100 / día",
                 iconoCategoria = R.drawable.ic_cat_tecnico,
-                colorFondo = "#FFF9C4"
+                colorFondo = "#5B3D8F",
+                empleador = "Juan Mendoza",
+                distrito = "San Juan Bautista",
+                tiempoPublicado = "Hace 3h",
+                descripcion = "Instalación eléctrica residencial. Trabajo de 2 días. Requiere certificación y herramientas propias. Pago adelantado el 50%."
             ),
             JobCard(
                 id = "5",
                 titulo = "Pintor Profesional",
                 categoria = "Construcción",
                 rating = 4.5f,
-                precio = "S/ 70/día",
+                precio = "S/ 70 / día",
                 iconoCategoria = R.drawable.ic_cat_construccion,
-                colorFondo = "#FFF3E0"
+                colorFondo = "#7B3D2A",
+                empleador = "Constructora Andina",
+                distrito = "Ayacucho Centro",
+                tiempoPublicado = "Hace 8h",
+                descripcion = "Se requiere pintor con experiencia en pintura de interiores y exteriores. Proyecto de 1 semana con posibilidad de renovación."
             ),
             JobCard(
                 id = "6",
-                titulo = "Jardinería",
+                titulo = "Jardinería y Mantenimiento",
                 categoria = "Limpieza",
                 rating = 4.4f,
-                precio = "S/ 60/día",
+                precio = "S/ 60 / día",
                 iconoCategoria = R.drawable.ic_cat_limpieza,
-                colorFondo = "#E3F2FD"
+                colorFondo = "#2D6B3A",
+                empleador = "Club Ayacucho",
+                distrito = "Magdalena",
+                tiempoPublicado = "Hace 6h",
+                descripcion = "Mantenimiento de jardines y áreas verdes. Trabajo fijo los fines de semana. Incluye almuerzo y materiales."
             ),
             JobCard(
                 id = "7",
                 titulo = "Mensajería Rápida",
                 categoria = "Delivery",
                 rating = 4.8f,
-                precio = "S/ 35/día",
+                precio = "S/ 35 / día",
                 iconoCategoria = R.drawable.ic_cat_delivery,
-                colorFondo = "#E8F5E9"
+                colorFondo = "#1E5A7A",
+                empleador = "Farmacias Unidas",
+                distrito = "Ayacucho Centro",
+                tiempoPublicado = "Hace 30min",
+                descripcion = "Mensajero para entrega de medicamentos a domicilio. Zona urbana solamente. Bicicleta o moto. Turno mañana o tarde."
             ),
             JobCard(
                 id = "8",
-                titulo = "Gasfitero",
+                titulo = "Gasfitero / Plomero",
                 categoria = "Técnico",
                 rating = 4.6f,
-                precio = "S/ 90/día",
+                precio = "S/ 90 / día",
                 iconoCategoria = R.drawable.ic_cat_tecnico,
-                colorFondo = "#FFF9C4"
+                colorFondo = "#3D2D6B",
+                empleador = "Roberto Huamán",
+                distrito = "Andrés Avelino Cáceres",
+                tiempoPublicado = "Hace 4h",
+                descripcion = "Instalación y reparación de tuberías en edificio nuevo. 3 días de trabajo. Herramientas a cargo del contratante. Pago diario."
             )
         )
         

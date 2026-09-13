@@ -686,18 +686,18 @@
             <!-- ──────────────────────────────────────────
                  LISTA DE JOB CARDS (RecyclerView optimizado)
                  ────────────────────────────────────────── -->
+            <!-- Feed de trabajos estilo Instagram — 1 tarjeta por fila, ancho completo -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvJobs"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:layout_marginTop="8dp"
                 android:nestedScrollingEnabled="false"
                 android:clipToPadding="false"
-                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:spanCount="2"
-                tools:listitem="@layout/item_job_card" />
+                android:overScrollMode="never"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_job_card"
+                tools:itemCount="3" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
