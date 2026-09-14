@@ -48,9 +48,11 @@ class JobCardAdapter(
         private val tvLocation: TextView = itemView.findViewById(R.id.tvLocation)
         private val tvTimeAgo: TextView = itemView.findViewById(R.id.tvTimeAgo)
         private val btnPostular: TextView = itemView.findViewById(R.id.btnPostular)
+        private val btnMoreOptions: ImageButton = itemView.findViewById(R.id.btnMoreOptions)
 
         // Descripción del trabajo
         private val tvJobDescription: TextView = itemView.findViewById(R.id.tvJobDescription)
+        private val btnVerMas: TextView = itemView.findViewById(R.id.btnVerMas)
 
         // Área de imagen / info card
         private val frameJobImage: FrameLayout = itemView.findViewById(R.id.frameJobImage)
@@ -66,49 +68,65 @@ class JobCardAdapter(
         private val btnComment: ImageButton = itemView.findViewById(R.id.btnComment)
         private val btnShare: ImageButton = itemView.findViewById(R.id.btnShare)
         private val btnBookmark: ImageButton = itemView.findViewById(R.id.btnBookmark)
+        private val tvLikesCount: TextView = itemView.findViewById(R.id.tvLikesCount)
+        private val tvCommentsCount: TextView = itemView.findViewById(R.id.tvCommentsCount)
+        private val tvSharesCount: TextView = itemView.findViewById(R.id.tvSharesCount)
 
         // Pie de tarjeta
-        private val tvLikesCount: TextView = itemView.findViewById(R.id.tvLikesCount)
         private val tvJobRating: TextView = itemView.findViewById(R.id.tvJobRating)
 
         fun bind(jobCard: JobCard) {
             // ── Cabecera ──────────────────────────────────
-            // Nombre de perfil (usamos la categoría como nombre del publicador si no hay campo)
             tvProfileName.text = jobCard.empleador.ifEmpty { "Empleador ChambAYA" }
             tvLocation.text = jobCard.distrito.ifEmpty { "Ayacucho" }
             tvTimeAgo.text = jobCard.tiempoPublicado.ifEmpty { "Hace 2h" }
 
-            // ── Descripción del trabajo ────────────────────
-            tvJobDescription.text = jobCard.descripcion.ifEmpty {
+            // ── Descripción del trabajo + "Ver más" ───────
+            val fullDescription = jobCard.descripcion.ifEmpty {
                 "${jobCard.empleador.ifEmpty { "Se busca" }} para ${jobCard.titulo}"
             }
+            tvJobDescription.text = fullDescription
+            tvJobDescription.maxLines = 2
+            var isExpanded = false
+            btnVerMas.text = "Ver más"
+
+            // Mostrar "Ver más" si la descripción es extensa (> 75 caracteres o > 2 líneas)
+            tvJobDescription.post {
+                if (tvJobDescription.lineCount > 2 || fullDescription.length > 75) {
+                    btnVerMas.visibility = View.VISIBLE
+                } else {
+                    btnVerMas.visibility = View.GONE
+                }
+            }
+
+            val toggleExpand = View.OnClickListener {
+                isExpanded = !isExpanded
+                if (isExpanded) {
+                    tvJobDescription.maxLines = Int.MAX_VALUE
+                    btnVerMas.text = "Ver menos"
+                } else {
+                    tvJobDescription.maxLines = 2
+                    btnVerMas.text = "Ver más"
+                }
+            }
+            btnVerMas.setOnClickListener(toggleExpand)
 
             // ── Imagen / Info Card ─────────────────────────
-            // Si no hay imagen, mostrar la tarjeta de info con gradiente
             ivJobImage.visibility = View.GONE
             layoutJobInfoCard.visibility = View.VISIBLE
 
-            // Color de fondo del área de imagen
             try {
                 frameJobImage.setBackgroundColor(Color.parseColor(jobCard.colorFondo))
             } catch (e: IllegalArgumentException) {
                 frameJobImage.setBackgroundColor(Color.parseColor("#1E3A5F"))
             }
 
-            // Ícono de categoría
             ivCategoryIcon.setImageResource(jobCard.iconoCategoria)
-
-            // Título del puesto
             tvJobTitle.text = jobCard.titulo
-
-            // Categoría como badge
             tvJobCategory.text = jobCard.categoria
-
-            // Precio/sueldo destacado
             tvJobPrice.text = jobCard.precio
 
-            // ── Interacciones ─────────────────────────────
-            // Ícono de favorito / corazón
+            // ── Interacciones (Contadores al lado derecho) ──
             val iconoFavorito = if (jobCard.isFavorito) {
                 R.drawable.ic_heart_filled
             } else {
@@ -116,34 +134,76 @@ class JobCardAdapter(
             }
             btnFavorite.setImageResource(iconoFavorito)
 
-            // Contador de likes (simulado)
-            val likesSimulados = (jobCard.rating * 720).toInt()
-            tvLikesCount.text = "${formatLikes(likesSimulados)} Me gusta"
+            // Contadores de Me gusta, Comentarios y Compartidos
+            var likesSimulados = (jobCard.rating * 720).toInt() + if (jobCard.isFavorito) 1 else 0
+            val comentariosSimulados = (jobCard.rating * 28).toInt()
+            val compartidosSimulados = (jobCard.rating * 15).toInt()
 
-            // Rating + tiempo
-            tvJobRating.text = String.format("%.1f · %s · Ver más",
+            tvLikesCount.text = formatLikes(likesSimulados)
+            tvCommentsCount.text = formatLikes(comentariosSimulados)
+            tvSharesCount.text = formatLikes(compartidosSimulados)
+
+            // Rating + tiempo (Sin "Ver más", dejando la estrella intacta)
+            tvJobRating.text = String.format(
+                "%.1f · %s",
                 jobCard.rating,
-                jobCard.tiempoPublicado.ifEmpty { "Hace 2h" })
+                jobCard.tiempoPublicado.ifEmpty { "Hace 2h" }
+            )
 
             // ── Clicks ────────────────────────────────────
             cardJob.setOnClickListener { onJobClick(jobCard) }
-
             btnPostular.setOnClickListener { onJobClick(jobCard) }
+
+            btnMoreOptions.setOnClickListener {
+                showOptionsBottomSheet(itemView.context, jobCard)
+            }
 
             btnFavorite.setOnClickListener {
                 jobCard.isFavorito = !jobCard.isFavorito
                 val nuevoIcono = if (jobCard.isFavorito) R.drawable.ic_heart_filled
                                  else R.drawable.ic_heart_outline
                 btnFavorite.setImageResource(nuevoIcono)
+                
+                if (jobCard.isFavorito) likesSimulados++ else likesSimulados--
+                tvLikesCount.text = formatLikes(likesSimulados)
+                
                 onFavoriteClick(jobCard)
             }
 
             btnBookmark.setOnClickListener { onJobClick(jobCard) }
         }
 
+        private fun showOptionsBottomSheet(context: android.content.Context, jobCard: JobCard) {
+            val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(context)
+            val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_job_options, null)
+            bottomSheetDialog.setContentView(dialogView)
+
+            dialogView.findViewById<View>(R.id.optionWhy)?.setOnClickListener {
+                android.widget.Toast.makeText(context, "Por qué ves esta publicación de ${jobCard.empleador}", android.widget.Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            dialogView.findViewById<View>(R.id.optionRate)?.setOnClickListener {
+                android.widget.Toast.makeText(context, "Calificando publicación: ${jobCard.titulo}", android.widget.Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            dialogView.findViewById<View>(R.id.optionNotInterested)?.setOnClickListener {
+                android.widget.Toast.makeText(context, "Marcar 'No me interesa'", android.widget.Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            dialogView.findViewById<View>(R.id.optionReport)?.setOnClickListener {
+                android.widget.Toast.makeText(context, "Denunciar publicación", android.widget.Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            bottomSheetDialog.show()
+        }
+
         private fun formatLikes(count: Int): String {
             return when {
-                count >= 1000 -> String.format("%.1f K", count / 1000.0)
+                count >= 1000 -> String.format("%.1fk", count / 1000.0)
                 else -> count.toString()
             }
         }
