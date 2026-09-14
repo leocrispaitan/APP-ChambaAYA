@@ -16,11 +16,12 @@
 
     <!-- Indicador superior de arrastre (Pill / handle line) -->
     <View
-        android:layout_width="40dp"
+        android:layout_width="38dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
+        android:layout_marginTop="2dp"
         android:layout_marginBottom="16dp"
-        android:background="@drawable/bg_carousel_dot_inactive" />
+        android:background="@drawable/bg_bottom_sheet_handle" />
 
     <!-- 1. Opción: Por qué ves esto -->
     <LinearLayout
