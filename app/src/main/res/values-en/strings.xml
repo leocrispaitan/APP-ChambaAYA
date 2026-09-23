@@ -55,4 +55,16 @@
     <string name="section_welcome_publicar">Welcome to Publish</string>
     <string name="section_welcome_mensajes">Welcome to Messages</string>
     <string name="section_welcome_perfil">Welcome to My Profile</string>
+
+    <!-- Chat Screen Strings -->
+    <string name="chat_title_chats">Chats</string>
+    <string name="chat_btn_new_chat">New chat</string>
+    <string name="chat_search_hint">Search</string>
+    <string name="chat_filter_all">All</string>
+    <string name="chat_filter_unread">Unread 1</string>
+    <string name="chat_filter_favorites">Favorites 4</string>
+    <string name="chat_add_filter">Add filter</string>
+    <string name="chat_status_online">Online</string>
+    <string name="chat_date_today">Today</string>
+    <string name="chat_input_hint">Message</string>
 </resources>

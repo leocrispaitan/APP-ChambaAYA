@@ -24,4 +24,23 @@
     <color name="map_radar_dot">#2563EB</color>
     <color name="map_radar_halo">#4060A5FA</color>
     <color name="map_item_stroke">#F1F5F9</color>
+
+    <!-- Chat Screen Colors (Exact match with reference design) -->
+    <color name="chat_primary_green">#00A859</color>
+    <color name="chat_primary_green_pressed">#008F4C</color>
+    <color name="chat_chip_active_bg">#E6F8EE</color>
+    <color name="chat_chip_active_text">#00A859</color>
+    <color name="chat_chip_inactive_bg">#F2F4F7</color>
+    <color name="chat_chip_inactive_text">#4B5563</color>
+    <color name="chat_search_bg">#F2F4F7</color>
+    <color name="chat_search_hint">#9CA3AF</color>
+    <color name="chat_online_green">#10B981</color>
+    <color name="chat_bubble_received_bg">#F2F4F7</color>
+    <color name="chat_bubble_received_text">#111827</color>
+    <color name="chat_bubble_sent_bg">#00A859</color>
+    <color name="chat_bubble_sent_text">#FFFFFF</color>
+    <color name="chat_time_text">#9CA3AF</color>
+    <color name="chat_check_blue">#3B82F6</color>
+    <color name="chat_title">#111827</color>
+    <color name="chat_subtitle">#6B7280</color>
 </resources>

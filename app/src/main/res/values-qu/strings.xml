@@ -55,4 +55,16 @@
     <string name="section_welcome_publicar">Publicayman allin hamuy</string>
     <string name="section_welcome_mensajes">Willakuykunaman allin hamuy</string>
     <string name="section_welcome_perfil">Perfilniykiman allin hamuy</string>
+
+    <!-- Chat Screen Strings -->
+    <string name="chat_title_chats">Chats</string>
+    <string name="chat_btn_new_chat">Musuq rimay</string>
+    <string name="chat_search_hint">Maskay</string>
+    <string name="chat_filter_all">Llapan</string>
+    <string name="chat_filter_unread">Mana leeq 1</string>
+    <string name="chat_filter_favorites">Gustaasqakuna 4</string>
+    <string name="chat_add_filter">Filtro yapay</string>
+    <string name="chat_status_online">Kashkan</string>
+    <string name="chat_date_today">Kunan punchaw</string>
+    <string name="chat_input_hint">Willakuy</string>
 </resources>
