@@ -79,4 +79,33 @@
     <string name="section_welcome_publicar">Bienvenido a Publicar</string>
     <string name="section_welcome_mensajes">Bienvenido a Mensajes</string>
     <string name="section_welcome_perfil">Bienvenido a Mi Perfil</string>
+
+    <!-- Map Redesign Strings -->
+    <string name="map_title_location">Location</string>
+    <string name="map_subtitle_address">1234 Sunset Blvd, Los Angeles, CA</string>
+    <string name="map_label_beverly_hills">Beverly Hills</string>
+    <string name="map_label_west_hollywood">West Hollywood</string>
+    <string name="map_label_los_angeles">Los Angeles</string>
+    <string name="map_villa_title">Modern Family Villa</string>
+    <string name="map_villa_price">\$1,250,000</string>
+    <string name="map_whats_nearby">What\'s Nearby</string>
+    <string name="map_whats_nearby_subtitle">Everything you need, close to home</string>
+    <string name="map_cat_schools">Schools</string>
+    <string name="map_cat_schools_dist">0.8 mi</string>
+    <string name="map_cat_schools_count">3 nearby</string>
+    <string name="map_cat_shopping">Shopping</string>
+    <string name="map_cat_shopping_dist">1.2 mi</string>
+    <string name="map_cat_shopping_count">5 nearby</string>
+    <string name="map_cat_parks">Parks</string>
+    <string name="map_cat_parks_dist">0.6 mi</string>
+    <string name="map_cat_parks_count">4 nearby</string>
+    <string name="map_cat_restaurants">Restaurants</string>
+    <string name="map_cat_restaurants_dist">1.1 mi</string>
+    <string name="map_cat_restaurants_count">6 nearby</string>
+    <string name="map_place_griffith_title">Griffith Park</string>
+    <string name="map_place_griffith_type">Outdoor Activities</string>
+    <string name="map_place_griffith_dist">2.3 mi</string>
+    <string name="map_place_grove_title">The Grove</string>
+    <string name="map_place_grove_type">Shopping &amp; Dining</string>
+    <string name="map_place_grove_dist">3.1 mi</string>
 </resources>

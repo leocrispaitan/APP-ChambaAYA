@@ -1,0 +1,85 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="72dp"
+    android:height="56dp"
+    android:viewportWidth="72"
+    android:viewportHeight="56">
+
+    <!-- Sky -->
+    <path
+        android:pathData="M0,0h72v56h-72z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="90"
+                android:startColor="#60A5FA"
+                android:endColor="#3B82F6"
+                android:type="linear"/>
+        </aapt:attr>
+    </path>
+
+    <!-- Buildings background Left -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M0,12h26v44h-26z"/>
+    <!-- Classical architecture cornices and trims -->
+    <path
+        android:fillColor="#CBD5E1"
+        android:pathData="M0,10h28v4h-28z M0,24h26v2h-26z"/>
+
+    <!-- Red Store Sign / Banner -->
+    <path
+        android:fillColor="#DC2626"
+        android:pathData="M3,26h6v12h-6z"/>
+
+    <!-- Buildings background Right -->
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M44,14h28v42h-28z"/>
+    <!-- Store Roof Accent -->
+    <path
+        android:fillColor="#D97706"
+        android:pathData="M42,12h30v3h-30z M44,22h28v2h-28z"/>
+
+    <!-- Promenade / Street floor -->
+    <path
+        android:pathData="M0,42h72v14h-72z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="90"
+                android:startColor="#78350F"
+                android:endColor="#92400E"
+                android:type="linear"/>
+        </aapt:attr>
+    </path>
+
+    <!-- Palm Tree trunk and leaves (iconic The Grove element) -->
+    <!-- Curved Trunk -->
+    <path
+        android:strokeColor="#78350F"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M37,48 Q35,30 31,16"/>
+    <!-- Palm fronds -->
+    <path
+        android:fillColor="#15803D"
+        android:pathData="M31,16 Q20,10 14,15 Q24,19 31,16 Z"/>
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="M31,16 Q26,6 30,2 Q33,9 31,16 Z"/>
+    <path
+        android:fillColor="#15803D"
+        android:pathData="M31,16 Q36,6 44,8 Q38,14 31,16 Z"/>
+    <path
+        android:fillColor="#22C55E"
+        android:pathData="M31,16 Q42,15 47,22 Q39,22 31,16 Z"/>
+
+    <!-- Store Warm Glass Display Windows -->
+    <path
+        android:fillColor="#FEF3C7"
+        android:pathData="M6,32h14v10h-14z M50,30h16v12h-16z"/>
+    <!-- Glass reflections / frames -->
+    <path
+        android:strokeColor="#B45309"
+        android:strokeWidth="0.8"
+        android:pathData="M6,32h14v10h-14z M50,30h16v12h-16z"/>
+</vector>

@@ -1,0 +1,94 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="390dp"
+    android:height="460dp"
+    android:viewportWidth="390"
+    android:viewportHeight="460">
+
+    <!-- Base map terrain -->
+    <path
+        android:fillColor="#F2F8F4"
+        android:pathData="M0,0h390v460h-390z"/>
+
+    <!-- Green park areas / terrain patches -->
+    <path
+        android:fillColor="#D8EEDF"
+        android:pathData="M20,15 Q45,10 65,30 T110,40 Q130,85 90,95 T40,75 Z"/>
+    <path
+        android:fillColor="#CEE9D6"
+        android:pathData="M140,20 Q180,15 200,45 T250,60 Q260,110 220,120 T150,90 Z"/>
+    <path
+        android:fillColor="#E2F4E8"
+        android:pathData="M290,10 Q340,30 360,70 T390,120 L390,0 L270,0 Z"/>
+    <path
+        android:fillColor="#D6EEDB"
+        android:pathData="M310,130 Q350,140 370,180 T350,230 Q320,240 290,210 T280,160 Z"/>
+    <path
+        android:fillColor="#CEE9D7"
+        android:pathData="M10,140 Q40,130 60,170 T50,230 Q20,250 5,220 Z"/>
+    <path
+        android:fillColor="#DBF1E2"
+        android:pathData="M80,180 Q120,170 140,200 T130,250 Q100,270 70,240 Z"/>
+    <path
+        android:fillColor="#D4ECD9"
+        android:pathData="M180,240 Q220,220 250,250 T240,310 Q210,330 170,290 Z"/>
+    <path
+        android:fillColor="#C8E6D2"
+        android:pathData="M270,280 Q320,270 345,310 T335,370 Q290,390 260,350 Z"/>
+    <path
+        android:fillColor="#DBF1E2"
+        android:pathData="M20,290 Q65,280 85,320 T70,390 Q30,410 10,370 Z"/>
+    <path
+        android:fillColor="#CEE9D7"
+        android:pathData="M120,330 Q160,320 185,355 T175,410 Q140,430 110,390 Z"/>
+
+    <!-- Soft water/cyan lake patch -->
+    <path
+        android:fillColor="#CBECE6"
+        android:pathData="M210,140 Q240,135 255,160 T245,195 Q220,205 200,180 Z"/>
+
+    <!-- Secondary street network (thinner white lines) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M-10,80 L400,120 M-10,210 L400,260 M-10,340 L400,380 M60,-10 L100,470 M190,-10 L230,470 M310,-10 L340,470"/>
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M-10,30 L180,230 L390,190 M10,400 L210,180 L400,60 M70,50 L340,320 M30,170 L300,440"/>
+
+    <!-- Major Avenues / Boulevards (crisp wide white streets with clean borders) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M-20,130 C120,150 180,180 400,140"/>
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M50,-20 C100,160 160,260 210,470"/>
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="10"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M-20,290 C140,240 260,220 400,310"/>
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="10"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M280,-20 C270,140 310,300 370,470"/>
+
+    <!-- Small diagonal residential street connectors -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M40,30 L110,10 M140,80 L180,50 M250,90 L300,60 M330,150 L380,120 M90,170 L140,140 M230,220 L270,190 M30,270 L80,240 M140,310 L190,280 M270,360 L320,330 M60,370 L110,340"/>
+</vector>

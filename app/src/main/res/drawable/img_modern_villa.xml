@@ -1,0 +1,54 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="48dp"
+    android:height="40dp"
+    android:viewportWidth="48"
+    android:viewportHeight="40">
+
+    <!-- Sky -->
+    <path
+        android:pathData="M0,0h48v40h-48z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="90"
+                android:startColor="#87CEEB"
+                android:endColor="#4A90E2"
+                android:type="linear"/>
+        </aapt:attr>
+    </path>
+
+    <!-- Mountains / Trees in background -->
+    <path
+        android:fillColor="#2D5A27"
+        android:pathData="M0,24 Q12,18 24,23 T48,20 L48,28 L0,28 Z"/>
+
+    <!-- Villa Roof & Structure -->
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M8,18 L24,11 L40,18 Z"/>
+    <path
+        android:fillColor="#F4A460"
+        android:pathData="M11,18 L37,18 L37,28 L11,28 Z"/>
+
+    <!-- Villa Windows with warm light -->
+    <path
+        android:fillColor="#FFE4B5"
+        android:pathData="M14,20h7v6h-7z M27,20h8v6h-8z"/>
+
+    <!-- Green Lawn Patio -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M0,28h48v12h-48z"/>
+
+    <!-- Swimming Pool with blue shimmer -->
+    <path
+        android:pathData="M16,30 Q28,29 38,31 Q40,36 34,38 Q22,39 14,37 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="0"
+                android:startColor="#00BCD4"
+                android:endColor="#0288D1"
+                android:type="linear"/>
+        </aapt:attr>
+    </path>
+</vector>

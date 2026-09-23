@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="56dp"
+    android:viewportWidth="48"
+    android:viewportHeight="56">
+    <!-- Pin Teardrop Shape with White Border -->
+    <path
+        android:fillColor="@color/map_forest_green"
+        android:strokeColor="@color/white"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:pathData="M24,52 L10,31 A18,18 0,1 1,38 31 Z"/>
+
+    <!-- White House Icon Centered at (24, 21) -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M24,11 L13.5,20.5 H17 V30 H22 V23.5 H26 V30 H31 V20.5 H34.5 Z"/>
+</vector>

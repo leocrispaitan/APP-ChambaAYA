@@ -28,7 +28,7 @@
         android:orientation="vertical">
 
         <!-- ══════════════════════════════════════════
-             CABECERA — Estilo Instagram
+             CABECERA — 
              (Avatar + Nombre + Ubicación + Postular + ⋮)
              ══════════════════════════════════════════ -->
         <androidx.constraintlayout.widget.ConstraintLayout

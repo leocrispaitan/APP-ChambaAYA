@@ -12,4 +12,16 @@
     <color name="login_hint">#A9A9A9</color>
     <color name="login_text_secondary">#666666</color>
     <color name="background_light">#F5F7FF</color>
+
+    <!-- Map Screen Colors -->
+    <color name="map_forest_green">#064E3B</color>
+    <color name="map_forest_dark">#083E30</color>
+    <color name="map_card_bg">#F2F8F5</color>
+    <color name="map_card_stroke">#E2EDE7</color>
+    <color name="map_text_title">#0F172A</color>
+    <color name="map_text_sub">#64748B</color>
+    <color name="map_text_muted">#94A3B8</color>
+    <color name="map_radar_dot">#2563EB</color>
+    <color name="map_radar_halo">#4060A5FA</color>
+    <color name="map_item_stroke">#F1F5F9</color>
 </resources>

@@ -1,0 +1,63 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="72dp"
+    android:height="56dp"
+    android:viewportWidth="72"
+    android:viewportHeight="56">
+
+    <!-- Sky with subtle gradient -->
+    <path
+        android:pathData="M0,0h72v56h-72z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="90"
+                android:startColor="#BAE6FD"
+                android:endColor="#60A5FA"
+                android:type="linear"/>
+        </aapt:attr>
+    </path>
+
+    <!-- Distant skyline silhouettes -->
+    <path
+        android:fillColor="#7DD3FC"
+        android:pathData="M10,24h3v-7h4v7h2v-11h3v11h4v-5h3v5h5v-9h4v9h6v-13h3v13h10v3h-57z"/>
+
+    <!-- Rolling Hills / Mountains -->
+    <path
+        android:pathData="M0,26 Q20,20 40,24 T72,22 L72,35 L0,35 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="45"
+                android:startColor="#15803D"
+                android:endColor="#166534"
+                android:type="linear"/>
+        </aapt:attr>
+    </path>
+
+    <!-- Foreground Lush Green Park & Trees -->
+    <path
+        android:pathData="M0,32 Q25,28 45,34 T72,30 L72,56 L0,56 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="90"
+                android:startColor="#14532D"
+                android:endColor="#16A34A"
+                android:type="linear"/>
+        </aapt:attr>
+    </path>
+
+    <!-- Tree Silhouettes in foreground -->
+    <path
+        android:fillColor="#052E16"
+        android:pathData="M52,22 C48,22 47,28 49,33 C46,33 46,39 49,42 L52,42 L52,48 L54,48 L54,42 C57,42 58,36 55,32 C58,27 56,22 52,22 Z"/>
+    <path
+        android:fillColor="#047857"
+        android:pathData="M15,30 C12,30 11,35 13,38 C10,38 10,43 13,46 L15,46 L15,50 L17,50 L17,46 C20,46 21,41 18,38 C21,34 19,30 15,30 Z"/>
+
+    <!-- Park Trail / Walkway -->
+    <path
+        android:strokeColor="#FDE68A"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M0,52 Q28,48 48,54 T72,50"/>
+</vector>
