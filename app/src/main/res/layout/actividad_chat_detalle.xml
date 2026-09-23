@@ -172,28 +172,10 @@
         android:paddingBottom="12dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Attachment "+" Button -->
-        <FrameLayout
-            android:id="@+id/btnAttachment"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_gravity="center"
-                android:contentDescription="Attach"
-                android:src="@drawable/ic_chat_plus_gray" />
-        </FrameLayout>
-
         <!-- Message Pill Input Container -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="44dp"
-            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:background="@drawable/bg_chat_input_pill"
             android:gravity="center_vertical"
@@ -216,29 +198,39 @@
                 android:textColorHint="@color/chat_search_hint"
                 android:textSize="15sp" />
 
+            <!-- Icono de archivo (paperclip) dentro del pill -->
             <ImageView
-                android:id="@+id/btnEmoji"
+                android:id="@+id/btnAttachInline"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_marginStart="6dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
-                android:contentDescription="Emoji"
+                android:contentDescription="Adjuntar archivo"
                 android:focusable="true"
-                android:src="@drawable/ic_chat_smile" />
-
-            <ImageView
-                android:id="@+id/btnCamera"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:clickable="true"
-                android:contentDescription="Camera"
-                android:focusable="true"
-                android:src="@drawable/ic_chat_camera" />
+                android:src="@drawable/ic_chat_attach"
+                app:tint="@color/chat_subtitle" />
 
         </LinearLayout>
+
+        <!-- Botón Enviar (círculo verde) - oculto hasta que haya texto -->
+        <FrameLayout
+            android:id="@+id/btnSend"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_chat_send_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="Enviar mensaje"
+                android:src="@drawable/ic_chat_send" />
+        </FrameLayout>
 
     </LinearLayout>
 

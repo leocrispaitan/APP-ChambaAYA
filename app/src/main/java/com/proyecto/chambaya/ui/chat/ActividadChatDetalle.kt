@@ -1,10 +1,14 @@
 package com.proyecto.chambaya.ui.chat
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -13,6 +17,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.imageview.ShapeableImageView
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
@@ -126,21 +131,48 @@ class ActividadChatDetalle : AppCompatActivity() {
 
     private fun setupInput() {
         etMessageInput = findViewById(R.id.etMessageInput)
-        val btnAttachment = findViewById<FrameLayout>(R.id.btnAttachment)
-        val btnEmoji = findViewById<ImageView>(R.id.btnEmoji)
-        val btnCamera = findViewById<ImageView>(R.id.btnCamera)
+        val btnAttachInline = findViewById<ImageView>(R.id.btnAttachInline)
+        val btnSend = findViewById<FrameLayout>(R.id.btnSend)
 
-        btnAttachment.setOnClickListener {
-            Toast.makeText(this, "Adjuntar archivo", Toast.LENGTH_SHORT).show()
+        val abrirMenuAdjuntos: () -> Unit = {
+            val dialog = BottomSheetDialog(this)
+            val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_adjuntos, null)
+            dialog.setContentView(sheetView)
+
+            sheetView.findViewById<LinearLayout>(R.id.btnMenuGaleria)?.setOnClickListener {
+                Toast.makeText(this, "Galería", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            sheetView.findViewById<LinearLayout>(R.id.btnMenuCamara)?.setOnClickListener {
+                Toast.makeText(this, "Cámara", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            sheetView.findViewById<LinearLayout>(R.id.btnMenuUbicacion)?.setOnClickListener {
+                Toast.makeText(this, "Ubicación", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+            sheetView.findViewById<LinearLayout>(R.id.btnMenuDocumento)?.setOnClickListener {
+                Toast.makeText(this, "Documento", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+
+            dialog.show()
         }
 
-        btnEmoji.setOnClickListener {
-            Toast.makeText(this, "Emojis", Toast.LENGTH_SHORT).show()
+        btnAttachInline.setOnClickListener { abrirMenuAdjuntos() }
+
+        btnSend.setOnClickListener {
+            enviarMensajeActual()
         }
 
-        btnCamera.setOnClickListener {
-            Toast.makeText(this, "Cámara", Toast.LENGTH_SHORT).show()
-        }
+        // Mostrar/ocultar botón de enviar según haya texto
+        etMessageInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                btnSend.visibility = if (s?.trim()?.isNotEmpty() == true) View.VISIBLE else View.GONE
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
 
         etMessageInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND || actionId == EditorInfo.IME_ACTION_DONE) {
