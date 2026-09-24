@@ -1,0 +1,1850 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/registerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/brand_color"
+    tools:context=".RegistroActivity">
+
+    <!-- Botón de regreso -->
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/auth_back"
+        android:padding="8dp"
+        android:src="@drawable/ic_arrow_back"
+        android:tint="@color/white"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Elemento decorativo diagonal -->
+    <View
+        android:id="@+id/registerDiagonal"
+        android:layout_width="180dp"
+        android:layout_height="200dp"
+        android:layout_marginEnd="-70dp"
+        android:layout_marginBottom="-80dp"
+        android:background="@drawable/bg_login_diagonal"
+        android:rotation="-26"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Header ChambAYA -->
+    <LinearLayout
+        android:id="@+id/registerHeaderGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/registerPanel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.5">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_welcome_mark"
+                android:tint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="sans-serif-black"
+                android:text="@string/app_name"
+                android:textColor="@color/white"
+                android:textSize="28sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvHeaderSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="sans-serif"
+            android:text="@string/register_subtitle"
+            android:textColor="#E0EAFF"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Panel principal blanco curvado -->
+    <LinearLayout
+        android:id="@+id/registerPanel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_login_panel"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHeight_percent="0.84"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1">
+
+        <!-- ============================================================ -->
+        <!-- STEPPER HORIZONTAL — visible solo en pasos 1-4               -->
+        <!-- ============================================================ -->
+        <LinearLayout
+            android:id="@+id/stepperTimelineContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingBottom="12dp"
+            android:visibility="gone">
+
+            <!-- Fila de círculos y conectores -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Paso 1 -->
+                <FrameLayout
+                    android:id="@+id/stepCircle1"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_step_circle_active">
+                    <TextView
+                        android:id="@+id/tvStepNumber1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="sans-serif-bold"
+                        android:text="1"
+                        android:textColor="@color/white"
+                        android:textSize="12sp" />
+                    <ImageView
+                        android:id="@+id/ivStepCheck1"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_check"
+                        android:tint="@color/white"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/stepLine1"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#E2E8F0" />
+
+                <!-- Paso 2 -->
+                <FrameLayout
+                    android:id="@+id/stepCircle2"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_step_circle_inactive">
+                    <TextView
+                        android:id="@+id/tvStepNumber2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="sans-serif-bold"
+                        android:text="2"
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+                    <ImageView
+                        android:id="@+id/ivStepCheck2"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_check"
+                        android:tint="@color/white"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/stepLine2"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#E2E8F0" />
+
+                <!-- Paso 3 -->
+                <FrameLayout
+                    android:id="@+id/stepCircle3"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_step_circle_inactive">
+                    <TextView
+                        android:id="@+id/tvStepNumber3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="sans-serif-bold"
+                        android:text="3"
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+                    <ImageView
+                        android:id="@+id/ivStepCheck3"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_check"
+                        android:tint="@color/white"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/stepLine3"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#E2E8F0" />
+
+                <!-- Paso 4 -->
+                <FrameLayout
+                    android:id="@+id/stepCircle4"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_step_circle_inactive">
+                    <TextView
+                        android:id="@+id/tvStepNumber4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:fontFamily="sans-serif-bold"
+                        android:text="4"
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+                    <ImageView
+                        android:id="@+id/ivStepCheck4"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_check"
+                        android:tint="@color/white"
+                        android:visibility="gone" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- Etiquetas de cada paso -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvStepLabel1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-bold"
+                    android:gravity="center"
+                    android:text="Identidad"
+                    android:textColor="@color/brand_color"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvStepLabel2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:text="Credenciales"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvStepLabel3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:text="Verificar"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvStepLabel4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:text="Listo"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divisor sutil -->
+        <View
+            android:id="@+id/stepperDivider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="12dp"
+            android:background="#F1F5F9"
+            android:visibility="gone" />
+
+        <!-- ============================================================ -->
+        <!-- SCROLL CONTENEDOR PRINCIPAL                                   -->
+        <!-- ============================================================ -->
+        <ScrollView
+            android:id="@+id/registerScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <!-- ======================================================= -->
+                <!-- PASO 0: SELECCIÓN DE ROL (pantalla inicial)             -->
+                <!-- ======================================================= -->
+                <LinearLayout
+                    android:id="@+id/layoutStep0"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <!-- Título -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="¿Cómo usarás ChambAYA?"
+                        android:textColor="@color/black"
+                        android:textSize="24sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="sans-serif"
+                        android:text="Elige tu perfil principal para comenzar el registro"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- Card: Trabajador -->
+                    <LinearLayout
+                        android:id="@+id/cardRoleWorkerSelect"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="22dp"
+                        android:background="@drawable/bg_card_selected"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <!-- Ícono con fondo circular azul -->
+                            <FrameLayout
+                                android:layout_width="52dp"
+                                android:layout_height="52dp"
+                                android:background="@drawable/bg_step_circle_active">
+                                <ImageView
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_role_worker"
+                                    android:tint="@color/white" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="@string/register_role_worker_title"
+                                    android:textColor="@color/black"
+                                    android:textSize="17sp" />
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="3dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="@string/register_role_worker_desc"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <RadioButton
+                                android:id="@+id/rbWorkerSelect"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false"
+                                android:clickable="false" />
+                        </LinearLayout>
+
+                        <!-- Tags info -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_chip_active"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:text="✓ Verificado con DNI"
+                                android:textColor="@color/brand_color"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/bg_chip_inactive"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:text="Ofrece servicios"
+                                android:textColor="#475569"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Separador "o" -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginBottom="14dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1"
+                            android:background="#E2E8F0" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginEnd="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="o"
+                            android:textColor="#94A3B8"
+                            android:textSize="13sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1"
+                            android:background="#E2E8F0" />
+                    </LinearLayout>
+
+                    <!-- Card: Empleador -->
+                    <LinearLayout
+                        android:id="@+id/cardRoleEmployerSelect"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_card_selectable"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <!-- Ícono con fondo circular -->
+                            <FrameLayout
+                                android:layout_width="52dp"
+                                android:layout_height="52dp"
+                                android:background="@drawable/bg_step_circle_inactive">
+                                <ImageView
+                                    android:id="@+id/ivEmployerRoleIcon"
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_role_employer"
+                                    android:tint="#64748B" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="@string/register_role_employer_title"
+                                    android:textColor="@color/black"
+                                    android:textSize="17sp" />
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="3dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="@string/register_role_employer_desc"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <RadioButton
+                                android:id="@+id/rbEmployerSelect"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false"
+                                android:clickable="false" />
+                        </LinearLayout>
+
+                        <!-- Tags info -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_chip_inactive"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:text="DNI o RUC"
+                                android:textColor="#475569"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/bg_chip_inactive"
+                                android:fontFamily="sans-serif-medium"
+                                android:paddingStart="10dp"
+                                android:paddingTop="4dp"
+                                android:paddingEnd="10dp"
+                                android:paddingBottom="4dp"
+                                android:text="Publica empleos"
+                                android:textColor="#475569"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Botón continuar Paso 0 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStep0Next"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="24dp"
+                        android:backgroundTint="@color/brand_color"
+                        android:fontFamily="sans-serif-bold"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/register_btn_continue"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        app:cornerRadius="26dp" />
+
+                </LinearLayout>
+
+                <!-- ======================================================= -->
+                <!-- PASO 1: IDENTIDAD (DNI para Trabajador / DNI o RUC para Empleador) -->
+                <!-- ======================================================= -->
+                <LinearLayout
+                    android:id="@+id/layoutStep1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="Verifica tu identidad"
+                        android:textColor="@color/black"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:id="@+id/tvStep1Subtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif"
+                        android:text="@string/register_step2_subtitle"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- ─── TABS DNI / RUC (solo visibles para Empleador) ─── -->
+                    <LinearLayout
+                        android:id="@+id/layoutIdentityTypeTabs"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_requirement_box"
+                        android:orientation="horizontal"
+                        android:padding="4dp"
+                        android:visibility="gone">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTabDni"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="@color/brand_color"
+                            android:fontFamily="sans-serif-bold"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="DNI"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="13sp"
+                            app:cornerRadius="20dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTabRuc"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="RUC"
+                            android:textAllCaps="false"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            app:cornerRadius="20dp" />
+                    </LinearLayout>
+
+                    <!-- ─── FORMULARIO DNI ─── -->
+                    <LinearLayout
+                        android:id="@+id/layoutDniForm"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="2.2"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-black"
+                                android:text="@string/register_dni_label"
+                                android:textColor="@color/black"
+                                android:textSize="13sp" />
+
+                            <EditText
+                                android:id="@+id/etDni"
+                                android:layout_width="match_parent"
+                                android:layout_height="50dp"
+                                android:layout_marginTop="6dp"
+                                android:background="@drawable/bg_login_input"
+                                android:drawableStart="@drawable/ic_id_card"
+                                android:drawablePadding="12dp"
+                                android:fontFamily="sans-serif"
+                                android:hint="@string/register_dni_hint"
+                                android:inputType="number"
+                                android:maxLength="8"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="16dp"
+                                android:singleLine="true"
+                                android:textColor="@color/black"
+                                android:textColorHint="@color/login_hint"
+                                android:textSize="15sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-black"
+                                android:text="@string/register_dni_code_label"
+                                android:textColor="@color/black"
+                                android:textSize="13sp" />
+
+                            <EditText
+                                android:id="@+id/etDniVerifier"
+                                android:layout_width="match_parent"
+                                android:layout_height="50dp"
+                                android:layout_marginTop="6dp"
+                                android:background="@drawable/bg_login_input"
+                                android:fontFamily="sans-serif-bold"
+                                android:gravity="center"
+                                android:hint="@string/register_dni_code_hint"
+                                android:inputType="textCapCharacters"
+                                android:maxLength="1"
+                                android:textColor="@color/black"
+                                android:textColorHint="@color/login_hint"
+                                android:textSize="18sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Botón consultar RENIEC -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConsultReniec"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="14dp"
+                        android:backgroundTint="#0F172A"
+                        android:fontFamily="sans-serif-bold"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/register_btn_consult_reniec"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        app:cornerRadius="25dp"
+                        app:icon="@drawable/ic_shield_check"
+                        app:iconGravity="textStart"
+                        app:iconTint="#00A859" />
+
+                    <!-- ProgressBar RENIEC -->
+                    <ProgressBar
+                        android:id="@+id/pbReniec"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="5dp"
+                        android:layout_marginTop="8dp"
+                        android:indeterminate="true"
+                        android:visibility="gone" />
+
+                    <!-- Tarjeta resultado RENIEC verificado -->
+                    <LinearLayout
+                        android:id="@+id/cardDniVerified"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_dni_verified_card"
+                        android:orientation="vertical"
+                        android:padding="14dp"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/ic_shield_check" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="@string/register_dni_verified_badge"
+                                android:textColor="#065F46"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvReniecFullName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif-black"
+                            android:text="JUAN CARLOS PÉREZ QUISPE"
+                            android:textColor="#0F172A"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/tvReniecDniDetail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="sans-serif"
+                            android:text="DNI: 72345678 · Ayacucho, Huamanga"
+                            android:textColor="#475569"
+                            android:textSize="13sp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="8dp"
+                            android:background="#D1FAE5" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/register_dni_unique_badge"
+                            android:textColor="#047857"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Intentos RENIEC -->
+                    <TextView
+                        android:id="@+id/tvDniAttempts"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="sans-serif"
+                        android:text="Intentos disponibles: 2 de 2"
+                        android:textColor="#94A3B8"
+                        android:textSize="12sp" />
+
+                    <!-- ─── FORMULARIO RUC (solo empleador que elige RUC) ─── -->
+                    <LinearLayout
+                        android:id="@+id/layoutRucForm"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:text="@string/register_ruc_label"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/etRuc"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_login_input"
+                            android:drawableStart="@drawable/ic_sunat_building"
+                            android:drawablePadding="12dp"
+                            android:fontFamily="sans-serif"
+                            android:hint="@string/register_ruc_hint"
+                            android:inputType="number"
+                            android:maxLength="11"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
+                            android:textColorHint="@color/login_hint"
+                            android:textSize="15sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnConsultSunat"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="12dp"
+                            android:backgroundTint="#1E293B"
+                            android:fontFamily="sans-serif-bold"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="@string/register_btn_consult_sunat"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="14sp"
+                            app:cornerRadius="25dp" />
+
+                        <ProgressBar
+                            android:id="@+id/pbSunat"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="5dp"
+                            android:layout_marginTop="8dp"
+                            android:indeterminate="true"
+                            android:visibility="gone" />
+
+                        <!-- Tarjeta resultado SUNAT -->
+                        <LinearLayout
+                            android:id="@+id/cardRucVerified"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_dni_verified_card"
+                            android:orientation="vertical"
+                            android:padding="14dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/register_ruc_verified_badge"
+                                android:textColor="#065F46"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/tvSunatRazonSocial"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:fontFamily="sans-serif-black"
+                                android:text="CONSTRUCTORA &amp; MULTISERVICIOS AYACUCHO S.A.C."
+                                android:textColor="#0F172A"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvSunatCondition"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="Condición: HABIDO | Estado: ACTIVO"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Botones nav Paso 1 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStep1Back"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-bold"
+                            android:text="@string/register_btn_back"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_primary"
+                            app:cornerRadius="25dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStep1Next"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1.4"
+                            android:backgroundTint="@color/brand_color"
+                            android:fontFamily="sans-serif-bold"
+                            android:text="@string/register_btn_continue"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            app:cornerRadius="25dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ======================================================= -->
+                <!-- PASO 2: CREDENCIALES (Email + Teléfono + Contraseña)    -->
+                <!-- ======================================================= -->
+                <LinearLayout
+                    android:id="@+id/layoutStep2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="Crea tus credenciales"
+                        android:textColor="@color/black"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif"
+                        android:text="Ingresa tu correo y contraseña para acceder"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- Correo electrónico -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:fontFamily="sans-serif-black"
+                        android:text="@string/auth_email_label"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
+
+                    <EditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_login_input"
+                        android:drawableStart="@drawable/ic_login_email"
+                        android:drawablePadding="12dp"
+                        android:fontFamily="sans-serif"
+                        android:hint="@string/auth_email_hint"
+                        android:inputType="textEmailAddress"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:singleLine="true"
+                        android:textColor="@color/black"
+                        android:textColorHint="@color/login_hint"
+                        android:textSize="14sp" />
+
+                    <!-- Número de teléfono (sin OTP, solo dato de contacto) -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:fontFamily="sans-serif-black"
+                        android:text="@string/register_phone_label"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="82dp"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_login_input"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="14dp"
+                                android:src="@drawable/ic_flag_peru" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="+51"
+                                android:textColor="@color/black"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <EditText
+                            android:id="@+id/etPhone"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_login_input"
+                            android:drawableStart="@drawable/ic_phone"
+                            android:drawablePadding="10dp"
+                            android:fontFamily="sans-serif"
+                            android:hint="@string/register_phone_hint"
+                            android:inputType="phone"
+                            android:maxLength="9"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
+                            android:textColorHint="@color/login_hint"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Info: teléfono sin OTP -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:drawableStart="@drawable/ic_verified"
+                        android:drawablePadding="4dp"
+                        android:fontFamily="sans-serif"
+                        android:text="Solo para contacto. La verificación es por correo."
+                        android:textColor="#94A3B8"
+                        android:textSize="11sp" />
+
+                    <!-- Contraseña -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:fontFamily="sans-serif-black"
+                        android:text="@string/auth_password_label"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_login_input">
+
+                        <EditText
+                            android:id="@+id/etPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent"
+                            android:drawableStart="@drawable/ic_login_lock"
+                            android:drawablePadding="12dp"
+                            android:fontFamily="sans-serif"
+                            android:hint="@string/auth_password_hint"
+                            android:inputType="textPassword"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="50dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
+                            android:textColorHint="@color/login_hint"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:id="@+id/ivTogglePassword"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_gravity="center_vertical|end"
+                            android:layout_marginEnd="14dp"
+                            android:clickable="true"
+                            android:contentDescription="@string/auth_show_password"
+                            android:focusable="true"
+                            android:src="@drawable/ic_login_eye_off" />
+                    </FrameLayout>
+
+                    <!-- Confirmar Contraseña -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="sans-serif-black"
+                        android:text="@string/register_confirm_password_label"
+                        android:textColor="@color/black"
+                        android:textSize="13sp" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_login_input">
+
+                        <EditText
+                            android:id="@+id/etConfirmPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent"
+                            android:drawableStart="@drawable/ic_login_lock"
+                            android:drawablePadding="12dp"
+                            android:fontFamily="sans-serif"
+                            android:hint="@string/register_confirm_password_hint"
+                            android:inputType="textPassword"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="50dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
+                            android:textColorHint="@color/login_hint"
+                            android:textSize="14sp" />
+
+                        <ImageView
+                            android:id="@+id/ivToggleConfirmPassword"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_gravity="center_vertical|end"
+                            android:layout_marginEnd="14dp"
+                            android:clickable="true"
+                            android:contentDescription="@string/auth_show_password"
+                            android:focusable="true"
+                            android:src="@drawable/ic_login_eye_off" />
+                    </FrameLayout>
+
+                    <!-- Requisitos de Contraseña -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_requirement_box"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-bold"
+                            android:text="@string/register_pwd_req_title"
+                            android:textColor="#334155"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:id="@+id/ivReqLength"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:src="@drawable/ic_close_circle" />
+                            <TextView
+                                android:id="@+id/tvReqLength"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/register_pwd_req_length"
+                                android:textColor="#64748B"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:id="@+id/ivReqNumber"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:src="@drawable/ic_close_circle" />
+                            <TextView
+                                android:id="@+id/tvReqNumber"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/register_pwd_req_number"
+                                android:textColor="#64748B"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:id="@+id/ivReqSpecial"
+                                android:layout_width="14dp"
+                                android:layout_height="14dp"
+                                android:src="@drawable/ic_close_circle" />
+                            <TextView
+                                android:id="@+id/tvReqSpecial"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/register_pwd_req_special"
+                                android:textColor="#64748B"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Continuar con Google -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1"
+                            android:background="#E2E8F0" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginEnd="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/auth_or_continue"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1"
+                            android:background="#E2E8F0" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/btnGoogleRegister"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_login_google_button"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_marginEnd="10dp"
+                            android:src="@drawable/ic_google_g" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/auth_continue_google"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Aviso términos -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="sans-serif"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/register_terms_notice"
+                        android:textColor="#64748B"
+                        android:textSize="11sp" />
+
+                    <!-- Botones nav Paso 2 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStep2Back"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-bold"
+                            android:text="@string/register_btn_back"
+                            android:textAllCaps="false"
+                            android:textColor="@color/text_primary"
+                            app:cornerRadius="25dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnStep2Next"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1.4"
+                            android:backgroundTint="@color/brand_color"
+                            android:fontFamily="sans-serif-bold"
+                            android:text="@string/register_btn_continue"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            app:cornerRadius="25dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ======================================================= -->
+                <!-- PASO 3: OTP DE CORREO ELECTRÓNICO                       -->
+                <!-- ======================================================= -->
+                <LinearLayout
+                    android:id="@+id/layoutStep3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <!-- Ilustración email -->
+                    <FrameLayout
+                        android:layout_width="130dp"
+                        android:layout_height="130dp"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="4dp">
+
+                        <!-- Círculo fondo azul claro -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_step_circle_active"
+                            android:alpha="0.12" />
+
+                        <!-- Ícono email grande -->
+                        <ImageView
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_login_email"
+                            android:tint="@color/brand_color" />
+
+                        <!-- Badge candado pequeño -->
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_gravity="bottom|end"
+                            android:layout_marginEnd="4dp"
+                            android:layout_marginBottom="4dp"
+                            android:background="@drawable/bg_step_circle_active">
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_login_lock"
+                                android:tint="@color/white" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:gravity="center"
+                        android:text="Verifica tu correo"
+                        android:textColor="@color/black"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:id="@+id/tvOtpEmailHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="sans-serif"
+                        android:gravity="center"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Hemos enviado un código de 4 dígitos a\ntu@correo.com"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- 4 cuadros OTP -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="28dp"
+                        android:layout_marginBottom="4dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <EditText
+                            android:id="@+id/otpBox1"
+                            android:layout_width="58dp"
+                            android:layout_height="64dp"
+                            android:background="@drawable/bg_login_input"
+                            android:fontFamily="sans-serif-black"
+                            android:gravity="center"
+                            android:inputType="number"
+                            android:maxLength="1"
+                            android:textColor="@color/brand_color"
+                            android:textSize="26sp" />
+
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="3dp"
+                            android:layout_gravity="center_vertical"
+                            android:background="#CBD5E1" />
+
+                        <EditText
+                            android:id="@+id/otpBox2"
+                            android:layout_width="58dp"
+                            android:layout_height="64dp"
+                            android:background="@drawable/bg_login_input"
+                            android:fontFamily="sans-serif-black"
+                            android:gravity="center"
+                            android:inputType="number"
+                            android:maxLength="1"
+                            android:textColor="@color/brand_color"
+                            android:textSize="26sp" />
+
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="3dp"
+                            android:layout_gravity="center_vertical"
+                            android:background="#CBD5E1" />
+
+                        <EditText
+                            android:id="@+id/otpBox3"
+                            android:layout_width="58dp"
+                            android:layout_height="64dp"
+                            android:background="@drawable/bg_login_input"
+                            android:fontFamily="sans-serif-black"
+                            android:gravity="center"
+                            android:inputType="number"
+                            android:maxLength="1"
+                            android:textColor="@color/brand_color"
+                            android:textSize="26sp" />
+
+                        <View
+                            android:layout_width="10dp"
+                            android:layout_height="3dp"
+                            android:layout_gravity="center_vertical"
+                            android:background="#CBD5E1" />
+
+                        <EditText
+                            android:id="@+id/otpBox4"
+                            android:layout_width="58dp"
+                            android:layout_height="64dp"
+                            android:background="@drawable/bg_login_input"
+                            android:fontFamily="sans-serif-black"
+                            android:gravity="center"
+                            android:inputType="number"
+                            android:maxLength="1"
+                            android:textColor="@color/brand_color"
+                            android:textSize="26sp" />
+                    </LinearLayout>
+
+                    <!-- Botón Confirmar OTP -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConfirmOtp"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="24dp"
+                        android:backgroundTint="@color/brand_color"
+                        android:fontFamily="sans-serif-bold"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="Confirmar código"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        app:cornerRadius="26dp" />
+
+                    <!-- Progress OTP -->
+                    <ProgressBar
+                        android:id="@+id/pbOtp"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="6dp"
+                        android:indeterminate="true"
+                        android:visibility="gone" />
+
+                    <!-- Reenviar / Cambiar email -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnResendOtp"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="4dp"
+                        android:text="Reenviar código"
+                        android:textColor="@color/brand_color"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnChangeEmail"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center_horizontal"
+                        android:text="Cambiar correo"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- ======================================================= -->
+                <!-- PASO 4: RESUMEN Y CREACIÓN FINAL                        -->
+                <!-- ======================================================= -->
+                <LinearLayout
+                    android:id="@+id/layoutStep4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="@string/register_step5_title"
+                        android:textColor="@color/black"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif"
+                        android:text="@string/register_step5_subtitle"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <!-- Tarjeta Resumen -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_dni_verified_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <!-- Cabecera: ícono + nombre -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <FrameLayout
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/bg_step_circle_active">
+                                <ImageView
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_shield_check"
+                                    android:tint="@color/white" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvSummaryFullName"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="Juan Carlos Pérez Quispe"
+                                    android:textColor="#0F172A"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:id="@+id/tvSummaryVerifiedBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-bold"
+                                    android:text="✓ Perfil Verificado Oficial (RENIEC)"
+                                    android:textColor="#059669"
+                                    android:textSize="11sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="14dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="#D1FAE5" />
+
+                        <!-- Fila DNI -->
+                        <LinearLayout
+                            android:id="@+id/layoutSummaryDniRow"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="110dp"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="DNI Verificado:"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                            <TextView
+                                android:id="@+id/tvSummaryDni"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="72345678"
+                                android:textColor="#0F172A"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- Fila Email verificado -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="110dp"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="Correo (OTP):"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                            <TextView
+                                android:id="@+id/tvSummaryEmail"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="juan.perez@gmail.com"
+                                android:textColor="#0F172A"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- Fila Teléfono -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="110dp"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="Celular:"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                            <TextView
+                                android:id="@+id/tvSummaryPhone"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="+51 987 654 321"
+                                android:textColor="#0F172A"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- Fila RUC (solo empleador con RUC) -->
+                        <LinearLayout
+                            android:id="@+id/layoutSummaryRucRow"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal"
+                            android:visibility="gone">
+                            <TextView
+                                android:layout_width="110dp"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="RUC SUNAT:"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                            <TextView
+                                android:id="@+id/tvSummaryRuc"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="20601234567 (Activo/Habido)"
+                                android:textColor="#0F172A"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- Fila Rol -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="110dp"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="Rol Principal:"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                            <TextView
+                                android:id="@+id/tvSummaryRole"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="Trabajador"
+                                android:textColor="@color/brand_color"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Aviso seguridad -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="sans-serif"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Tus datos están protegidos en Cloud Firestore con cifrado de grado bancario y una sola cuenta asociada a tu identidad."
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+
+                    <!-- Botón Crear Cuenta -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFinalizeRegister"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="20dp"
+                        android:backgroundTint="@color/brand_color"
+                        android:fontFamily="sans-serif-bold"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="@string/register_btn_finish"
+                        android:textAllCaps="false"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        app:cornerRadius="26dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStep5Back"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/register_btn_back"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+            </FrameLayout>
+        </ScrollView>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

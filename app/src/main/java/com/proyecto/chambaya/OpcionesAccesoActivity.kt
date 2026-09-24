@@ -45,7 +45,9 @@ class OpcionesAccesoActivity : AppCompatActivity() {
     private fun setupClickListeners() {
         btnLanguage.setOnClickListener { showLanguagePopup() }
         btnGetStarted.setOnClickListener { openMain() }
-        btnSignup.setOnClickListener { /* Registro: se implementará en un paso posterior */ }
+        btnSignup.setOnClickListener {
+            startActivity(Intent(this, RegistroActivity::class.java))
+        }
         btnLogin.setOnClickListener { openLogin() }
     }
 

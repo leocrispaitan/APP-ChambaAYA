@@ -63,7 +63,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         tvSignupLink.setOnClickListener {
-            // Registro se implementará en un paso futuro.
+            startActivity(android.content.Intent(this, RegistroActivity::class.java))
         }
 
         setupPasswordToggle(etPassword, ivTogglePassword)
