@@ -1467,7 +1467,7 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
-                    <!-- 4 cuadros OTP -->
+                    <!-- 4 cuadros OTP estilo profesional -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -1479,69 +1479,54 @@
 
                         <EditText
                             android:id="@+id/otpBox1"
-                            android:layout_width="58dp"
+                            android:layout_width="64dp"
                             android:layout_height="64dp"
-                            android:background="@drawable/bg_login_input"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_otp_box"
                             android:fontFamily="sans-serif-black"
                             android:gravity="center"
                             android:inputType="number"
                             android:maxLength="1"
-                            android:textColor="@color/brand_color"
-                            android:textSize="26sp" />
-
-                        <View
-                            android:layout_width="10dp"
-                            android:layout_height="3dp"
-                            android:layout_gravity="center_vertical"
-                            android:background="#CBD5E1" />
+                            android:textColor="@color/black"
+                            android:textSize="28sp" />
 
                         <EditText
                             android:id="@+id/otpBox2"
-                            android:layout_width="58dp"
+                            android:layout_width="64dp"
                             android:layout_height="64dp"
-                            android:background="@drawable/bg_login_input"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_otp_box"
                             android:fontFamily="sans-serif-black"
                             android:gravity="center"
                             android:inputType="number"
                             android:maxLength="1"
-                            android:textColor="@color/brand_color"
-                            android:textSize="26sp" />
-
-                        <View
-                            android:layout_width="10dp"
-                            android:layout_height="3dp"
-                            android:layout_gravity="center_vertical"
-                            android:background="#CBD5E1" />
+                            android:textColor="@color/black"
+                            android:textSize="28sp" />
 
                         <EditText
                             android:id="@+id/otpBox3"
-                            android:layout_width="58dp"
+                            android:layout_width="64dp"
                             android:layout_height="64dp"
-                            android:background="@drawable/bg_login_input"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_otp_box"
                             android:fontFamily="sans-serif-black"
                             android:gravity="center"
                             android:inputType="number"
                             android:maxLength="1"
-                            android:textColor="@color/brand_color"
-                            android:textSize="26sp" />
-
-                        <View
-                            android:layout_width="10dp"
-                            android:layout_height="3dp"
-                            android:layout_gravity="center_vertical"
-                            android:background="#CBD5E1" />
+                            android:textColor="@color/black"
+                            android:textSize="28sp" />
 
                         <EditText
                             android:id="@+id/otpBox4"
-                            android:layout_width="58dp"
+                            android:layout_width="64dp"
                             android:layout_height="64dp"
-                            android:background="@drawable/bg_login_input"
+                            android:background="@drawable/bg_otp_box"
                             android:fontFamily="sans-serif-black"
                             android:gravity="center"
                             android:inputType="number"
                             android:maxLength="1"
-                            android:textColor="@color/brand_color"
-                            android:textSize="26sp" />
+                            android:textColor="@color/black"
+                            android:textSize="28sp" />
                     </LinearLayout>
 
                     <!-- Botón Confirmar OTP -->
