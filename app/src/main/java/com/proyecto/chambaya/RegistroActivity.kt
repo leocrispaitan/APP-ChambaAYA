@@ -455,11 +455,16 @@ class RegistroActivity : AppCompatActivity() {
             }
         })
 
+        // Listeners del switch DNI/RUC - prevenir clicks repetidos en el mismo tab
         btnTabDni.setOnClickListener {
-            selectIdentityTab("DNI")
+            if (identityMode != "DNI") {  // Solo cambiar si no está ya seleccionado
+                selectIdentityTab("DNI")
+            }
         }
         btnTabRuc.setOnClickListener {
-            selectIdentityTab("RUC")
+            if (identityMode != "RUC") {  // Solo cambiar si no está ya seleccionado
+                selectIdentityTab("RUC")
+            }
         }
 
         btnConsultReniec.setOnClickListener {
@@ -502,46 +507,68 @@ class RegistroActivity : AppCompatActivity() {
     private fun configureIdentityStep() {
         val isWorker = selectedRole == "TRABAJADOR"
         if (isWorker) {
+            // Modo trabajador: solo DNI
             layoutIdentityTypeTabs.visibility = View.GONE
             layoutDniForm.visibility = View.VISIBLE
             layoutRucForm.visibility = View.GONE
             identityMode = "DNI"
             tvStep1Subtitle.text = getString(R.string.register_step2_subtitle)
         } else {
+            // Modo empleador: mostrar tabs DNI/RUC
             layoutIdentityTypeTabs.visibility = View.VISIBLE
-            selectIdentityTab(identityMode)
+            // Resetear a DNI por defecto y aplicar estilos
+            identityMode = ""  // Forzar que selectIdentityTab procese el cambio
+            selectIdentityTab("DNI")
         }
     }
 
     private fun selectIdentityTab(mode: String) {
+        // Prevenir cambios innecesarios
+        if (identityMode == mode) return
+        
         identityMode = mode
         val brandColor = ContextCompat.getColor(this, R.color.brand_color)
 
         if (mode == "DNI") {
-            styleTab(btnTabDni, selected = true, brandColor)
-            styleTab(btnTabRuc, selected = false, brandColor)
+            // Aplicar estilos de tabs
+            applyTabStyle(btnTabDni, selected = true, brandColor)
+            applyTabStyle(btnTabRuc, selected = false, brandColor)
+            
+            // Mostrar/ocultar layouts
             layoutDniForm.visibility = View.VISIBLE
             layoutRucForm.visibility = View.GONE
             cardRucVerified.visibility = View.GONE
+            
             tvStep1Subtitle.text = getString(R.string.register_step2_subtitle)
         } else {
-            styleTab(btnTabRuc, selected = true, brandColor)
-            styleTab(btnTabDni, selected = false, brandColor)
+            // RUC seleccionado
+            applyTabStyle(btnTabRuc, selected = true, brandColor)
+            applyTabStyle(btnTabDni, selected = false, brandColor)
+            
+            // Mostrar/ocultar layouts
             layoutRucForm.visibility = View.VISIBLE
             layoutDniForm.visibility = View.GONE
+            cardDniVerified.visibility = View.GONE
+            
             tvStep1Subtitle.text = "Valida tu empresa registrada en SUNAT (RUC Activo/Habido)"
         }
     }
 
-    private fun styleTab(btn: MaterialButton, selected: Boolean, brandColor: Int) {
+    /**
+     * Aplica el estilo visual a un botón del tab switch
+     * Enfoque simple: usa solo backgroundTintList con colores explícitos
+     */
+    private fun applyTabStyle(button: MaterialButton, selected: Boolean, brandColor: Int) {
         if (selected) {
-            btn.backgroundTintList = ColorStateList.valueOf(brandColor)
-            btn.setTextColor(Color.WHITE)
-            btn.typeface = android.graphics.Typeface.DEFAULT_BOLD
+            // Tab seleccionado: fondo azul, texto blanco, negrita
+            button.backgroundTintList = ColorStateList.valueOf(brandColor)
+            button.setTextColor(Color.WHITE)
+            button.typeface = android.graphics.Typeface.DEFAULT_BOLD
         } else {
-            btn.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
-            btn.setTextColor(Color.parseColor("#64748B"))
-            btn.typeface = android.graphics.Typeface.DEFAULT
+            // Tab no seleccionado: fondo gris claro del contenedor, texto gris
+            button.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#F8FAFC"))
+            button.setTextColor(Color.parseColor("#64748B"))
+            button.typeface = android.graphics.Typeface.DEFAULT
         }
     }
 

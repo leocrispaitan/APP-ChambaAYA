@@ -642,7 +642,6 @@
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:backgroundTint="@color/brand_color"
                             android:fontFamily="sans-serif-bold"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
@@ -766,116 +765,116 @@
                             android:textColor="#64748B"
                             android:textSize="12sp"
                             android:visibility="gone" />
-                    </LinearLayout>
 
-                    <!-- Botón Verificar Identidad -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnConsultReniec"
-                        android:layout_width="match_parent"
-                        android:layout_height="54dp"
-                        android:layout_marginTop="20dp"
-                        android:backgroundTint="@color/brand_color"
-                        android:fontFamily="sans-serif-bold"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="Verificar Identidad"
-                        android:textAllCaps="false"
-                        android:textColor="@color/white"
-                        android:textSize="15sp"
-                        app:cornerRadius="27dp"
-                        app:icon="@drawable/ic_shield_check"
-                        app:iconGravity="textStart"
-                        app:iconSize="20dp" />
+                        <!-- Botón Verificar Identidad -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnConsultReniec"
+                            android:layout_width="match_parent"
+                            android:layout_height="54dp"
+                            android:layout_marginTop="20dp"
+                            android:backgroundTint="@color/brand_color"
+                            android:fontFamily="sans-serif-bold"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Verificar Identidad"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="15sp"
+                            app:cornerRadius="27dp"
+                            app:icon="@drawable/ic_shield_check"
+                            app:iconGravity="textStart"
+                            app:iconSize="20dp" />
 
-                    <!-- ProgressBar verificación -->
-                    <ProgressBar
-                        android:id="@+id/pbReniec"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="4dp"
-                        android:layout_marginTop="10dp"
-                        android:indeterminate="true"
-                        android:visibility="gone" />
+                        <!-- ProgressBar verificación -->
+                        <ProgressBar
+                            android:id="@+id/pbReniec"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="4dp"
+                            android:layout_marginTop="10dp"
+                            android:indeterminate="true"
+                            android:visibility="gone" />
 
-                    <!-- Tarjeta resultado verificado -->
-                    <LinearLayout
-                        android:id="@+id/cardDniVerified"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:background="@drawable/bg_dni_verified_card"
-                        android:orientation="vertical"
-                        android:padding="14dp"
-                        android:visibility="gone">
-
+                        <!-- Tarjeta resultado verificado -->
                         <LinearLayout
+                            android:id="@+id/cardDniVerified"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:layout_marginTop="14dp"
+                            android:background="@drawable/bg_dni_verified_card"
+                            android:orientation="vertical"
+                            android:padding="14dp"
+                            android:visibility="gone">
 
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:src="@drawable/ic_shield_check" />
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:src="@drawable/ic_shield_check" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:fontFamily="sans-serif-black"
+                                    android:text="@string/register_dni_verified_badge"
+                                    android:textColor="#065F46"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:id="@+id/tvReniecFullName"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
+                                android:layout_marginTop="8dp"
                                 android:fontFamily="sans-serif-black"
-                                android:text="@string/register_dni_verified_badge"
-                                android:textColor="#065F46"
+                                android:text="JUAN CARLOS PÉREZ QUISPE"
+                                android:textColor="#0F172A"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvReniecDniDetail"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="DNI: 72345678 · Ayacucho, Huamanga"
+                                android:textColor="#475569"
                                 android:textSize="13sp" />
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="10dp"
+                                android:layout_marginBottom="8dp"
+                                android:background="#D1FAE5" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/register_dni_unique_badge"
+                                android:textColor="#047857"
+                                android:textSize="12sp" />
                         </LinearLayout>
 
+                        <!-- Intentos disponibles -->
                         <TextView
-                            android:id="@+id/tvReniecFullName"
+                            android:id="@+id/tvDniAttempts"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:fontFamily="sans-serif-black"
-                            android:text="JUAN CARLOS PÉREZ QUISPE"
-                            android:textColor="#0F172A"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:id="@+id/tvReniecDniDetail"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
+                            android:layout_marginTop="12dp"
                             android:fontFamily="sans-serif"
-                            android:text="DNI: 72345678 · Ayacucho, Huamanga"
-                            android:textColor="#475569"
-                            android:textSize="13sp" />
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginTop="10dp"
-                            android:layout_marginBottom="8dp"
-                            android:background="#D1FAE5" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="@string/register_dni_unique_badge"
-                            android:textColor="#047857"
+                            android:gravity="center"
+                            android:text="Intentos disponibles: 2 de 2"
+                            android:textColor="#94A3B8"
                             android:textSize="12sp" />
                     </LinearLayout>
-
-                    <!-- Intentos disponibles -->
-                    <TextView
-                        android:id="@+id/tvDniAttempts"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:fontFamily="sans-serif"
-                        android:gravity="center"
-                        android:text="Intentos disponibles: 2 de 2"
-                        android:textColor="#94A3B8"
-                        android:textSize="12sp" />
 
                     <!-- ─── FORMULARIO RUC (solo empleador que elige RUC) ─── -->
                     <LinearLayout
