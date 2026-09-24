@@ -1,0 +1,99 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="412dp"
+    android:height="230dp"
+    android:viewportWidth="412"
+    android:viewportHeight="230">
+
+    <!-- Deep purple/cosmic background base -->
+    <path
+        android:pathData="M0,0 L412,0 L412,230 L0,230 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="40"
+                android:startY="0"
+                android:endX="380"
+                android:endY="230">
+                <item android:offset="0.0" android:color="#14032C"/>
+                <item android:offset="0.35" android:color="#26064C"/>
+                <item android:offset="0.7" android:color="#36085C"/>
+                <item android:offset="1.0" android:color="#1A0236"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Ambient glowing violet/indigo orb on upper right -->
+    <path
+        android:pathData="M220,0 C320,0 412,40 412,140 C412,190 350,210 270,180 C200,150 190,60 220,0 Z"
+        android:alpha="0.45">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="330"
+                android:centerY="50"
+                android:gradientRadius="160">
+                <item android:offset="0.0" android:color="#6A108A"/>
+                <item android:offset="1.0" android:color="#00180434"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle futuristic glow ray upper right -->
+    <path
+        android:pathData="M290,100 L412,145 L412,175 L330,125 Z"
+        android:alpha="0.25">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="290"
+                android:startY="100"
+                android:endX="412"
+                android:endY="160">
+                <item android:offset="0.0" android:color="#009A1CB2"/>
+                <item android:offset="0.5" android:color="#B38023D4"/>
+                <item android:offset="1.0" android:color="#005B117A"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Magenta curved glowing wing on the left -->
+    <path
+        android:pathData="M0,110 C35,120 70,145 95,175 C100,182 102,188 95,192 C80,200 45,190 0,165 Z"
+        android:alpha="0.95">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="120"
+                android:endX="100"
+                android:endY="190">
+                <item android:offset="0.0" android:color="#EB1A99"/>
+                <item android:offset="0.6" android:color="#C5168A"/>
+                <item android:offset="1.0" android:color="#840A6B"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Second soft magenta curve streak below it -->
+    <path
+        android:pathData="M0,140 C40,150 75,175 110,210 C70,212 30,195 0,175 Z"
+        android:alpha="0.3">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="140"
+                android:endX="110"
+                android:endY="210">
+                <item android:offset="0.0" android:color="#FF2CA8"/>
+                <item android:offset="1.0" android:color="#006A0B63"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Seamless organic curved white mask at the bottom -->
+    <path
+        android:pathData="M0,165 C60,185 130,208 206,204 C282,200 345,188 412,208 L412,230 L0,230 Z"
+        android:fillColor="#FFFFFF"/>
+</vector>

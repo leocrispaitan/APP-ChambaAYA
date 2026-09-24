@@ -1,0 +1,49 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="44dp"
+    android:height="44dp"
+    android:viewportWidth="44"
+    android:viewportHeight="44">
+    <!-- Turbocharger housing spiral -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M22,12 A10,10 0 1,0 32,22 L36,22 L36,12 L22,12 Z"/>
+    <!-- Outer flange lip -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M36,9 L36,25"/>
+    <!-- Turbo center circle / hub -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2.2"
+        android:fillColor="#00000000"
+        android:pathData="M22,18 A4,4 0 1,0 22,26 A4,4 0 1,0 22,18 Z"/>
+    <!-- Inner impeller spiral curve -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M22,15 C26,15 28,18 28,22 C28,26 25,29 21,29 C17,29 14,26 14,22 C14,17 18,13 23,13"/>
+    <!-- Center plus mark inside hub -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M22,20.5 L22,23.5 M20.5,22 L23.5,22"/>
+    <!-- Base mounting bracket -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M16,33 L28,33 M19,33 L17,37 M25,33 L27,37 M14,37 L30,37"/>
+</vector>

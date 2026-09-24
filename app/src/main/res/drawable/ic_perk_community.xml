@@ -1,0 +1,58 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="44dp"
+    android:height="44dp"
+    android:viewportWidth="44"
+    android:viewportHeight="44">
+    <!-- Center Person Head -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2.2"
+        android:fillColor="#00000000"
+        android:pathData="M22,17m-3.5,0a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0"/>
+    <!-- Center Person Body -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M16,30 C16,25.5 18,23 22,23 C26,23 28,25.5 28,30 Z"/>
+    
+    <!-- Left Person Head -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M12,20m-3,0a3,3 0 1,0 6,0a3,3 0 1,0 -6,0"/>
+    <!-- Left Person Body -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M7,31 C7,27.5 9,25.5 13,25"/>
+
+    <!-- Right Person Head -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M32,20m-3,0a3,3 0 1,0 6,0a3,3 0 1,0 -6,0"/>
+    <!-- Right Person Body -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M37,31 C37,27.5 35,25.5 31,25"/>
+
+    <!-- 3 emphasis burst lines above center head -->
+    <path
+        android:strokeColor="#1B1838"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M22,8 L22,11 M16,10 L18,12.5 M28,10 L26,12.5"/>
+</vector>

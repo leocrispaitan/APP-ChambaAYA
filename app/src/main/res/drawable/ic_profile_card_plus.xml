@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="20"
+    android:viewportHeight="20">
+    <!-- Coral/Red circular badge -->
+    <path
+        android:fillColor="#FF4664"
+        android:pathData="M10,10m-10,0a10,10 0 1,0 20,0a10,10 0 1,0 -20,0"/>
+    <!-- Crisp white plus mark -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M10,6 L10,14 M6,10 L14,10"/>
+</vector>

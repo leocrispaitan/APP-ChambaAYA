@@ -1,24 +1,695 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:scrollbars="none"
     tools:context=".ui.profile.FragmentoMiPerfil">
 
-    <TextView
-        android:id="@+id/tvSectionTitle"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-medium"
-        android:gravity="center"
-        android:text="@string/section_welcome_perfil"
-        android:textColor="@color/brand_color"
-        android:textSize="22sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:paddingBottom="32dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- Deep Cosmic Purple Curved Header Graphic -->
+        <ImageView
+            android:id="@+id/ivHeaderBackground"
+            android:layout_width="match_parent"
+            android:layout_height="225dp"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/bg_profile_header_art"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Header Top Navigation Bar -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutTopBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="42dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <!-- Back Button -->
+            <FrameLayout
+                android:id="@+id/btnBack"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_profile_circle_btn"
+                android:clickable="true"
+                android:contentDescription="@string/auth_back"
+                android:focusable="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_profile_arrow_back" />
+            </FrameLayout>
+
+            <!-- Screen Title "Profile" -->
+            <TextView
+                android:id="@+id/tvHeaderTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/profile_title"
+                android:textColor="@color/white"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@id/btnBack"
+                app:layout_constraintStart_toEndOf="@id/btnBack"
+                app:layout_constraintTop_toTopOf="@id/btnBack" />
+
+            <!-- Settings Button -->
+            <FrameLayout
+                android:id="@+id/btnSettings"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_profile_circle_btn"
+                android:clickable="true"
+                android:contentDescription="Settings"
+                android:focusable="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_profile_settings" />
+            </FrameLayout>
+
+            <!-- Privacy / Hide Mode Button -->
+            <FrameLayout
+                android:id="@+id/btnPrivacy"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_profile_circle_btn"
+                android:clickable="true"
+                android:contentDescription="Privacy"
+                android:focusable="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/btnSettings"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_profile_eye_slash" />
+            </FrameLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Avatar Container with Glowing Gradient Ring -->
+        <FrameLayout
+            android:id="@+id/avatarContainer"
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:layout_marginTop="142dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/ivHeaderBackground">
+
+            <!-- Glowing Ring -->
+            <ImageView
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:contentDescription="@null"
+                android:src="@drawable/bg_profile_avatar_ring" />
+
+            <!-- Circular Avatar Image -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivProfileAvatar"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center"
+                android:contentDescription="Profile Photo"
+                android:scaleType="centerCrop"
+                android:src="@drawable/avatar_katty"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Circle" />
+
+        </FrameLayout>
+
+        <!-- "67% Complete" Pill Badge overlapping bottom of avatar -->
+        <TextView
+            android:id="@+id/tvCompletionBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-11dp"
+            android:background="@drawable/bg_profile_complete_badge"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:paddingHorizontal="11dp"
+            android:paddingVertical="4dp"
+            android:text="@string/profile_completion_mock"
+            android:textColor="@color/white"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@id/avatarContainer"
+            app:layout_constraintStart_toStartOf="@id/avatarContainer"
+            app:layout_constraintTop_toBottomOf="@id/avatarContainer" />
+
+        <!-- User Name & Verified Scalloped Badge -->
+        <LinearLayout
+            android:id="@+id/layoutName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvCompletionBadge">
+
+            <TextView
+                android:id="@+id/tvProfileName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/profile_name_mock"
+                android:textColor="@color/profile_text_title"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/ivVerifiedBadge"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="6dp"
+                android:contentDescription="Verified"
+                android:src="@drawable/ic_profile_verified_badge" />
+
+        </LinearLayout>
+
+        <!-- User Handle -->
+        <TextView
+            android:id="@+id/tvProfileHandle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="sans-serif"
+            android:text="@string/profile_handle_mock"
+            android:textColor="@color/profile_text_handle"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layoutName" />
+
+        <!-- Stats Counter Row (230 Posts | 890 Following | 120K Follower) -->
+        <LinearLayout
+            android:id="@+id/layoutStats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="20dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvProfileHandle">
+
+            <!-- Posts Column -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvPostsCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/profile_posts_count"
+                    android:textColor="@color/profile_text_stat_num"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:fontFamily="sans-serif"
+                    android:text="@string/profile_posts_label"
+                    android:textColor="@color/profile_text_stat_label"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Divider 1 -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="@color/profile_divider" />
+
+            <!-- Following Column -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvFollowingCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/profile_following_count"
+                    android:textColor="@color/profile_text_stat_num"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:fontFamily="sans-serif"
+                    android:text="@string/profile_following_label"
+                    android:textColor="@color/profile_text_stat_label"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Divider 2 -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="@color/profile_divider" />
+
+            <!-- Follower Column -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvFollowersCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/profile_followers_count"
+                    android:textColor="@color/profile_text_stat_num"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:fontFamily="sans-serif"
+                    android:text="@string/profile_followers_label"
+                    android:textColor="@color/profile_text_stat_label"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Action Buttons Row (Follow | Message | Email) -->
+        <LinearLayout
+            android:id="@+id/layoutActionButtons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layoutStats">
+
+            <!-- Follow Gradient Button -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnFollow"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1.05"
+                android:background="@drawable/bg_profile_btn_follow"
+                android:fontFamily="sans-serif-medium"
+                android:stateListAnimator="@null"
+                android:text="@string/profile_btn_follow"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Message Button -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnMessage"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="9dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_profile_btn_secondary"
+                android:fontFamily="sans-serif-medium"
+                android:stateListAnimator="@null"
+                android:text="@string/profile_btn_message"
+                android:textAllCaps="false"
+                android:textColor="@color/profile_btn_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Email Button -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnEmail"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="9dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_profile_btn_secondary"
+                android:fontFamily="sans-serif-medium"
+                android:stateListAnimator="@null"
+                android:text="@string/profile_btn_email"
+                android:textAllCaps="false"
+                android:textColor="@color/profile_btn_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Tabs Row (Your Perks / Achievements) -->
+        <LinearLayout
+            android:id="@+id/layoutTabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layoutActionButtons">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="24dp">
+
+                <!-- Tab 1: Your Perks (Active) -->
+                <LinearLayout
+                    android:id="@+id/tabPerks"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvTabPerks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/profile_tab_perks"
+                        android:textColor="@color/profile_tab_active"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <!-- Active Gradient Underline Indicator -->
+                    <View
+                        android:id="@+id/viewPerksIndicator"
+                        android:layout_width="match_parent"
+                        android:layout_height="3dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_profile_tab_indicator" />
+                </LinearLayout>
+
+                <!-- Tab 2: Achievements (Inactive) -->
+                <LinearLayout
+                    android:id="@+id/tabAchievements"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="44dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvTabAchievements"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/profile_tab_achievements"
+                        android:textColor="@color/profile_tab_inactive"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <!-- Hidden Indicator for inactive tab -->
+                    <View
+                        android:id="@+id/viewAchievementsIndicator"
+                        android:layout_width="match_parent"
+                        android:layout_height="3dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_profile_tab_indicator"
+                        android:visibility="invisible" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Bottom Divider under tabs -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#F0F3F7" />
+
+        </LinearLayout>
+
+        <!-- 2x2 Perks Grid Section -->
+        <LinearLayout
+            android:id="@+id/gridPerks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="18dp"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layoutTabs">
+
+            <!-- Grid Row 1: Turbos & Fast Adds -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Card 1: Turbos (Pastel Lilac) -->
+                <FrameLayout
+                    android:id="@+id/cardTurbos"
+                    android:layout_width="0dp"
+                    android:layout_height="145dp"
+                    android:layout_marginEnd="7dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_perk_turbo"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <!-- Plus Badge in top-right corner -->
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="12dp"
+                        android:contentDescription="Add perk"
+                        android:src="@drawable/ic_profile_card_plus" />
+
+                    <!-- Centered Icon and Title -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_perk_turbos" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/profile_perk_turbos"
+                            android:textColor="@color/profile_card_icon_tint"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </FrameLayout>
+
+                <!-- Card 2: Fast Adds (Pastel Peach/Pink) -->
+                <FrameLayout
+                    android:id="@+id/cardFastAdds"
+                    android:layout_width="0dp"
+                    android:layout_height="145dp"
+                    android:layout_marginStart="7dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_perk_fast_adds"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <!-- Plus Badge in top-right corner -->
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="12dp"
+                        android:contentDescription="Add perk"
+                        android:src="@drawable/ic_profile_card_plus" />
+
+                    <!-- Centered Icon and Title -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_perk_fast_adds" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/profile_perk_fast_adds"
+                            android:textColor="@color/profile_card_icon_tint"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <!-- Grid Row 2: Spotlights & Community -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <!-- Card 3: Spotlights (Pastel Champagne/Gold) -->
+                <FrameLayout
+                    android:id="@+id/cardSpotlights"
+                    android:layout_width="0dp"
+                    android:layout_height="145dp"
+                    android:layout_marginEnd="7dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_perk_spotlights"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <!-- Plus Badge in top-right corner -->
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="12dp"
+                        android:contentDescription="Add perk"
+                        android:src="@drawable/ic_profile_card_plus" />
+
+                    <!-- Centered Icon and Title -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_perk_spotlights" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/profile_perk_spotlights"
+                            android:textColor="@color/profile_card_icon_tint"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </FrameLayout>
+
+                <!-- Card 4: Community (Pastel Mint/Aqua) -->
+                <FrameLayout
+                    android:id="@+id/cardCommunity"
+                    android:layout_width="0dp"
+                    android:layout_height="145dp"
+                    android:layout_marginStart="7dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_perk_community"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <!-- Plus Badge in top-right corner -->
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="12dp"
+                        android:contentDescription="Add perk"
+                        android:src="@drawable/ic_profile_card_plus" />
+
+                    <!-- Centered Icon and Title -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_perk_community" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/profile_perk_community"
+                            android:textColor="@color/profile_card_icon_tint"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>

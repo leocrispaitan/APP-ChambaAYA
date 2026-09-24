@@ -43,4 +43,33 @@
     <color name="chat_check_blue">#3B82F6</color>
     <color name="chat_title">#111827</color>
     <color name="chat_subtitle">#6B7280</color>
+
+    <!-- Profile Screen Colors (Replica reference) -->
+    <color name="profile_header_dark">#12042B</color>
+    <color name="profile_header_mid">#2F0854</color>
+    <color name="profile_header_accent">#7B1280</color>
+    <color name="profile_header_glow">#D91E9E</color>
+    <color name="profile_text_title">#15172A</color>
+    <color name="profile_text_handle">#82889A</color>
+    <color name="profile_text_stat_num">#15172A</color>
+    <color name="profile_text_stat_label">#8A91A3</color>
+    <color name="profile_divider">#EEF1F6</color>
+    <color name="profile_btn_follow_start">#941988</color>
+    <color name="profile_btn_follow_center">#D92771</color>
+    <color name="profile_btn_follow_end">#FF781F</color>
+    <color name="profile_btn_border">#E2E6EF</color>
+    <color name="profile_btn_text">#1F2437</color>
+    <color name="profile_tab_active">#15172A</color>
+    <color name="profile_tab_inactive">#8E95A5</color>
+    <color name="profile_badge_plus">#FF4664</color>
+    <color name="profile_badge_verified">#FF4765</color>
+    <color name="profile_icon_button_bg">#33FFFFFF</color>
+    <color name="profile_icon_button_stroke">#4DFFFFFF</color>
+    
+    <!-- Perk Card Backgrounds -->
+    <color name="profile_perk_turbo_bg">#F2EDFD</color>
+    <color name="profile_perk_fast_bg">#FFF0F2</color>
+    <color name="profile_perk_spotlight_bg">#FFF9E6</color>
+    <color name="profile_perk_community_bg">#E8FBF8</color>
+    <color name="profile_card_icon_tint">#1B1838</color>
 </resources>

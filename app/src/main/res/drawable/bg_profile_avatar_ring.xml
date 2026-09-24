@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="104dp"
+    android:height="104dp"
+    android:viewportWidth="104"
+    android:viewportHeight="104">
+
+    <!-- Glowing circular gradient ring -->
+    <path
+        android:fillType="evenOdd"
+        android:pathData="M 52,2 A 50,50 0 1,0 52,102 A 50,50 0 1,0 52,2 Z M 52,5.5 A 46.5,46.5 0 1,0 52,98.5 A 46.5,46.5 0 1,0 52,5.5 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="10"
+                android:startY="10"
+                android:endX="94"
+                android:endY="94">
+                <item android:offset="0.0" android:color="#E01B95"/>
+                <item android:offset="0.35" android:color="#F73368"/>
+                <item android:offset="0.75" android:color="#FF7028"/>
+                <item android:offset="1.0" android:color="#FFB326"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>
