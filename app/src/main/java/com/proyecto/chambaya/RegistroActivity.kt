@@ -12,6 +12,7 @@ import android.text.method.PasswordTransformationMethod
 import android.view.KeyEvent
 import android.view.View
 import android.widget.*
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -87,7 +88,10 @@ class RegistroActivity : AppCompatActivity() {
     private lateinit var btnTabRuc: MaterialButton
     private lateinit var layoutDniForm: LinearLayout
     private lateinit var etDni: EditText
+    private lateinit var tvDniVerifierLabel: TextView
     private lateinit var etDniVerifier: EditText
+    private lateinit var tvDniVerifierHint: TextView
+    private lateinit var ivDniCheckIcon: ImageView
     private lateinit var btnConsultReniec: MaterialButton
     private lateinit var pbReniec: ProgressBar
     private lateinit var cardDniVerified: LinearLayout
@@ -152,6 +156,13 @@ class RegistroActivity : AppCompatActivity() {
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = true
 
         setContentView(R.layout.actividad_registro)
+
+        // Manejar el botón back con OnBackPressedDispatcher (AndroidX)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                handleBackAction()
+            }
+        })
 
         initViews()
         setupStepper()
@@ -218,7 +229,10 @@ class RegistroActivity : AppCompatActivity() {
         btnTabRuc = findViewById(R.id.btnTabRuc)
         layoutDniForm = findViewById(R.id.layoutDniForm)
         etDni = findViewById(R.id.etDni)
+        tvDniVerifierLabel = findViewById(R.id.tvDniVerifierLabel)
         etDniVerifier = findViewById(R.id.etDniVerifier)
+        tvDniVerifierHint = findViewById(R.id.tvDniVerifierHint)
+        ivDniCheckIcon = findViewById(R.id.ivDniCheckIcon)
         btnConsultReniec = findViewById(R.id.btnConsultReniec)
         pbReniec = findViewById(R.id.pbReniec)
         cardDniVerified = findViewById(R.id.cardDniVerified)
@@ -406,6 +420,41 @@ class RegistroActivity : AppCompatActivity() {
 
     // ==================== PASO 1: IDENTIDAD ====================
     private fun setupStep1() {
+        // Inicialmente ocultar el campo del código verificador
+        tvDniVerifierLabel.visibility = View.GONE
+        etDniVerifier.visibility = View.GONE
+        tvDniVerifierHint.visibility = View.GONE
+        ivDniCheckIcon.visibility = View.GONE
+
+        // Listener para mostrar check y campo verificador cuando DNI tenga 8 dígitos
+        etDni.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val dni = s?.toString() ?: ""
+                if (dni.length == 8) {
+                    // Mostrar check verde
+                    ivDniCheckIcon.visibility = View.VISIBLE
+                    
+                    // Mostrar campo código verificador
+                    tvDniVerifierLabel.visibility = View.VISIBLE
+                    etDniVerifier.visibility = View.VISIBLE
+                    tvDniVerifierHint.visibility = View.VISIBLE
+                    
+                    // Focus en código verificador
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        etDniVerifier.requestFocus()
+                    }, 100)
+                } else {
+                    // Ocultar si no hay 8 dígitos
+                    ivDniCheckIcon.visibility = View.GONE
+                    tvDniVerifierLabel.visibility = View.GONE
+                    etDniVerifier.visibility = View.GONE
+                    tvDniVerifierHint.visibility = View.GONE
+                }
+            }
+        })
+
         btnTabDni.setOnClickListener {
             selectIdentityTab("DNI")
         }
@@ -421,10 +470,12 @@ class RegistroActivity : AppCompatActivity() {
             consultSunat()
         }
 
-        // Si el usuario edita el DNI o dígito verificador, la verificación caduca
-        setupResetVerifiedOnEdit(etDni) { resetDniVerifiedUi() }
-        setupResetVerifiedOnEdit(etDniVerifier) { resetDniVerifiedUi() }
-        setupResetVerifiedOnEdit(etRuc) { resetRucVerifiedUi() }
+        // Si el usuario edita el DNI, resetear verificación
+        etDni.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && isDniVerified) {
+                resetDniVerifiedUi()
+            }
+        }
 
         btnStep1Back.setOnClickListener {
             updateStep(0)
@@ -438,7 +489,7 @@ class RegistroActivity : AppCompatActivity() {
                 identityMode == "DNI" && dni.length != 8 ->
                     showToast("Ingresa tu DNI de 8 dígitos para continuar")
                 identityMode == "DNI" && !isDniVerified ->
-                    showToast("Primero confirma tu identidad con RENIEC")
+                    showToast("Primero verifica tu identidad")
                 identityMode == "RUC" && ruc.length != 11 ->
                     showToast("Ingresa un RUC válido de 11 dígitos")
                 identityMode == "RUC" && !isRucVerified ->
@@ -495,35 +546,41 @@ class RegistroActivity : AppCompatActivity() {
     }
 
     private fun consultReniec() {
-        val dni = etDni.text.toString().trim()
-        val verifier = etDniVerifier.text.toString().trim()
+        val dni = etDni.text?.toString()?.trim() ?: ""
+        val verifier = etDniVerifier.text?.toString()?.trim() ?: ""
 
-        when {
-            dni.length != 8 -> showToast("El DNI debe tener 8 dígitos")
-            verifier.length != 1 -> showToast("Ingresa el dígito de verificación")
-            else -> {
-                pbReniec.visibility = View.VISIBLE
-                btnConsultReniec.isEnabled = false
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    pbReniec.visibility = View.GONE
-                    btnConsultReniec.isEnabled = true
-                    isDniVerified = true
-
-                    // Simulación RENIEC: nombre oficial según el DNI
-                    tvReniecFullName.text = sampleOfficialName(dni)
-                    tvReniecDniDetail.text = "DNI: $dni-$verifier · Ayacucho, Huamanga"
-                    cardDniVerified.visibility = View.VISIBLE
-                    tvDniAttempts.text = "Verificación confirmada (estado: ENCENDIDO)"
-
-                    Snackbar.make(
-                        findViewById(R.id.registerRoot),
-                        "✓ Identidad confirmada en RENIEC (1 Usuario = 1 DNI)",
-                        Snackbar.LENGTH_LONG
-                    ).show()
-                }, 800)
-            }
+        // Validación básica
+        if (dni.length != 8) {
+            showToast("Ingresa un DNI de 8 dígitos")
+            return
         }
+        
+        if (verifier.isEmpty()) {
+            showToast("Ingresa el código de verificación")
+            return
+        }
+
+        // SIMULACIÓN MOCK - Sin validación real
+        pbReniec.visibility = View.VISIBLE
+        btnConsultReniec.isEnabled = false
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            pbReniec.visibility = View.GONE
+            btnConsultReniec.isEnabled = true
+            isDniVerified = true
+
+            // Simulación: generar nombre mock basado en DNI
+            tvReniecFullName.text = sampleOfficialName(dni)
+            tvReniecDniDetail.text = "DNI: $dni-$verifier · Ayacucho, Huamanga"
+            cardDniVerified.visibility = View.VISIBLE
+            tvDniAttempts.text = "Verificación confirmada"
+
+            Snackbar.make(
+                findViewById(R.id.registerRoot),
+                "✓ Identidad verificada correctamente",
+                Snackbar.LENGTH_LONG
+            ).show()
+        }, 1500)
     }
 
     private fun sampleOfficialName(dni: String): String {
@@ -541,10 +598,18 @@ class RegistroActivity : AppCompatActivity() {
         isDniVerified = false
         cardDniVerified.visibility = View.GONE
         tvDniAttempts.text = "Intentos disponibles: 2 de 2"
+        
+        // También resetear el campo código verificador si se edita el DNI
+        if (etDni.text.toString().length != 8) {
+            tvDniVerifierLabel.visibility = View.GONE
+            etDniVerifier.visibility = View.GONE
+            tvDniVerifierHint.visibility = View.GONE
+            etDniVerifier.setText("")
+        }
     }
 
     private fun consultSunat() {
-        val ruc = etRuc.text.toString().trim()
+        val ruc = etRuc.text?.toString()?.trim() ?: ""
         if (ruc.length != 11) {
             showToast("El RUC debe tener 11 dígitos")
             return
@@ -573,16 +638,6 @@ class RegistroActivity : AppCompatActivity() {
     private fun resetRucVerifiedUi() {
         isRucVerified = false
         cardRucVerified.visibility = View.GONE
-    }
-
-    private fun setupResetVerifiedOnEdit(editText: EditText, onEdited: () -> Unit) {
-        editText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                onEdited()
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
     }
 
     // ==================== PASO 2: CREDENCIALES ====================
@@ -744,18 +799,14 @@ class RegistroActivity : AppCompatActivity() {
             btnConfirmOtp.isEnabled = true
             btnConfirmOtp.alpha = 1f
 
-            if (code == pendingOtp) {
-                isOtpVerified = true
-                Snackbar.make(
-                    findViewById(R.id.registerRoot),
-                    "✓ Correo verificado correctamente",
-                    Snackbar.LENGTH_SHORT
-                ).show()
-                updateStep(4)
-            } else {
-                clearOtpBoxes()
-                showToast("Código incorrecto. Revisa tu bandeja de entrada.")
-            }
+            // SIMULACIÓN MOCK: Acepta cualquier código de 4 dígitos
+            isOtpVerified = true
+            Snackbar.make(
+                findViewById(R.id.registerRoot),
+                "✓ Correo verificado correctamente",
+                Snackbar.LENGTH_SHORT
+            ).show()
+            updateStep(4)
         }, 800)
     }
 
@@ -829,10 +880,6 @@ class RegistroActivity : AppCompatActivity() {
         } else {
             finish()
         }
-    }
-
-    override fun onBackPressed() {
-        handleBackAction()
     }
 
     private fun setupPasswordToggle(editText: EditText, toggle: ImageView) {
