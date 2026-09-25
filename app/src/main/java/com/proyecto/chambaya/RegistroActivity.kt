@@ -167,6 +167,19 @@ class RegistroActivity : AppCompatActivity() {
     // Step 3 — OTP de correo / Verificación
     private lateinit var functions: FirebaseFunctions
     private lateinit var firestore: FirebaseFirestore
+
+    // Sub-panel EMAIL WAITING (correo + contraseña)
+    private lateinit var layoutEmailWaiting: LinearLayout
+    private lateinit var tvEmailWaitingAddress: TextView
+    private lateinit var tvEmailWaitingStatus: TextView
+    private lateinit var tvEmailWaitingError: TextView
+    private lateinit var pbEmailWaiting: ProgressBar
+    private lateinit var btnEmailWaitingCheck: com.google.android.material.button.MaterialButton
+    private lateinit var btnEmailWaitingResend: com.google.android.material.button.MaterialButton
+    private lateinit var btnEmailWaitingChangeEmail: com.google.android.material.button.MaterialButton
+
+    // Sub-panel OTP (Google)
+    private lateinit var layoutOtpContent: LinearLayout
     private lateinit var tvOtpInstruction: TextView
     private lateinit var tvOtpEmailHint: TextView
     private lateinit var tvOtpExpirationHint: TextView
@@ -177,10 +190,10 @@ class RegistroActivity : AppCompatActivity() {
     private lateinit var otpBox4: EditText
     private lateinit var otpBox5: EditText
     private lateinit var otpBox6: EditText
-    private lateinit var btnConfirmOtp: MaterialButton
+    private lateinit var btnConfirmOtp: com.google.android.material.button.MaterialButton
     private lateinit var pbOtp: ProgressBar
-    private lateinit var btnResendOtp: MaterialButton
-    private lateinit var btnChangeEmail: MaterialButton
+    private lateinit var btnResendOtp: com.google.android.material.button.MaterialButton
+    private lateinit var btnChangeEmail: com.google.android.material.button.MaterialButton
 
     private var resendCountDownTimer: CountDownTimer? = null
     private var isRequestingOtp = false
@@ -339,7 +352,18 @@ class RegistroActivity : AppCompatActivity() {
         btnGoogleRegister = findViewById(R.id.btnGoogleRegister)
         btnGoogleBack = findViewById(R.id.btnGoogleBack)
 
-        // Step 3
+        // Step 3 — Email Waiting sub-panel
+        layoutEmailWaiting = findViewById(R.id.layoutEmailWaiting)
+        tvEmailWaitingAddress = findViewById(R.id.tvEmailWaitingAddress)
+        tvEmailWaitingStatus = findViewById(R.id.tvEmailWaitingStatus)
+        tvEmailWaitingError = findViewById(R.id.tvEmailWaitingError)
+        pbEmailWaiting = findViewById(R.id.pbEmailWaiting)
+        btnEmailWaitingCheck = findViewById(R.id.btnEmailWaitingCheck)
+        btnEmailWaitingResend = findViewById(R.id.btnEmailWaitingResend)
+        btnEmailWaitingChangeEmail = findViewById(R.id.btnEmailWaitingChangeEmail)
+
+        // Step 3 — OTP sub-panel
+        layoutOtpContent = findViewById(R.id.layoutOtpContent)
         tvOtpInstruction = findViewById(R.id.tvOtpInstruction)
         tvOtpEmailHint = findViewById(R.id.tvOtpEmailHint)
         tvOtpExpirationHint = findViewById(R.id.tvOtpExpirationHint)
@@ -387,9 +411,9 @@ class RegistroActivity : AppCompatActivity() {
     }
 
     private fun updateStep(step: Int) {
-        // Bloquear acceso a Paso 4 si la verificación OTP de Fase 3 no ha sido completada
+        // Bloquear acceso a Paso 4 si la verificación no ha sido completada
         if (step == 4 && !isOtpVerified) {
-            showToast("Debes confirmar tu código de verificación para continuar.")
+            showToast("Debes completar la verificación para continuar.")
             return
         }
 
@@ -1069,19 +1093,11 @@ class RegistroActivity : AppCompatActivity() {
             .show()
     }
 
-    // Modal informativo para correo + contraseña (Regla 7)
+    // Transición directa a Fase 3 para correo + contraseña (sin modal intermedio)
     private fun showEmailVerificationSentModal(email: String) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Revisa tu correo")
-            .setMessage(
-                "Hemos enviado un enlace de verificación a tu dirección de correo electrónico:\n\n$email\n\n" +
-                "Por favor, revisa tu bandeja de entrada para verificar tu cuenta antes de continuar a la siguiente fase."
-            )
-            .setPositiveButton("Continuar") { _, _ ->
-                onPhase2Completed()
-            }
-            .setCancelable(false)
-            .show()
+        // Ya no mostramos modal en Fase 2; el correo ya fue enviado por Firebase.
+        // La pantalla de espera está en la Fase 3 (layoutEmailWaiting).
+        onPhase2Completed()
     }
 
     private fun onPhase2Completed() {
@@ -1113,7 +1129,6 @@ class RegistroActivity : AppCompatActivity() {
         }
 
         btnResendOtp.setOnClickListener {
-            val email = registeredEmail ?: etEmail.text.toString().trim()
             if (!isRequestingOtp) {
                 clearOtpBoxes()
                 tvOtpError.visibility = View.GONE
@@ -1124,6 +1139,110 @@ class RegistroActivity : AppCompatActivity() {
         btnChangeEmail.setOnClickListener {
             updateStep(2)
         }
+
+        // Botones del sub-panel de espera de correo (EMAIL_PASSWORD)
+        btnEmailWaitingCheck.setOnClickListener {
+            checkEmailVerificationAndProceed()
+        }
+
+        btnEmailWaitingResend.setOnClickListener {
+            resendVerificationEmail()
+        }
+
+        btnEmailWaitingChangeEmail.setOnClickListener {
+            updateStep(2)
+        }
+    }
+
+    /** Verifica si el usuario ya validó su correo en Firebase y avanza a Fase 4 */
+    private fun checkEmailVerificationAndProceed() {
+        val user = auth.currentUser ?: run {
+            tvEmailWaitingError.text = "No se encontró la sesión activa. Vuelve a registrarte."
+            tvEmailWaitingError.visibility = View.VISIBLE
+            return
+        }
+
+        pbEmailWaiting.visibility = View.VISIBLE
+        btnEmailWaitingCheck.isEnabled = false
+        btnEmailWaitingCheck.alpha = 0.6f
+        tvEmailWaitingError.visibility = View.GONE
+        tvEmailWaitingStatus.text = "🔄 Verificando..."
+        tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#3B82F6"))
+
+        // Recargar el usuario para obtener el estado actualizado de emailVerified
+        user.reload().addOnCompleteListener { reloadTask ->
+            pbEmailWaiting.visibility = View.GONE
+            btnEmailWaitingCheck.isEnabled = true
+            btnEmailWaitingCheck.alpha = 1f
+
+            if (reloadTask.isSuccessful) {
+                val freshUser = auth.currentUser
+                if (freshUser?.isEmailVerified == true) {
+                    // Correo verificado: actualizar Firestore y pasar a Fase 4
+                    isOtpVerified = true
+                    isEmailVerifiedByAuth = true
+                    tvEmailWaitingStatus.text = "✅ ¡Correo verificado!"
+                    tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#059669"))
+
+                    val uid = freshUser.uid
+                    val email = registeredEmail ?: freshUser.email ?: ""
+                    firestore.collection("users").document(uid)
+                        .set(mapOf(
+                            "uid" to uid,
+                            "email" to email,
+                            "role" to selectedRole,
+                            "emailVerified" to true,
+                            "registrationStatus" to "VERIFIED",
+                            "authMethod" to "EMAIL_PASSWORD",
+                            "verifiedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                        ), com.google.firebase.firestore.SetOptions.merge())
+                        .addOnCompleteListener {
+                            showEmailVerifiedSuccessAndProceed(email)
+                        }
+                } else {
+                    tvEmailWaitingStatus.text = "⏳ Pendiente de verificación"
+                    tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
+                    tvEmailWaitingError.text = "Aun no hemos detectado la verificación. Revisa tu correo y vuelve a intentarlo."
+                    tvEmailWaitingError.visibility = View.VISIBLE
+                }
+            } else {
+                tvEmailWaitingStatus.text = "⏳ Pendiente de verificación"
+                tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
+                tvEmailWaitingError.text = "Error al verificar. Revisa tu conexión e inténtalo de nuevo."
+                tvEmailWaitingError.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    /** Reenvía el correo de verificación de Firebase */
+    private fun resendVerificationEmail() {
+        val user = auth.currentUser ?: return
+        btnEmailWaitingResend.isEnabled = false
+        btnEmailWaitingResend.alpha = 0.5f
+        user.sendEmailVerification().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                showToast("✉️ Correo de verificación reenviado")
+            } else {
+                showToast("No se pudo reenviar. Inténtalo en un momento.")
+            }
+            // Cooldown de 30 segundos para reenviar
+            object : android.os.CountDownTimer(30_000, 1000) {
+                override fun onTick(ms: Long) {
+                    val sec = Math.ceil(ms / 1000.0).toInt()
+                    btnEmailWaitingResend.text = "Reenviar en $sec s"
+                }
+                override fun onFinish() {
+                    btnEmailWaitingResend.text = "Reenviar correo de verificación"
+                    btnEmailWaitingResend.isEnabled = true
+                    btnEmailWaitingResend.alpha = 1f
+                }
+            }.start()
+        }
+    }
+
+    /** Muestra mini-mensaje de éxito y avanza a Fase 4 */
+    private fun showEmailVerifiedSuccessAndProceed(email: String) {
+        updateStep(4)
     }
 
     private fun setupOtpInputLogic() {
@@ -1212,25 +1331,39 @@ class RegistroActivity : AppCompatActivity() {
 
     private fun prepareOtpStep() {
         val email = registeredEmail ?: etEmail.text.toString().trim()
-        tvOtpInstruction.text = "Hemos enviado un código de 6 dígitos a"
-        tvOtpEmailHint.text = maskEmail(email)
-        tvOtpExpirationHint.text = "El código expira en 5 minutos"
-        tvOtpError.visibility = View.GONE
 
-        clearOtpBoxes()
-        updateConfirmOtpButtonState()
-        pbOtp.visibility = View.GONE
+        if (registeredAuthMethod == "EMAIL_PASSWORD") {
+            // Mostrar sub-panel de espera de verificación de correo
+            layoutEmailWaiting.visibility = View.VISIBLE
+            layoutOtpContent.visibility = View.GONE
+            tvEmailWaitingAddress.text = email
+            tvEmailWaitingStatus.text = "⏳ Pendiente de verificación"
+            tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
+            tvEmailWaitingError.visibility = View.GONE
+            pbEmailWaiting.visibility = View.GONE
+        } else {
+            // Mostrar sub-panel OTP de 6 dígitos (GOOGLE)
+            layoutEmailWaiting.visibility = View.GONE
+            layoutOtpContent.visibility = View.VISIBLE
+            tvOtpInstruction.text = "Hemos enviado un código de 6 dígitos a"
+            tvOtpEmailHint.text = maskEmail(email)
+            tvOtpExpirationHint.text = "El código expira en 5 minutos"
+            tvOtpError.visibility = View.GONE
+            clearOtpBoxes()
+            updateConfirmOtpButtonState()
+            pbOtp.visibility = View.GONE
 
-        // Solicitar el código automáticamente si aún no ha sido solicitado
-        if (!otpRequestedAtLeastOnce) {
-            requestOtpFromBackend(showToastOnSuccess = false)
-        }
+            // Solicitar el código automáticamente si aún no ha sido solicitado
+            if (!otpRequestedAtLeastOnce) {
+                requestOtpFromBackend(showToastOnSuccess = false)
+            }
 
-        // Enfocar primer campo y abrir teclado
-        otpBox1.post {
-            otpBox1.requestFocus()
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.showSoftInput(otpBox1, InputMethodManager.SHOW_IMPLICIT)
+            // Enfocar primer campo y abrir teclado
+            otpBox1.post {
+                otpBox1.requestFocus()
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(otpBox1, InputMethodManager.SHOW_IMPLICIT)
+            }
         }
     }
 
@@ -1501,18 +1634,7 @@ class RegistroActivity : AppCompatActivity() {
         btnConfirmOtp.alpha = 1.0f
         isOtpVerified = true
         resendCountDownTimer?.cancel()
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle("¡Correo verificado!")
-            .setMessage("Tu correo electrónico ha sido verificado exitosamente mediante código OTP.\n\n" +
-                "✓ Identidad: ${if (identityMode == "RUC") "RUC" else "DNI"} Verificado\n" +
-                "✓ Correo: $email\n" +
-                "✓ Rol: ${if (selectedRole == "TRABAJADOR") "Trabajador" else "Contratante"}")
-            .setPositiveButton("Continuar") { _, _ ->
-                updateStep(4)
-            }
-            .setCancelable(false)
-            .show()
+        updateStep(4)
     }
 
     private fun computeSha256(input: String): String {
@@ -1613,15 +1735,35 @@ class RegistroActivity : AppCompatActivity() {
     }
 
     private fun showSuccessRegistrationDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("¡Bienvenido a ChambAYA!")
+        val email = registeredEmail ?: etEmail.text.toString().trim()
+        val fullName = if (identityMode == "RUC" && isRucVerified) {
+            tvSunatRazonSocial.text.toString()
+        } else if (isDniVerified) {
+            tvReniecFullName.text.toString()
+        } else {
+            email
+        }
+        val roleLabel = if (selectedRole == "TRABAJADOR") "Trabajador" else "Contratante"
+        val methodLabel = if (registeredAuthMethod == "GOOGLE") "Google" else "Correo y contraseña"
+
+        // Dialog moderno de bienvenida con datos del usuario
+        val dialogView = android.view.LayoutInflater.from(this)
+            .inflate(android.R.layout.simple_list_item_1, null) // usaremos AlertDialog con mensaje enriquecido
+
+        MaterialAlertDialogBuilder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog_Centered)
+            .setIcon(android.R.drawable.ic_dialog_email)
+            .setTitle("🎉 ¡Bienvenido a ChambAYA!")
             .setMessage(
-                "Tu cuenta y perfil han sido verificados y registrados con éxito.\n\n" +
-                "✓ Identidad verificada (RENIEC/SUNAT)\n" +
-                "✓ Correo verificado con OTP\n" +
-                "✓ Perfil listo en Cloud Firestore"
+                "Tu cuenta ha sido creada y verificada con éxito.\n\n" +
+                "👤  $fullName\n" +
+                "📧  $email\n" +
+                "💼  $roleLabel\n" +
+                "🔐  Acceso vía: $methodLabel\n\n" +
+                "✅ Identidad verificada (${if (identityMode == "RUC") "SUNAT" else "RENIEC"})\n" +
+                "✅ Correo verificado\n" +
+                "✅ Perfil guardado en Cloud Firestore"
             )
-            .setPositiveButton("Ir a ChambAYA") { _, _ ->
+            .setPositiveButton("Ir a ChambAYA →") { _, _ ->
                 val intent = Intent(this, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }

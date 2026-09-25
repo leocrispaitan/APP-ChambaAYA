@@ -1464,7 +1464,7 @@
                 </LinearLayout>
 
                 <!-- ======================================================= -->
-                <!-- PASO 3: OTP DE CORREO ELECTRÓNICO                       -->
+                <!-- PASO 3: VERIFICACIÓN (OTP para Google / Email-wait para Email+Pass) -->
                 <!-- ======================================================= -->
                 <LinearLayout
                     android:id="@+id/layoutStep3"
@@ -1474,242 +1474,486 @@
                     android:orientation="vertical"
                     android:visibility="gone">
 
-                    <!-- Ilustración email -->
-                    <FrameLayout
-                        android:layout_width="130dp"
-                        android:layout_height="130dp"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="4dp">
-
-                        <!-- Círculo fondo azul claro -->
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/bg_step_circle_active"
-                            android:alpha="0.12" />
-
-                        <!-- Ícono email grande -->
-                        <ImageView
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_login_email"
-                            android:tint="@color/brand_color" />
-
-                        <!-- Badge candado pequeño -->
-                        <FrameLayout
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:layout_gravity="bottom|end"
-                            android:layout_marginEnd="4dp"
-                            android:layout_marginBottom="4dp"
-                            android:background="@drawable/bg_step_circle_active">
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_login_lock"
-                                android:tint="@color/white" />
-                        </FrameLayout>
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-black"
-                        android:gravity="center"
-                        android:text="Verifica tu correo"
-                        android:textColor="@color/black"
-                        android:textSize="22sp" />
-
-                    <TextView
-                        android:id="@+id/tvOtpInstruction"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:fontFamily="sans-serif"
-                        android:gravity="center"
-                        android:text="Hemos enviado un código de 6 dígitos a"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/tvOtpEmailHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="sans-serif-bold"
-                        android:gravity="center"
-                        android:text="za******@gmail.com"
-                        android:textColor="@color/brand_color"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:id="@+id/tvOtpExpirationHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:fontFamily="sans-serif"
-                        android:gravity="center"
-                        android:text="El código expira en 5 minutos"
-                        android:textColor="#64748B"
-                        android:textSize="12sp" />
-
-                    <!-- 6 cuadros OTP estilo profesional -->
+                    <!-- ===================================================== -->
+                    <!-- SUB-PANEL A: Espera validación de correo (EMAIL+PASS)  -->
+                    <!-- ===================================================== -->
                     <LinearLayout
-                        android:id="@+id/layoutOtpBoxes"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/layoutEmailWaiting"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="24dp"
-                        android:layout_marginBottom="4dp"
-                        android:gravity="center"
-                        android:orientation="horizontal">
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
-                        <EditText
-                            android:id="@+id/otpBox1"
-                            android:layout_width="46dp"
-                            android:layout_height="54dp"
-                            android:layout_marginEnd="6dp"
-                            android:background="@drawable/bg_otp_box"
+                        <!-- Ilustración de sobre con reloj -->
+                        <FrameLayout
+                            android:layout_width="140dp"
+                            android:layout_height="140dp"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp">
+
+                            <!-- Círculo exterior suave azul -->
+                            <View
+                                android:layout_width="140dp"
+                                android:layout_height="140dp"
+                                android:background="@drawable/bg_step_circle_active"
+                                android:alpha="0.08" />
+
+                            <!-- Círculo interior -->
+                            <View
+                                android:layout_width="100dp"
+                                android:layout_height="100dp"
+                                android:layout_gravity="center"
+                                android:background="@drawable/bg_step_circle_active"
+                                android:alpha="0.14" />
+
+                            <!-- Ícono email grande centrado -->
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_login_email"
+                                android:tint="@color/brand_color" />
+
+                            <!-- Badge de reloj / pending en esquina -->
+                            <FrameLayout
+                                android:layout_width="38dp"
+                                android:layout_height="38dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_marginEnd="2dp"
+                                android:layout_marginBottom="2dp"
+                                android:background="@drawable/bg_step_circle_active">
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_shield_check"
+                                    android:tint="@color/white" />
+                            </FrameLayout>
+                        </FrameLayout>
+
+                        <!-- Título -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-black"
                             android:gravity="center"
-                            android:importantForAutofill="no"
-                            android:inputType="number"
-                            android:maxLength="1"
+                            android:text="Revisa tu correo"
                             android:textColor="@color/black"
-                            android:textSize="22sp" />
+                            android:textSize="24sp" />
 
-                        <EditText
-                            android:id="@+id/otpBox2"
-                            android:layout_width="46dp"
-                            android:layout_height="54dp"
-                            android:layout_marginEnd="6dp"
-                            android:background="@drawable/bg_otp_box"
-                            android:fontFamily="sans-serif-black"
+                        <!-- Subtítulo -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="sans-serif"
                             android:gravity="center"
-                            android:importantForAutofill="no"
-                            android:inputType="number"
-                            android:maxLength="1"
-                            android:textColor="@color/black"
-                            android:textSize="22sp" />
+                            android:text="Hemos enviado un enlace de verificación a"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp" />
 
-                        <EditText
-                            android:id="@+id/otpBox3"
-                            android:layout_width="46dp"
-                            android:layout_height="54dp"
-                            android:layout_marginEnd="6dp"
-                            android:background="@drawable/bg_otp_box"
-                            android:fontFamily="sans-serif-black"
+                        <!-- Email del usuario -->
+                        <TextView
+                            android:id="@+id/tvEmailWaitingAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif-bold"
                             android:gravity="center"
-                            android:importantForAutofill="no"
-                            android:inputType="number"
-                            android:maxLength="1"
-                            android:textColor="@color/black"
-                            android:textSize="22sp" />
+                            android:text="usuario@gmail.com"
+                            android:textColor="@color/brand_color"
+                            android:textSize="15sp" />
 
-                        <EditText
-                            android:id="@+id/otpBox4"
-                            android:layout_width="46dp"
-                            android:layout_height="54dp"
-                            android:layout_marginEnd="6dp"
-                            android:background="@drawable/bg_otp_box"
-                            android:fontFamily="sans-serif-black"
-                            android:gravity="center"
-                            android:importantForAutofill="no"
-                            android:inputType="number"
-                            android:maxLength="1"
-                            android:textColor="@color/black"
-                            android:textSize="22sp" />
+                        <!-- Card informativa de estado pending -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:background="@drawable/bg_requirement_box"
+                            android:orientation="vertical"
+                            android:padding="16dp">
 
-                        <EditText
-                            android:id="@+id/otpBox5"
-                            android:layout_width="46dp"
-                            android:layout_height="54dp"
-                            android:layout_marginEnd="6dp"
-                            android:background="@drawable/bg_otp_box"
-                            android:fontFamily="sans-serif-black"
-                            android:gravity="center"
-                            android:importantForAutofill="no"
-                            android:inputType="number"
-                            android:maxLength="1"
-                            android:textColor="@color/black"
-                            android:textSize="22sp" />
+                            <!-- Indicador de estado: Pendiente -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
 
-                        <EditText
-                            android:id="@+id/otpBox6"
-                            android:layout_width="46dp"
-                            android:layout_height="54dp"
-                            android:background="@drawable/bg_otp_box"
-                            android:fontFamily="sans-serif-black"
+                                <FrameLayout
+                                    android:layout_width="36dp"
+                                    android:layout_height="36dp"
+                                    android:background="@drawable/bg_step_circle_active">
+                                    <ImageView
+                                        android:layout_width="20dp"
+                                        android:layout_height="20dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_login_email"
+                                        android:tint="@color/white" />
+                                </FrameLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-bold"
+                                        android:text="Correo de verificación enviado"
+                                        android:textColor="@color/black"
+                                        android:textSize="14sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvEmailWaitingStatus"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="sans-serif-medium"
+                                        android:text="⏳ Pendiente de verificación"
+                                        android:textColor="#F59E0B"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="14dp"
+                                android:layout_marginBottom="12dp"
+                                android:background="#E2E8F0" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif"
+                                android:lineSpacingExtra="3dp"
+                                android:text="Abre tu bandeja de entrada y haz clic en el enlace de verificación que te enviamos. Una vez verificado, regresa aquí y pulsa &quot;Ya verifiqué mi correo&quot;"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- ProgressBar para verificación -->
+                        <ProgressBar
+                            android:id="@+id/pbEmailWaiting"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="4dp"
+                            android:layout_marginTop="16dp"
+                            android:indeterminate="true"
+                            android:visibility="gone" />
+
+                        <!-- Mensaje de error -->
+                        <TextView
+                            android:id="@+id/tvEmailWaitingError"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:fontFamily="sans-serif-medium"
                             android:gravity="center"
-                            android:importantForAutofill="no"
-                            android:inputType="number"
-                            android:maxLength="1"
-                            android:textColor="@color/black"
-                            android:textSize="22sp" />
+                            android:textColor="#EF4444"
+                            android:textSize="12sp"
+                            android:visibility="gone" />
+
+                        <!-- Botón principal: Ya verifiqué -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEmailWaitingCheck"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:layout_marginTop="20dp"
+                            android:backgroundTint="@color/brand_color"
+                            android:fontFamily="sans-serif-bold"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Ya verifiqué mi correo"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            app:cornerRadius="26dp"
+                            app:icon="@drawable/ic_shield_check"
+                            app:iconGravity="textStart"
+                            app:iconSize="20dp" />
+
+                        <!-- Botón reenviar link -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEmailWaitingResend"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="44dp"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="4dp"
+                            android:text="Reenviar correo de verificación"
+                            android:textColor="@color/brand_color"
+                            android:textSize="13sp" />
+
+                        <!-- Botón cambiar correo -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEmailWaitingChangeEmail"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_gravity="center_horizontal"
+                            android:text="Cambiar correo electrónico"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
                     </LinearLayout>
 
-                    <!-- Mensaje de error amigable -->
-                    <TextView
-                        android:id="@+id/tvOtpError"
+                    <!-- ===================================================== -->
+                    <!-- SUB-PANEL B: OTP de 6 dígitos (solo GOOGLE)           -->
+                    <!-- ===================================================== -->
+                    <LinearLayout
+                        android:id="@+id/layoutOtpContent"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:gravity="center"
-                        android:textColor="#EF4444"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
-                    <!-- Botón Confirmar OTP -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnConfirmOtp"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:layout_marginTop="20dp"
-                        android:backgroundTint="@color/brand_color"
-                        android:fontFamily="sans-serif-bold"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="Confirmar código"
-                        android:textAllCaps="false"
-                        android:textColor="@color/white"
-                        android:textSize="16sp"
-                        app:cornerRadius="26dp" />
+                        <!-- Ilustración email -->
+                        <FrameLayout
+                            android:layout_width="130dp"
+                            android:layout_height="130dp"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="4dp">
 
-                    <!-- Progress OTP -->
-                    <ProgressBar
-                        android:id="@+id/pbOtp"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="4dp"
-                        android:layout_marginTop="6dp"
-                        android:indeterminate="true"
-                        android:visibility="gone" />
+                            <!-- Círculo fondo azul claro -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_step_circle_active"
+                                android:alpha="0.12" />
 
-                    <!-- Reenviar / Cambiar email -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnResendOtp"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="44dp"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="4dp"
-                        android:text="Reenviar código"
-                        android:textColor="@color/brand_color"
-                        android:textSize="13sp" />
+                            <!-- Ícono email grande -->
+                            <ImageView
+                                android:layout_width="64dp"
+                                android:layout_height="64dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_login_email"
+                                android:tint="@color/brand_color" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnChangeEmail"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:layout_gravity="center_horizontal"
-                        android:text="Cambiar correo"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                            <!-- Badge candado pequeño -->
+                            <FrameLayout
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_marginEnd="4dp"
+                                android:layout_marginBottom="4dp"
+                                android:background="@drawable/bg_step_circle_active">
+                                <ImageView
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_login_lock"
+                                    android:tint="@color/white" />
+                            </FrameLayout>
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:gravity="center"
+                            android:text="Verifica tu correo"
+                            android:textColor="@color/black"
+                            android:textSize="22sp" />
+
+                        <TextView
+                            android:id="@+id/tvOtpInstruction"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="sans-serif"
+                            android:gravity="center"
+                            android:text="Hemos enviado un código de 6 dígitos a"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvOtpEmailHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="sans-serif-bold"
+                            android:gravity="center"
+                            android:text="za******@gmail.com"
+                            android:textColor="@color/brand_color"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvOtpExpirationHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif"
+                            android:gravity="center"
+                            android:text="El código expira en 5 minutos"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+
+                        <!-- 6 cuadros OTP estilo profesional -->
+                        <LinearLayout
+                            android:id="@+id/layoutOtpBoxes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="24dp"
+                            android:layout_marginBottom="4dp"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <EditText
+                                android:id="@+id/otpBox1"
+                                android:layout_width="46dp"
+                                android:layout_height="54dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_otp_box"
+                                android:fontFamily="sans-serif-black"
+                                android:gravity="center"
+                                android:importantForAutofill="no"
+                                android:inputType="number"
+                                android:maxLength="1"
+                                android:textColor="@color/black"
+                                android:textSize="22sp" />
+
+                            <EditText
+                                android:id="@+id/otpBox2"
+                                android:layout_width="46dp"
+                                android:layout_height="54dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_otp_box"
+                                android:fontFamily="sans-serif-black"
+                                android:gravity="center"
+                                android:importantForAutofill="no"
+                                android:inputType="number"
+                                android:maxLength="1"
+                                android:textColor="@color/black"
+                                android:textSize="22sp" />
+
+                            <EditText
+                                android:id="@+id/otpBox3"
+                                android:layout_width="46dp"
+                                android:layout_height="54dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_otp_box"
+                                android:fontFamily="sans-serif-black"
+                                android:gravity="center"
+                                android:importantForAutofill="no"
+                                android:inputType="number"
+                                android:maxLength="1"
+                                android:textColor="@color/black"
+                                android:textSize="22sp" />
+
+                            <EditText
+                                android:id="@+id/otpBox4"
+                                android:layout_width="46dp"
+                                android:layout_height="54dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_otp_box"
+                                android:fontFamily="sans-serif-black"
+                                android:gravity="center"
+                                android:importantForAutofill="no"
+                                android:inputType="number"
+                                android:maxLength="1"
+                                android:textColor="@color/black"
+                                android:textSize="22sp" />
+
+                            <EditText
+                                android:id="@+id/otpBox5"
+                                android:layout_width="46dp"
+                                android:layout_height="54dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/bg_otp_box"
+                                android:fontFamily="sans-serif-black"
+                                android:gravity="center"
+                                android:importantForAutofill="no"
+                                android:inputType="number"
+                                android:maxLength="1"
+                                android:textColor="@color/black"
+                                android:textSize="22sp" />
+
+                            <EditText
+                                android:id="@+id/otpBox6"
+                                android:layout_width="46dp"
+                                android:layout_height="54dp"
+                                android:background="@drawable/bg_otp_box"
+                                android:fontFamily="sans-serif-black"
+                                android:gravity="center"
+                                android:importantForAutofill="no"
+                                android:inputType="number"
+                                android:maxLength="1"
+                                android:textColor="@color/black"
+                                android:textSize="22sp" />
+                        </LinearLayout>
+
+                        <!-- Mensaje de error amigable -->
+                        <TextView
+                            android:id="@+id/tvOtpError"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center"
+                            android:textColor="#EF4444"
+                            android:textSize="12sp"
+                            android:visibility="gone" />
+
+                        <!-- Botón Confirmar OTP -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnConfirmOtp"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:layout_marginTop="20dp"
+                            android:backgroundTint="@color/brand_color"
+                            android:fontFamily="sans-serif-bold"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Confirmar código"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            app:cornerRadius="26dp" />
+
+                        <!-- Progress OTP -->
+                        <ProgressBar
+                            android:id="@+id/pbOtp"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="4dp"
+                            android:layout_marginTop="6dp"
+                            android:indeterminate="true"
+                            android:visibility="gone" />
+
+                        <!-- Reenviar / Cambiar email -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnResendOtp"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="44dp"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="4dp"
+                            android:text="Reenviar código"
+                            android:textColor="@color/brand_color"
+                            android:textSize="13sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnChangeEmail"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_gravity="center_horizontal"
+                            android:text="Cambiar correo"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
                 </LinearLayout>
 
                 <!-- ======================================================= -->
