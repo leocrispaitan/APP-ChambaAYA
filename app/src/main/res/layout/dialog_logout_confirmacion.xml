@@ -5,54 +5,71 @@
     android:id="@+id/dialogLogoutRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_dialog_rounded"
+    android:background="@drawable/bg_bottom_sheet_logout"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:paddingTop="12dp"
+    android:paddingBottom="36dp"
+    android:paddingHorizontal="24dp">
 
-    <!-- Close X -->
-    <FrameLayout
+    <!-- Indicador superior de arrastre (Handle pill) -->
+    <View
+        android:layout_width="42dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_bottom_sheet_handle" />
+
+    <!-- Barra superior: [X]               Cerrar sesión               [spacer] -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="44dp">
 
         <ImageView
             android:id="@+id/btnCloseLogoutDialog"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_gravity="start"
-            android:background="@drawable/bg_dialog_close_btn"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:contentDescription="Cerrar"
             android:focusable="true"
-            android:padding="6dp"
+            android:padding="9dp"
             android:src="@drawable/ic_menu_close"
-            app:tint="#374151" />
+            app:tint="#1F2937"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
         <TextView
+            android:id="@+id/tvLogoutSheetTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
             android:fontFamily="sans-serif-medium"
             android:text="@string/logout_dialog_title"
             android:textColor="#EF4444"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </FrameLayout>
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Logout illustration icon -->
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Icono circular de cerrar sesión (puerta con flecha de salida en rojo suave) -->
     <FrameLayout
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="86dp"
+        android:layout_height="86dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="22dp"
         android:background="@drawable/bg_logout_icon_circle">
 
         <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_gravity="center"
             android:contentDescription="@null"
-            android:src="@drawable/ic_profile_arrow_back"
-            app:tint="#EF4444" />
+            android:src="@drawable/ic_dialog_logout" />
     </FrameLayout>
 
     <!-- "¿Estás seguro de cerrar sesión?" -->
@@ -60,15 +77,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:fontFamily="sans-serif-medium"
         android:gravity="center"
         android:text="@string/logout_dialog_question"
         android:textColor="#111827"
-        android:textSize="17sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
-    <!-- Subtitle -->
+    <!-- Subtitle: "¡Gracias y nos vemos pronto! ❤️" -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -77,21 +94,21 @@
         android:fontFamily="sans-serif"
         android:gravity="center"
         android:text="@string/logout_dialog_subtitle"
-        android:textColor="#EF4444"
-        android:textSize="13sp" />
+        android:textColor="#6B7280"
+        android:textSize="14sp" />
 
-    <!-- Buttons row -->
+    <!-- Fila de botones de acción redondeados -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="28dp"
         android:orientation="horizontal">
 
-        <!-- Cancel -->
+        <!-- Botón Cancelar -->
         <FrameLayout
             android:id="@+id/btnLogoutCancel"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="50dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_dialog_btn_cancel"
@@ -104,16 +121,16 @@
                 android:layout_gravity="center"
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/logout_dialog_cancel"
-                android:textColor="#374151"
+                android:textColor="#1F2937"
                 android:textSize="15sp"
                 android:textStyle="bold" />
         </FrameLayout>
 
-        <!-- Confirm Logout -->
+        <!-- Botón Sí, salir -->
         <FrameLayout
             android:id="@+id/btnLogoutConfirm"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="50dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_dialog_btn_confirm"

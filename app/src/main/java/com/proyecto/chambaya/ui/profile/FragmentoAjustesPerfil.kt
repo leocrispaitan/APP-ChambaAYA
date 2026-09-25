@@ -166,41 +166,33 @@ class FragmentoAjustesPerfil : Fragment() {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  LOGOUT DIALOG
+    //  LOGOUT DIALOG (BOTTOM SHEET)
     // ─────────────────────────────────────────────────────────────
 
     private fun showLogoutDialog() {
-        val dialog = Dialog(requireContext())
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setContentView(R.layout.dialog_logout_confirmacion)
+        val bottomSheet = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val dialogView = layoutInflater.inflate(R.layout.dialog_logout_confirmacion, null)
+        bottomSheet.setContentView(dialogView)
 
-        // Fondo transparente para que se vea el shape redondeado
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.88f).toInt(),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        dialog.setCancelable(true)
+        // Fondo transparente en el contenedor del BottomSheet para permitir bordes superiores curvos
+        (dialogView.parent as? View)?.setBackgroundColor(Color.TRANSPARENT)
 
-        // Animación de entrada suave
-        dialog.window?.attributes?.windowAnimations = R.style.DialogSlideUpAnimation
-
-        dialog.findViewById<View>(R.id.btnCloseLogoutDialog)?.setOnClickListener {
-            dialog.dismiss()
+        dialogView.findViewById<View>(R.id.btnCloseLogoutDialog)?.setOnClickListener {
+            bottomSheet.dismiss()
         }
 
-        dialog.findViewById<View>(R.id.btnLogoutCancel)?.setOnClickListener {
+        dialogView.findViewById<View>(R.id.btnLogoutCancel)?.setOnClickListener {
             animateTap(it)
-            dialog.dismiss()
+            bottomSheet.dismiss()
         }
 
-        dialog.findViewById<View>(R.id.btnLogoutConfirm)?.setOnClickListener {
+        dialogView.findViewById<View>(R.id.btnLogoutConfirm)?.setOnClickListener {
             animateTap(it)
-            dialog.dismiss()
+            bottomSheet.dismiss()
             performLogout()
         }
 
-        dialog.show()
+        bottomSheet.show()
     }
 
     private fun performLogout() {

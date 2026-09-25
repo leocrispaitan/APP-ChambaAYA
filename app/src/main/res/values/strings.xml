@@ -282,7 +282,7 @@
     <!-- Logout Dialog -->
     <string name="logout_dialog_title">Cerrar sesión</string>
     <string name="logout_dialog_question">¿Estás seguro de cerrar sesión?</string>
-    <string name="logout_dialog_subtitle">Tendrás que volver a ingresar tus credenciales para acceder a tus servicios.</string>
+    <string name="logout_dialog_subtitle">¡Gracias y nos vemos pronto! ❤️</string>
     <string name="logout_dialog_cancel">Cancelar</string>
     <string name="logout_dialog_confirm">Sí, salir</string>
 </resources>
