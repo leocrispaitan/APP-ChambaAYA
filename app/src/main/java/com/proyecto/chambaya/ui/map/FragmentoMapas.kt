@@ -37,10 +37,6 @@ class FragmentoMapas : Fragment() {
             }
         }
 
-        view.findViewById<View>(R.id.btnBack)?.setOnClickListener {
-            (activity as? MainActivity)?.navigateToTab(R.id.nav_jobs)
-        }
-
         view.findViewById<View>(R.id.btnMapLayers)?.setOnClickListener {
             Toast.makeText(requireContext(), "Capas del mapa", Toast.LENGTH_SHORT).show()
         }
