@@ -4,21 +4,33 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.PasswordTransformationMethod
+import android.util.Patterns
 import android.view.KeyEvent
 import android.view.View
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -27,12 +39,12 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Flujo de registro rediseñado:
- *  - Paso 0: Selección de rol (Trabajador / Empleador) — sin stepper
- *  - Paso 1: Identidad (Trabajador: DNI+RENIEC | Empleador: DNI o RUC)
- *  - Paso 2: Credenciales (teléfono, correo, contraseña)
- *  - Paso 3: Verificación por OTP de correo (4 dígitos)
- *  - Paso 4: Resumen final y creación de cuenta
+ * Flujo de registro ChambAYA:
+ *  - Paso 0: Selección de rol (Trabajador / Contratante) — sin stepper
+ *  - Paso 1: Identidad (Trabajador: DNI+RENIEC | Contratante: DNI o RUC)
+ *  - Paso 2: Credenciales (Correo + Contraseña o Google Auth con Firebase)
+ *  - Paso 3: Verificación (Preparado para Fase 3)
+ *  - Paso 4: Resumen final
  */
 class RegistroActivity : AppCompatActivity() {
 
@@ -42,8 +54,21 @@ class RegistroActivity : AppCompatActivity() {
     private var isRucVerified = false
     private var roleSelected = false
     private var selectedRole = ""
-    private var identityMode = "DNI" // "DNI" | "RUC" (solo empleador)
+    private var identityMode = "DNI" // "DNI" | "RUC" (solo empleador/contratante)
     private var pendingOtp = ""
+
+    // Firebase Auth & Google Sign-In
+    private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+
+    // Estado conservado de Fase 2
+    private var registeredFirebaseUid: String? = null
+    private var registeredEmail: String? = null
+    private var registeredAuthMethod: String = "" // "EMAIL_PASSWORD" | "GOOGLE"
+    private var isEmailVerifiedByAuth: Boolean = false
+    private var isPhase2Completed: Boolean = false
+    private var currentAuthMethod: String = "EMAIL" // "EMAIL" | "GOOGLE"
 
     // Stepper views (4 pasos)
     private lateinit var stepperTimelineContainer: LinearLayout
@@ -115,8 +140,12 @@ class RegistroActivity : AppCompatActivity() {
     private lateinit var btnStep1Next: MaterialButton
 
     // Step 2 — Credenciales
+    private lateinit var layoutAuthMethodTabs: LinearLayout
+    private lateinit var btnTabEmailMethod: MaterialButton
+    private lateinit var btnTabGoogleMethod: MaterialButton
+    private lateinit var pbStep2Loading: ProgressBar
+    private lateinit var layoutEmailForm: LinearLayout
     private lateinit var etEmail: EditText
-    private lateinit var etPhone: EditText
     private lateinit var etPassword: EditText
     private lateinit var etConfirmPassword: EditText
     private lateinit var ivTogglePassword: ImageView
@@ -124,11 +153,13 @@ class RegistroActivity : AppCompatActivity() {
     private lateinit var ivReqLength: ImageView
     private lateinit var ivReqNumber: ImageView
     private lateinit var ivReqSpecial: ImageView
-    private lateinit var btnGoogleRegister: LinearLayout
     private lateinit var btnStep2Back: MaterialButton
     private lateinit var btnStep2Next: MaterialButton
+    private lateinit var layoutGoogleForm: LinearLayout
+    private lateinit var btnGoogleRegister: LinearLayout
+    private lateinit var btnGoogleBack: MaterialButton
 
-    // Step 3 — OTP de correo
+    // Step 3 — OTP de correo / Verificación
     private lateinit var tvOtpEmailHint: TextView
     private lateinit var otpBox1: EditText
     private lateinit var otpBox2: EditText
@@ -169,6 +200,20 @@ class RegistroActivity : AppCompatActivity() {
                 handleBackAction()
             }
         })
+
+        // Inicializar Firebase Auth existente
+        auth = FirebaseAuth.getInstance()
+
+        // Configuración oficial de Google Sign-In con el Web Client ID generado desde google-services.json
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            handleGoogleSignInResult(result.data)
+        }
 
         initViews()
         setupStepper()
@@ -255,9 +300,13 @@ class RegistroActivity : AppCompatActivity() {
         btnStep1Back = findViewById(R.id.btnStep1Back)
         btnStep1Next = findViewById(R.id.btnStep1Next)
 
-        // Step 2
+        // Step 2 (Teléfono eliminado completamente según Regla 8)
+        layoutAuthMethodTabs = findViewById(R.id.layoutAuthMethodTabs)
+        btnTabEmailMethod = findViewById(R.id.btnTabEmailMethod)
+        btnTabGoogleMethod = findViewById(R.id.btnTabGoogleMethod)
+        pbStep2Loading = findViewById(R.id.pbStep2Loading)
+        layoutEmailForm = findViewById(R.id.layoutEmailForm)
         etEmail = findViewById(R.id.etEmail)
-        etPhone = findViewById(R.id.etPhone)
         etPassword = findViewById(R.id.etPassword)
         etConfirmPassword = findViewById(R.id.etConfirmPassword)
         ivTogglePassword = findViewById(R.id.ivTogglePassword)
@@ -265,9 +314,11 @@ class RegistroActivity : AppCompatActivity() {
         ivReqLength = findViewById(R.id.ivReqLength)
         ivReqNumber = findViewById(R.id.ivReqNumber)
         ivReqSpecial = findViewById(R.id.ivReqSpecial)
-        btnGoogleRegister = findViewById(R.id.btnGoogleRegister)
         btnStep2Back = findViewById(R.id.btnStep2Back)
         btnStep2Next = findViewById(R.id.btnStep2Next)
+        layoutGoogleForm = findViewById(R.id.layoutGoogleForm)
+        btnGoogleRegister = findViewById(R.id.btnGoogleRegister)
+        btnGoogleBack = findViewById(R.id.btnGoogleBack)
 
         // Step 3
         tvOtpEmailHint = findViewById(R.id.tvOtpEmailHint)
@@ -764,10 +815,17 @@ class RegistroActivity : AppCompatActivity() {
 
     // ==================== PASO 2: CREDENCIALES ====================
     private fun setupStep2() {
+        btnTabEmailMethod.setOnClickListener {
+            if (currentAuthMethod != "EMAIL") selectAuthMethod("EMAIL")
+        }
+        btnTabGoogleMethod.setOnClickListener {
+            if (currentAuthMethod != "GOOGLE") selectAuthMethod("GOOGLE")
+        }
+
         setupPasswordToggle(etPassword, ivTogglePassword)
         setupPasswordToggle(etConfirmPassword, ivToggleConfirmPassword)
 
-        // Requisitos de contraseña en vivo
+        // Requisitos de contraseña en vivo (Regla 3)
         etPassword.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -783,39 +841,223 @@ class RegistroActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Google OAuth mock: autocompleta el correo
-        btnGoogleRegister.setOnClickListener {
-            etEmail.setText("juan.perez@gmail.com")
-            Snackbar.make(
-                findViewById(R.id.registerRoot),
-                "Datos de Google sincronizados",
-                Snackbar.LENGTH_SHORT
-            ).show()
+        btnStep2Back.setOnClickListener { updateStep(1) }
+        btnGoogleBack.setOnClickListener { updateStep(1) }
+
+        btnStep2Next.setOnClickListener { handleEmailRegister() }
+        btnGoogleRegister.setOnClickListener { launchGoogleSignIn() }
+    }
+
+    private fun selectAuthMethod(method: String) {
+        currentAuthMethod = method
+        val brandColor = ContextCompat.getColor(this, R.color.brand_color)
+
+        if (method == "EMAIL") {
+            applyTabStyle(btnTabEmailMethod, selected = true, brandColor)
+            applyTabStyle(btnTabGoogleMethod, selected = false, brandColor)
+            layoutEmailForm.visibility = View.VISIBLE
+            layoutGoogleForm.visibility = View.GONE
+        } else {
+            applyTabStyle(btnTabGoogleMethod, selected = true, brandColor)
+            applyTabStyle(btnTabEmailMethod, selected = false, brandColor)
+            layoutGoogleForm.visibility = View.VISIBLE
+            layoutEmailForm.visibility = View.GONE
         }
+    }
 
-        btnStep2Back.setOnClickListener {
-            updateStep(1)
-        }
+    private fun setStep2Loading(loading: Boolean) {
+        pbStep2Loading.visibility = if (loading) View.VISIBLE else View.GONE
+        btnStep2Next.isEnabled = !loading
+        btnStep2Next.alpha = if (loading) 0.6f else 1f
+        btnGoogleRegister.isEnabled = !loading
+        btnGoogleRegister.alpha = if (loading) 0.6f else 1f
+        btnStep2Back.isEnabled = !loading
+        btnGoogleBack.isEnabled = !loading
+        btnTabEmailMethod.isEnabled = !loading
+        btnTabGoogleMethod.isEnabled = !loading
+    }
 
-        btnStep2Next.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-            val phone = etPhone.text.toString().trim()
-            val pwd = etPassword.text.toString()
-            val confirmPwd = etConfirmPassword.text.toString()
+    private fun handleEmailRegister() {
+        val email = etEmail.text.toString().trim()
+        val pwd = etPassword.text.toString()
+        val confirmPwd = etConfirmPassword.text.toString()
 
-            when {
-                email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
-                    showToast("Ingresa un correo electrónico válido")
-                phone.length < 9 -> showToast("Ingresa tu número de celular (9 dígitos)")
-                pwd.length < 8 -> showToast("La contraseña debe tener al menos 8 caracteres")
-                pwd != confirmPwd -> showToast("Las contraseñas no coinciden")
-                else -> {
-                    isOtpVerified = false
-                    pendingOtp = ""
-                    updateStep(3)
-                }
+        val hasLength = pwd.length >= 8
+        val hasNumber = pwd.any { it.isDigit() }
+        val hasSpecial = pwd.any { it.isUpperCase() || !it.isLetterOrDigit() }
+
+        when {
+            email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                showToast("Ingresa un correo electrónico válido")
+                return
+            }
+            !hasLength -> {
+                showToast("La contraseña debe tener al menos 8 caracteres")
+                return
+            }
+            !hasNumber -> {
+                showToast("La contraseña debe contener al menos un número")
+                return
+            }
+            !hasSpecial -> {
+                showToast("La contraseña debe contener una letra mayúscula o un símbolo")
+                return
+            }
+            pwd != confirmPwd -> {
+                showToast("Las contraseñas no coinciden")
+                return
             }
         }
+
+        setStep2Loading(true)
+
+        // 4. Crear usuario mediante Firebase Authentication (Regla 3)
+        auth.createUserWithEmailAndPassword(email, pwd)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    registeredFirebaseUid = user?.uid
+                    registeredEmail = email
+                    registeredAuthMethod = "EMAIL_PASSWORD"
+                    isEmailVerifiedByAuth = false
+
+                    // 5. Enviar correo de verificación oficial mediante Firebase Authentication (Regla 3 y 4)
+                    user?.sendEmailVerification()
+                        ?.addOnCompleteListener(this) { verifyTask ->
+                            setStep2Loading(false)
+                            if (verifyTask.isSuccessful) {
+                                showEmailVerificationSentModal(email)
+                            } else {
+                                val err = verifyTask.exception?.localizedMessage ?: "No se pudo enviar el correo de verificación"
+                                showToast("Cuenta creada. $err")
+                                showEmailVerificationSentModal(email)
+                            }
+                        } ?: run {
+                            setStep2Loading(false)
+                            showEmailVerificationSentModal(email)
+                        }
+                } else {
+                    setStep2Loading(false)
+                    val exception = task.exception
+                    val errorMsg = when (exception) {
+                        is FirebaseAuthWeakPasswordException ->
+                            "La contraseña es demasiado débil. Ingresa al menos 8 caracteres con números y mayúsculas o símbolos."
+                        is FirebaseAuthUserCollisionException ->
+                            "Ya existe una cuenta registrada con este correo electrónico. Por favor inicia sesión."
+                        is FirebaseAuthInvalidCredentialsException ->
+                            "El formato del correo electrónico ingresado no es válido."
+                        is FirebaseNetworkException ->
+                            "Sin conexión a internet. Verifica tu red e inténtalo de nuevo."
+                        else ->
+                            exception?.localizedMessage ?: "Ocurrió un error al registrar las credenciales. Intenta nuevamente."
+                    }
+                    showToast(errorMsg)
+                }
+            }
+    }
+
+    private fun launchGoogleSignIn() {
+        setStep2Loading(true)
+        // Asegurar que el usuario pueda seleccionar cuenta si ya inició sesión previamente
+        googleSignInClient.signOut().addOnCompleteListener(this) {
+            val signInIntent = googleSignInClient.signInIntent
+            googleSignInLauncher.launch(signInIntent)
+        }
+    }
+
+    private fun handleGoogleSignInResult(data: Intent?) {
+        val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account.idToken
+            if (idToken.isNullOrEmpty()) {
+                setStep2Loading(false)
+                showToast("No se pudo obtener la credencial de Google. Inténtalo de nuevo.")
+                return
+            }
+
+            // Autenticación en Firebase mediante credencial de Google (Regla 2)
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            auth.signInWithCredential(credential)
+                .addOnCompleteListener(this) { authTask ->
+                    setStep2Loading(false)
+                    if (authTask.isSuccessful) {
+                        val user = auth.currentUser
+                        registeredFirebaseUid = user?.uid
+                        registeredEmail = user?.email ?: account.email ?: ""
+                        registeredAuthMethod = "GOOGLE"
+                        // Cuenta Google se considera verificada por Firebase sin requerir correo extra (Regla 2)
+                        isEmailVerifiedByAuth = true
+
+                        showGoogleSuccessModal()
+                    } else {
+                        val exception = authTask.exception
+                        val errorMsg = when (exception) {
+                            is FirebaseAuthUserCollisionException ->
+                                "Ya existe una cuenta con este correo utilizando otro método de acceso."
+                            is FirebaseNetworkException ->
+                                "Error de conexión a internet con Firebase. Intenta nuevamente."
+                            else ->
+                                exception?.localizedMessage ?: "Error al autenticar con Firebase usando Google."
+                        }
+                        showToast(errorMsg)
+                    }
+                }
+        } catch (e: ApiException) {
+            setStep2Loading(false)
+            when (e.statusCode) {
+                CommonStatusCodes.CANCELED, 12501 -> {
+                    // El usuario canceló la selección de cuenta
+                }
+                CommonStatusCodes.NETWORK_ERROR, 7 -> {
+                    showToast("Error de red al conectar con Google.")
+                }
+                CommonStatusCodes.DEVELOPER_ERROR, 10 -> {
+                    showToast("Configuración de Google Sign-In pendiente de vinculación SHA-1.")
+                }
+                else -> {
+                    showToast("Error al conectar con Google (código: ${e.statusCode})")
+                }
+            }
+        } catch (e: Exception) {
+            setStep2Loading(false)
+            showToast("Error inesperado en Google Sign-In: ${e.localizedMessage}")
+        }
+    }
+
+    // Modal de éxito profesional para Google Auth (Regla 6)
+    private fun showGoogleSuccessModal() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("¡Registro exitoso!")
+            .setMessage("Tu cuenta se ha creado correctamente con Google.\n\n" +
+                "✓ Correo: ${registeredEmail ?: ""}\n" +
+                "✓ Rol: ${if (selectedRole == "TRABAJADOR") "Trabajador" else "Contratante"}")
+            .setPositiveButton("Continuar") { _, _ ->
+                onPhase2Completed()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    // Modal informativo para correo + contraseña (Regla 7)
+    private fun showEmailVerificationSentModal(email: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Revisa tu correo")
+            .setMessage(
+                "Hemos enviado un enlace de verificación a tu dirección de correo electrónico:\n\n$email\n\n" +
+                "Por favor, revisa tu bandeja de entrada para verificar tu cuenta antes de continuar a la siguiente fase."
+            )
+            .setPositiveButton("Continuar") { _, _ ->
+                onPhase2Completed()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun onPhase2Completed() {
+        isPhase2Completed = true
+        // Deja preparada la transición hacia FASE 3 sin ejecutar OTP de cliente (Regla 5)
+        updateStep(3)
     }
 
     private fun updateRequirementItem(iv: ImageView, valid: Boolean) {
@@ -828,24 +1070,30 @@ class RegistroActivity : AppCompatActivity() {
         }
     }
 
-    // ==================== PASO 3: OTP DE CORREO ====================
+    // ==================== PASO 3: PREPARADO PARA FASE 3 (SIN OTP CLIENTE) ====================
     private fun setupStep3() {
+        // En Fase 2 no se implementa lógica de OTP de cliente ni servicios externos (Regla 5)
         setupOtpBox(otpBox1, otpBox2, null)
         setupOtpBox(otpBox2, otpBox3, otpBox1)
         setupOtpBox(otpBox3, otpBox4, otpBox2)
         setupOtpBox(otpBox4, null, otpBox3)
 
         btnConfirmOtp.setOnClickListener {
-            confirmOtp()
+            // Placeholder que deja preparado el flujo sin implementar backend OTP todavía (Regla 5)
+            showToast("FASE 3: El backend de verificación OTP se conectará en la siguiente fase.")
         }
 
         btnResendOtp.setOnClickListener {
-            generateOtpCode(resend = true)
+            val email = registeredEmail ?: etEmail.text.toString().trim()
+            if (registeredAuthMethod == "EMAIL_PASSWORD") {
+                auth.currentUser?.sendEmailVerification()
+                showToast("Enlace de verificación oficial de Firebase reenviado a $email")
+            } else {
+                showToast("Tu cuenta de Google ya está verificada")
+            }
         }
 
         btnChangeEmail.setOnClickListener {
-            pendingOtp = ""
-            isOtpVerified = false
             updateStep(2)
         }
     }
@@ -869,67 +1117,15 @@ class RegistroActivity : AppCompatActivity() {
     }
 
     private fun prepareOtpStep() {
-        tvOtpEmailHint.text = "Hemos enviado un código de 4 dígitos a\n${etEmail.text.toString().trim()}"
-
-        clearOtpBoxes()
+        val email = registeredEmail ?: etEmail.text.toString().trim()
+        if (registeredAuthMethod == "GOOGLE") {
+            tvOtpEmailHint.text = "Tu cuenta de Google ($email) se encuentra autenticada.\nTransición preparada para la Fase 3."
+        } else {
+            tvOtpEmailHint.text = "Hemos enviado un enlace de verificación a\n$email\nRevisa tu bandeja de entrada."
+        }
         btnConfirmOtp.isEnabled = true
         btnConfirmOtp.alpha = 1f
         pbOtp.visibility = View.GONE
-
-        if (pendingOtp.isEmpty()) generateOtpCode(resend = false)
-    }
-
-    private fun generateOtpCode(resend: Boolean) {
-        pendingOtp = (1000..9999).random().toString()
-        clearOtpBoxes()
-        pbOtp.visibility = View.GONE
-        btnConfirmOtp.isEnabled = true
-        btnConfirmOtp.alpha = 1f
-
-        if (resend) {
-            Snackbar.make(
-                findViewById(R.id.registerRoot),
-                "Nuevo código enviado a ${etEmail.text.toString().trim()} (demo: $pendingOtp)",
-                Snackbar.LENGTH_LONG
-            ).show()
-        }
-    }
-
-    private fun clearOtpBoxes() {
-        otpBox1.setText("")
-        otpBox2.setText("")
-        otpBox3.setText("")
-        otpBox4.setText("")
-        otpBox1.requestFocus()
-    }
-
-    private fun confirmOtp() {
-        val code = otpBox1.text.toString() + otpBox2.text.toString() +
-            otpBox3.text.toString() + otpBox4.text.toString()
-
-        if (code.length != 4) {
-            showToast("Ingresa el código de 4 dígitos")
-            return
-        }
-
-        pbOtp.visibility = View.VISIBLE
-        btnConfirmOtp.isEnabled = false
-        btnConfirmOtp.alpha = 0.6f
-
-        Handler(Looper.getMainLooper()).postDelayed({
-            pbOtp.visibility = View.GONE
-            btnConfirmOtp.isEnabled = true
-            btnConfirmOtp.alpha = 1f
-
-            // SIMULACIÓN MOCK: Acepta cualquier código de 4 dígitos
-            isOtpVerified = true
-            Snackbar.make(
-                findViewById(R.id.registerRoot),
-                "✓ Correo verificado correctamente",
-                Snackbar.LENGTH_SHORT
-            ).show()
-            updateStep(4)
-        }, 800)
     }
 
     // ==================== PASO 4: RESUMEN ====================
@@ -939,20 +1135,15 @@ class RegistroActivity : AppCompatActivity() {
         }
 
         btnFinalizeRegister.setOnClickListener {
-            if (!isOtpVerified) {
-                showToast("Debes verificar tu correo antes de crear la cuenta")
-                return@setOnClickListener
-            }
             showSuccessRegistrationDialog()
         }
     }
 
     private fun populateSummary() {
-        val email = etEmail.text.toString().trim()
-        tvSummaryEmail.text = if (email.isNotEmpty()) email else "juan.perez@gmail.com"
+        val email = registeredEmail ?: etEmail.text.toString().trim()
+        tvSummaryEmail.text = if (email.isNotEmpty()) email else "usuario@chambaya.pe"
 
-        val phone = etPhone.text.toString().trim()
-        tvSummaryPhone.text = if (phone.isNotEmpty()) "+51 $phone" else "+51 987 654 321"
+        tvSummaryPhone.text = "No requerido"
 
         val isWorker = selectedRole == "TRABAJADOR"
         val dni = etDni.text.toString().trim()
@@ -969,11 +1160,11 @@ class RegistroActivity : AppCompatActivity() {
             tvSummaryDni.text = if (dni.isNotEmpty()) dni else "72345678"
             tvSummaryFullName.text =
                 if (isDniVerified && tvReniecFullName.text.isNotBlank()) tvReniecFullName.text
-                else "Juan Carlos Pérez Quispe"
+                else "Perfil Verificado"
             tvSummaryVerifiedBadge.text = "✓ Perfil Verificado Oficial (RENIEC)"
         }
 
-        tvSummaryRole.text = if (isWorker) "Trabajador" else "Empleador / Contratante"
+        tvSummaryRole.text = if (isWorker) "Trabajador" else "Contratante"
     }
 
     private fun showSuccessRegistrationDialog() {

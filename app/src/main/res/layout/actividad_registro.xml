@@ -1015,6 +1015,9 @@
                 <!-- ======================================================= -->
                 <!-- PASO 2: CREDENCIALES (Email + Teléfono + Contraseña)    -->
                 <!-- ======================================================= -->
+                <!-- ======================================================= -->
+                <!-- PASO 2: CREDENCIALES (Email + Contraseña / Google)      -->
+                <!-- ======================================================= -->
                 <LinearLayout
                     android:id="@+id/layoutStep2"
                     android:layout_width="match_parent"
@@ -1031,392 +1034,433 @@
                         android:textSize="22sp" />
 
                     <TextView
+                        android:id="@+id/tvStep2Subtitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:fontFamily="sans-serif"
-                        android:text="Ingresa tu correo y contraseña para acceder"
+                        android:text="Elige tu método de registro para acceder"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
-                    <!-- Correo electrónico -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
-                        android:fontFamily="sans-serif-black"
-                        android:text="@string/auth_email_label"
-                        android:textColor="@color/black"
-                        android:textSize="13sp" />
-
-                    <EditText
-                        android:id="@+id/etEmail"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_login_input"
-                        android:drawableStart="@drawable/ic_login_email"
-                        android:drawablePadding="12dp"
-                        android:fontFamily="sans-serif"
-                        android:hint="@string/auth_email_hint"
-                        android:inputType="textEmailAddress"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:singleLine="true"
-                        android:textColor="@color/black"
-                        android:textColorHint="@color/login_hint"
-                        android:textSize="14sp" />
-
-                    <!-- Número de teléfono (sin OTP, solo dato de contacto) -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:fontFamily="sans-serif-black"
-                        android:text="@string/register_phone_label"
-                        android:textColor="@color/black"
-                        android:textSize="13sp" />
-
+                    <!-- Selector de método: Correo y contraseña / Google -->
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="6dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <LinearLayout
-                            android:layout_width="82dp"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/bg_login_input"
-                            android:gravity="center"
-                            android:orientation="horizontal"
-                            android:paddingStart="8dp"
-                            android:paddingEnd="8dp">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="14dp"
-                                android:src="@drawable/ic_flag_peru" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:fontFamily="sans-serif-bold"
-                                android:text="+51"
-                                android:textColor="@color/black"
-                                android:textSize="13sp" />
-                        </LinearLayout>
-
-                        <EditText
-                            android:id="@+id/etPhone"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_login_input"
-                            android:drawableStart="@drawable/ic_phone"
-                            android:drawablePadding="10dp"
-                            android:fontFamily="sans-serif"
-                            android:hint="@string/register_phone_hint"
-                            android:inputType="phone"
-                            android:maxLength="9"
-                            android:paddingStart="14dp"
-                            android:paddingEnd="14dp"
-                            android:singleLine="true"
-                            android:textColor="@color/black"
-                            android:textColorHint="@color/login_hint"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <!-- Info: teléfono sin OTP -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
-                        android:drawableStart="@drawable/ic_verified"
-                        android:drawablePadding="4dp"
-                        android:fontFamily="sans-serif"
-                        android:text="Solo para contacto. La verificación es por correo."
-                        android:textColor="#94A3B8"
-                        android:textSize="11sp" />
-
-                    <!-- Contraseña -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:fontFamily="sans-serif-black"
-                        android:text="@string/auth_password_label"
-                        android:textColor="@color/black"
-                        android:textSize="13sp" />
-
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_login_input">
-
-                        <EditText
-                            android:id="@+id/etPassword"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@android:color/transparent"
-                            android:drawableStart="@drawable/ic_login_lock"
-                            android:drawablePadding="12dp"
-                            android:fontFamily="sans-serif"
-                            android:hint="@string/auth_password_hint"
-                            android:inputType="textPassword"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="50dp"
-                            android:singleLine="true"
-                            android:textColor="@color/black"
-                            android:textColorHint="@color/login_hint"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:id="@+id/ivTogglePassword"
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:layout_gravity="center_vertical|end"
-                            android:layout_marginEnd="14dp"
-                            android:clickable="true"
-                            android:contentDescription="@string/auth_show_password"
-                            android:focusable="true"
-                            android:src="@drawable/ic_login_eye_off" />
-                    </FrameLayout>
-
-                    <!-- Confirmar Contraseña -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:fontFamily="sans-serif-black"
-                        android:text="@string/register_confirm_password_label"
-                        android:textColor="@color/black"
-                        android:textSize="13sp" />
-
-                    <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_login_input">
-
-                        <EditText
-                            android:id="@+id/etConfirmPassword"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@android:color/transparent"
-                            android:drawableStart="@drawable/ic_login_lock"
-                            android:drawablePadding="12dp"
-                            android:fontFamily="sans-serif"
-                            android:hint="@string/register_confirm_password_hint"
-                            android:inputType="textPassword"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="50dp"
-                            android:singleLine="true"
-                            android:textColor="@color/black"
-                            android:textColorHint="@color/login_hint"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:id="@+id/ivToggleConfirmPassword"
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:layout_gravity="center_vertical|end"
-                            android:layout_marginEnd="14dp"
-                            android:clickable="true"
-                            android:contentDescription="@string/auth_show_password"
-                            android:focusable="true"
-                            android:src="@drawable/ic_login_eye_off" />
-                    </FrameLayout>
-
-                    <!-- Requisitos de Contraseña -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_requirement_box"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-bold"
-                            android:text="@string/register_pwd_req_title"
-                            android:textColor="#334155"
-                            android:textSize="12sp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <ImageView
-                                android:id="@+id/ivReqLength"
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:src="@drawable/ic_close_circle" />
-                            <TextView
-                                android:id="@+id/tvReqLength"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:fontFamily="sans-serif"
-                                android:text="@string/register_pwd_req_length"
-                                android:textColor="#64748B"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <ImageView
-                                android:id="@+id/ivReqNumber"
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:src="@drawable/ic_close_circle" />
-                            <TextView
-                                android:id="@+id/tvReqNumber"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:fontFamily="sans-serif"
-                                android:text="@string/register_pwd_req_number"
-                                android:textColor="#64748B"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <ImageView
-                                android:id="@+id/ivReqSpecial"
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:src="@drawable/ic_close_circle" />
-                            <TextView
-                                android:id="@+id/tvReqSpecial"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:fontFamily="sans-serif"
-                                android:text="@string/register_pwd_req_special"
-                                android:textColor="#64748B"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Continuar con Google -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="#E2E8F0" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_marginEnd="12dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="@string/auth_or_continue"
-                            android:textColor="#94A3B8"
-                            android:textSize="12sp" />
-
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="#E2E8F0" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/btnGoogleRegister"
+                        android:id="@+id/layoutAuthMethodTabs"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
-                        android:layout_marginTop="10dp"
-                        android:background="@drawable/bg_login_google_button"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
-                        android:gravity="center"
-                        android:orientation="horizontal">
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_requirement_box"
+                        android:orientation="horizontal"
+                        android:padding="4dp">
 
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_marginEnd="10dp"
-                            android:src="@drawable/ic_google_g" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTabEmailMethod"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="@color/brand_color"
+                            android:fontFamily="sans-serif-bold"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Correo y clave"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="13sp"
+                            app:cornerRadius="20dp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTabGoogleMethod"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:backgroundTint="#F8FAFC"
                             android:fontFamily="sans-serif-medium"
-                            android:text="@string/auth_continue_google"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Google"
+                            android:textAllCaps="false"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            app:cornerRadius="20dp" />
                     </LinearLayout>
 
-                    <!-- Aviso términos -->
-                    <TextView
+                    <!-- Barra de progreso para operaciones Firebase -->
+                    <ProgressBar
+                        android:id="@+id/pbStep2Loading"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="10dp"
+                        android:indeterminate="true"
+                        android:visibility="gone" />
+
+                    <!-- =================================================== -->
+                    <!-- MÉTODO A: CORREO ELECTRÓNICO + CONTRASEÑA           -->
+                    <!-- =================================================== -->
+                    <LinearLayout
+                        android:id="@+id/layoutEmailForm"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:fontFamily="sans-serif"
-                        android:lineSpacingExtra="2dp"
-                        android:text="@string/register_terms_notice"
-                        android:textColor="#64748B"
-                        android:textSize="11sp" />
+                        android:orientation="vertical"
+                        android:visibility="visible">
 
-                    <!-- Botones nav Paso 2 -->
+                        <!-- Correo electrónico -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:text="@string/auth_email_label"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <EditText
+                            android:id="@+id/etEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_login_input"
+                            android:drawableStart="@drawable/ic_login_email"
+                            android:drawablePadding="12dp"
+                            android:fontFamily="sans-serif"
+                            android:hint="@string/auth_email_hint"
+                            android:inputType="textEmailAddress"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
+                            android:textColorHint="@color/login_hint"
+                            android:textSize="14sp" />
+
+                        <!-- Contraseña -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:fontFamily="sans-serif-black"
+                            android:text="@string/auth_password_label"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_login_input">
+
+                            <EditText
+                                android:id="@+id/etPassword"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@android:color/transparent"
+                                android:drawableStart="@drawable/ic_login_lock"
+                                android:drawablePadding="12dp"
+                                android:fontFamily="sans-serif"
+                                android:hint="@string/auth_password_hint"
+                                android:inputType="textPassword"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="50dp"
+                                android:singleLine="true"
+                                android:textColor="@color/black"
+                                android:textColorHint="@color/login_hint"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:id="@+id/ivTogglePassword"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center_vertical|end"
+                                android:layout_marginEnd="14dp"
+                                android:clickable="true"
+                                android:contentDescription="@string/auth_show_password"
+                                android:focusable="true"
+                                android:src="@drawable/ic_login_eye_off" />
+                        </FrameLayout>
+
+                        <!-- Confirmar Contraseña -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-black"
+                            android:text="@string/register_confirm_password_label"
+                            android:textColor="@color/black"
+                            android:textSize="13sp" />
+
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_login_input">
+
+                            <EditText
+                                android:id="@+id/etConfirmPassword"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@android:color/transparent"
+                                android:drawableStart="@drawable/ic_login_lock"
+                                android:drawablePadding="12dp"
+                                android:fontFamily="sans-serif"
+                                android:hint="@string/register_confirm_password_hint"
+                                android:inputType="textPassword"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="50dp"
+                                android:singleLine="true"
+                                android:textColor="@color/black"
+                                android:textColorHint="@color/login_hint"
+                                android:textSize="14sp" />
+
+                            <ImageView
+                                android:id="@+id/ivToggleConfirmPassword"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center_vertical|end"
+                                android:layout_marginEnd="14dp"
+                                android:clickable="true"
+                                android:contentDescription="@string/auth_show_password"
+                                android:focusable="true"
+                                android:src="@drawable/ic_login_eye_off" />
+                        </FrameLayout>
+
+                        <!-- Requisitos de Contraseña -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_requirement_box"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/register_pwd_req_title"
+                                android:textColor="#334155"
+                                android:textSize="12sp" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+                                <ImageView
+                                    android:id="@+id/ivReqLength"
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_close_circle" />
+                                <TextView
+                                    android:id="@+id/tvReqLength"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="@string/register_pwd_req_length"
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+                                <ImageView
+                                    android:id="@+id/ivReqNumber"
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_close_circle" />
+                                <TextView
+                                    android:id="@+id/tvReqNumber"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="@string/register_pwd_req_number"
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+                                <ImageView
+                                    android:id="@+id/ivReqSpecial"
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:src="@drawable/ic_close_circle" />
+                                <TextView
+                                    android:id="@+id/tvReqSpecial"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="@string/register_pwd_req_special"
+                                    android:textColor="#64748B"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Botones nav Correo -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnStep2Back"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="50dp"
+                                android:layout_marginEnd="8dp"
+                                android:layout_weight="1"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/register_btn_back"
+                                android:textAllCaps="false"
+                                android:textColor="@color/text_primary"
+                                app:cornerRadius="25dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnStep2Next"
+                                android:layout_width="0dp"
+                                android:layout_height="50dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1.4"
+                                android:backgroundTint="@color/brand_color"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/register_btn_continue"
+                                android:textAllCaps="false"
+                                android:textColor="@color/white"
+                                app:cornerRadius="25dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- =================================================== -->
+                    <!-- MÉTODO B: GOOGLE AUTH                               -->
+                    <!-- =================================================== -->
                     <LinearLayout
+                        android:id="@+id/layoutGoogleForm"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:orientation="horizontal">
+                        android:orientation="vertical"
+                        android:visibility="gone">
 
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_dni_verified_card"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="32dp"
+                                    android:layout_height="32dp"
+                                    android:src="@drawable/ic_google_g" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="14dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:fontFamily="sans-serif-black"
+                                        android:text="Registro rápido con Google"
+                                        android:textColor="#0F172A"
+                                        android:textSize="16sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:fontFamily="sans-serif"
+                                        android:text="Sin ingresar contraseñas manualmente"
+                                        android:textColor="#475569"
+                                        android:textSize="12sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="14dp"
+                                android:fontFamily="sans-serif"
+                                android:lineSpacingExtra="2dp"
+                                android:text="Tu identidad y correo electrónico serán verificados de forma segura mediante tu cuenta de Google en Firebase Authentication."
+                                android:textColor="#334155"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <!-- Botón Google Register -->
+                        <LinearLayout
+                            android:id="@+id/btnGoogleRegister"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:layout_marginTop="20dp"
+                            android:background="@drawable/bg_login_google_button"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginEnd="12dp"
+                                android:src="@drawable/ic_google_g" />
+
+                            <TextView
+                                android:id="@+id/tvGoogleBtnText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/auth_continue_google"
+                                android:textColor="@color/text_primary"
+                                android:textSize="15sp" />
+                        </LinearLayout>
+
+                        <!-- Botón volver para Google -->
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnStep2Back"
+                            android:id="@+id/btnGoogleBack"
                             style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="50dp"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
+                            android:layout_marginTop="14dp"
                             android:fontFamily="sans-serif-bold"
                             android:text="@string/register_btn_back"
                             android:textAllCaps="false"
                             android:textColor="@color/text_primary"
                             app:cornerRadius="25dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnStep2Next"
-                            android:layout_width="0dp"
-                            android:layout_height="50dp"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1.4"
-                            android:backgroundTint="@color/brand_color"
-                            android:fontFamily="sans-serif-bold"
-                            android:text="@string/register_btn_continue"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            app:cornerRadius="25dp" />
                     </LinearLayout>
+
+                    <!-- Aviso de términos común -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/register_terms_notice"
+                        android:textColor="#64748B"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
                 <!-- ======================================================= -->
