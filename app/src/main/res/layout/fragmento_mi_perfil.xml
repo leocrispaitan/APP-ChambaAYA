@@ -1,19 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    android:fillViewport="true"
-    android:overScrollMode="never"
-    android:scrollbars="none"
     tools:context=".ui.profile.FragmentoMiPerfil">
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="32dp">
 
         <!-- Deep Cosmic Purple Curved Header Graphic -->
         <ImageView
@@ -386,445 +378,460 @@
 
         </LinearLayout>
 
-        <!-- Card 1: Skills Section -->
-        <LinearLayout
-            android:id="@+id/cardSkills"
+        <!-- Scrollable Content Section: Skills & Experience -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollProfileContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_profile_section_card"
-            android:orientation="vertical"
-            android:padding="18dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="14dp"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/layoutActionButtons">
 
-            <!-- Skills Header: Circle Icon + Title + Subtitle -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:paddingBottom="32dp">
 
-                <!-- Solid Purple Circle with Lightning Bolt -->
-                <FrameLayout
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_profile_icon_circle_purple">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_profile_skills_zap" />
-                </FrameLayout>
-
-                <!-- Title & Subtitle -->
+                <!-- Card 1: Skills Section -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:id="@+id/cardSkills"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-bold"
-                        android:text="@string/profile_skills_title"
-                        android:textColor="#111827"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="sans-serif"
-                        android:text="@string/profile_skills_subtitle"
-                        android:textColor="#6B7280"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- 4 Skills Horizontal Tiles -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal">
-
-                <!-- Skill 1: Figma -->
-                <LinearLayout
-                    android:id="@+id/skillFigma"
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_marginEnd="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_profile_skill_tile"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_profile_section_card"
                     android:orientation="vertical"
-                    android:padding="6dp">
+                    android:padding="18dp">
 
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="28dp"
-                        android:contentDescription="@string/profile_skill_figma"
-                        android:src="@drawable/ic_skill_figma" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/profile_skill_figma"
-                        android:textColor="#1F2937"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <!-- Skill 2: Adobe XD -->
-                <LinearLayout
-                    android:id="@+id/skillAdobeXd"
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_profile_skill_tile"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="6dp">
-
-                    <ImageView
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:contentDescription="@string/profile_skill_adobexd"
-                        android:src="@drawable/ic_skill_adobexd" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/profile_skill_adobexd"
-                        android:textColor="#1F2937"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <!-- Skill 3: Sketch -->
-                <LinearLayout
-                    android:id="@+id/skillSketch"
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_profile_skill_tile"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="6dp">
-
-                    <ImageView
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:contentDescription="@string/profile_skill_sketch"
-                        android:src="@drawable/ic_skill_sketch" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/profile_skill_sketch"
-                        android:textColor="#1F2937"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <!-- Skill 4: InVision -->
-                <LinearLayout
-                    android:id="@+id/skillInVision"
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_marginStart="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_profile_skill_tile"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="6dp">
-
-                    <ImageView
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:contentDescription="@string/profile_skill_invision"
-                        android:src="@drawable/ic_skill_invision" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/profile_skill_invision"
-                        android:textColor="#1F2937"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <!-- Card 2: Experience Section -->
-        <LinearLayout
-            android:id="@+id/cardExperience"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="32dp"
-            android:background="@drawable/bg_profile_section_card"
-            android:orientation="vertical"
-            android:padding="18dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cardSkills">
-
-            <!-- Experience Header: Circle Icon + Title + Subtitle -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <!-- Solid Purple Circle with Briefcase -->
-                <FrameLayout
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_profile_icon_circle_purple">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_profile_exp_briefcase" />
-                </FrameLayout>
-
-                <!-- Title & Subtitle -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-bold"
-                        android:text="@string/profile_experience_title"
-                        android:textColor="#111827"
-                        android:textSize="17sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:fontFamily="sans-serif"
-                        android:text="@string/profile_experience_subtitle"
-                        android:textColor="#6B7280"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Experience Timeline Items -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp">
-
-                <!-- Vertical Timeline Line -->
-                <View
-                    android:id="@+id/timelineLine"
-                    android:layout_width="2dp"
-                    android:layout_height="0dp"
-                    android:background="#E2E8F0"
-                    app:layout_constraintBottom_toBottomOf="@id/expItem2"
-                    app:layout_constraintEnd_toEndOf="@id/dotExp1"
-                    app:layout_constraintStart_toStartOf="@id/dotExp1"
-                    app:layout_constraintTop_toTopOf="@id/dotExp1" />
-
-                <!-- Dot 1 for Art Director -->
-                <View
-                    android:id="@+id/dotExp1"
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginStart="4dp"
-                    android:background="@drawable/bg_profile_timeline_dot"
-                    app:layout_constraintBottom_toBottomOf="@id/expItem1"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/expItem1" />
-
-                <!-- Experience Item 1: Art Director -->
-                <LinearLayout
-                    android:id="@+id/expItem1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:background="@drawable/bg_profile_exp_item"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/dotExp1"
-                    app:layout_constraintTop_toTopOf="parent">
-
-                    <!-- Palette Icon Container -->
-                    <FrameLayout
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_profile_exp_icon_palette">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_exp_art_palette" />
-                    </FrameLayout>
-
-                    <!-- Title & Company -->
+                    <!-- Skills Header: Circle Icon + Title + Subtitle -->
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                        <TextView
+                        <!-- Solid Purple Circle with Lightning Bolt -->
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_profile_icon_circle_purple">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_profile_skills_zap" />
+                        </FrameLayout>
+
+                        <!-- Title & Subtitle -->
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-bold"
-                            android:text="@string/profile_exp_art_director_title"
-                            android:textColor="#111827"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                            android:layout_marginStart="14dp"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif"
-                            android:text="@string/profile_exp_art_director_company"
-                            android:textColor="#6B7280"
-                            android:textSize="12sp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/profile_skills_title"
+                                android:textColor="#111827"
+                                android:textSize="17sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/profile_skills_subtitle"
+                                android:textColor="#6B7280"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
                     </LinearLayout>
 
-                    <!-- Date -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:fontFamily="sans-serif"
-                        android:text="@string/profile_exp_art_director_date"
-                        android:textColor="#94A3B8"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <!-- Dot 2 for Designer -->
-                <View
-                    android:id="@+id/dotExp2"
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:background="@drawable/bg_profile_timeline_dot"
-                    app:layout_constraintBottom_toBottomOf="@id/expItem2"
-                    app:layout_constraintEnd_toEndOf="@id/dotExp1"
-                    app:layout_constraintStart_toStartOf="@id/dotExp1"
-                    app:layout_constraintTop_toTopOf="@id/expItem2" />
-
-                <!-- Experience Item 2: Designer -->
-                <LinearLayout
-                    android:id="@+id/expItem2"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_marginTop="12dp"
-                    android:background="@drawable/bg_profile_exp_item"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@id/dotExp1"
-                    app:layout_constraintTop_toBottomOf="@id/expItem1">
-
-                    <!-- Desktop Monitor Icon Container -->
-                    <FrameLayout
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_profile_exp_icon_desktop">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_exp_desktop" />
-                    </FrameLayout>
-
-                    <!-- Title & Company -->
+                    <!-- 4 Skills Horizontal Tiles -->
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-bold"
-                            android:text="@string/profile_exp_designer_title"
-                            android:textColor="#111827"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                        <!-- Skill 1: Figma -->
+                        <LinearLayout
+                            android:id="@+id/skillFigma"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_profile_skill_tile"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="6dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif"
-                            android:text="@string/profile_exp_designer_company"
-                            android:textColor="#6B7280"
-                            android:textSize="12sp" />
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="28dp"
+                                android:contentDescription="@string/profile_skill_figma"
+                                android:src="@drawable/ic_skill_figma" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/profile_skill_figma"
+                                android:textColor="#1F2937"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Skill 2: Adobe XD -->
+                        <LinearLayout
+                            android:id="@+id/skillAdobeXd"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_marginHorizontal="3dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_profile_skill_tile"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="6dp">
+
+                            <ImageView
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:contentDescription="@string/profile_skill_adobexd"
+                                android:src="@drawable/ic_skill_adobexd" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/profile_skill_adobexd"
+                                android:textColor="#1F2937"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Skill 3: Sketch -->
+                        <LinearLayout
+                            android:id="@+id/skillSketch"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_marginHorizontal="3dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_profile_skill_tile"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="6dp">
+
+                            <ImageView
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:contentDescription="@string/profile_skill_sketch"
+                                android:src="@drawable/ic_skill_sketch" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/profile_skill_sketch"
+                                android:textColor="#1F2937"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Skill 4: InVision -->
+                        <LinearLayout
+                            android:id="@+id/skillInVision"
+                            android:layout_width="0dp"
+                            android:layout_height="80dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_profile_skill_tile"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="6dp">
+
+                            <ImageView
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:contentDescription="@string/profile_skill_invision"
+                                android:src="@drawable/ic_skill_invision" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/profile_skill_invision"
+                                android:textColor="#1F2937"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
                     </LinearLayout>
 
-                    <!-- Date -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:fontFamily="sans-serif"
-                        android:text="@string/profile_exp_designer_date"
-                        android:textColor="#94A3B8"
-                        android:textSize="11sp" />
                 </LinearLayout>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                <!-- Card 2: Experience Section -->
+                <LinearLayout
+                    android:id="@+id/cardExperience"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="20dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_profile_section_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
-        </LinearLayout>
+                    <!-- Experience Header: Circle Icon + Title + Subtitle -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+                        <!-- Solid Purple Circle with Briefcase -->
+                        <FrameLayout
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:background="@drawable/bg_profile_icon_circle_purple">
 
-</androidx.core.widget.NestedScrollView>
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_profile_exp_briefcase" />
+                        </FrameLayout>
+
+                        <!-- Title & Subtitle -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-bold"
+                                android:text="@string/profile_experience_title"
+                                android:textColor="#111827"
+                                android:textSize="17sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/profile_experience_subtitle"
+                                android:textColor="#6B7280"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Experience Timeline Items -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp">
+
+                        <!-- Vertical Timeline Line -->
+                        <View
+                            android:id="@+id/timelineLine"
+                            android:layout_width="2dp"
+                            android:layout_height="0dp"
+                            android:background="#E2E8F0"
+                            app:layout_constraintBottom_toBottomOf="@id/expItem2"
+                            app:layout_constraintEnd_toEndOf="@id/dotExp1"
+                            app:layout_constraintStart_toStartOf="@id/dotExp1"
+                            app:layout_constraintTop_toTopOf="@id/dotExp1" />
+
+                        <!-- Dot 1 for Art Director -->
+                        <View
+                            android:id="@+id/dotExp1"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_marginStart="4dp"
+                            android:background="@drawable/bg_profile_timeline_dot"
+                            app:layout_constraintBottom_toBottomOf="@id/expItem1"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="@id/expItem1" />
+
+                        <!-- Experience Item 1: Art Director -->
+                        <LinearLayout
+                            android:id="@+id/expItem1"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:background="@drawable/bg_profile_exp_item"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="10dp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/dotExp1"
+                            app:layout_constraintTop_toTopOf="parent">
+
+                            <!-- Palette Icon Container -->
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_profile_exp_icon_palette">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_exp_art_palette" />
+                            </FrameLayout>
+
+                            <!-- Title & Company -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-bold"
+                                    android:text="@string/profile_exp_art_director_title"
+                                    android:textColor="#111827"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="@string/profile_exp_art_director_company"
+                                    android:textColor="#6B7280"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <!-- Date -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/profile_exp_art_director_date"
+                                android:textColor="#94A3B8"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Dot 2 for Designer -->
+                        <View
+                            android:id="@+id/dotExp2"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_profile_timeline_dot"
+                            app:layout_constraintBottom_toBottomOf="@id/expItem2"
+                            app:layout_constraintEnd_toEndOf="@id/dotExp1"
+                            app:layout_constraintStart_toStartOf="@id/dotExp1"
+                            app:layout_constraintTop_toTopOf="@id/expItem2" />
+
+                        <!-- Experience Item 2: Designer -->
+                        <LinearLayout
+                            android:id="@+id/expItem2"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_profile_exp_item"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="10dp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toEndOf="@id/dotExp1"
+                            app:layout_constraintTop_toBottomOf="@id/expItem1">
+
+                            <!-- Desktop Monitor Icon Container -->
+                            <FrameLayout
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="@drawable/bg_profile_exp_icon_desktop">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_exp_desktop" />
+                            </FrameLayout>
+
+                            <!-- Title & Company -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-bold"
+                                    android:text="@string/profile_exp_designer_title"
+                                    android:textColor="#111827"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:fontFamily="sans-serif"
+                                    android:text="@string/profile_exp_designer_company"
+                                    android:textColor="#6B7280"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <!-- Date -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:fontFamily="sans-serif"
+                                android:text="@string/profile_exp_designer_date"
+                                android:textColor="#94A3B8"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
