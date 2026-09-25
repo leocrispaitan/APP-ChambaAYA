@@ -203,4 +203,21 @@
     <string name="profile_perk_fast_adds">Fast Adds</string>
     <string name="profile_perk_spotlights">Spotlights</string>
     <string name="profile_perk_community">Community</string>
+
+    <!-- Profile Redesign: Skills & Experience -->
+    <string name="profile_skills_title">Skills</string>
+    <string name="profile_skills_subtitle">Tools and technologies I use</string>
+    <string name="profile_skill_figma">Figma</string>
+    <string name="profile_skill_adobexd">Adobe XD</string>
+    <string name="profile_skill_sketch">Sketch</string>
+    <string name="profile_skill_invision">InVision</string>
+
+    <string name="profile_experience_title">Experience</string>
+    <string name="profile_experience_subtitle">My professional journey</string>
+    <string name="profile_exp_art_director_title">Art Director</string>
+    <string name="profile_exp_art_director_company">Pixelsy LTD</string>
+    <string name="profile_exp_art_director_date">Feb 2019 - Present</string>
+    <string name="profile_exp_designer_title">Designer</string>
+    <string name="profile_exp_designer_company">Fire Media LLC</string>
+    <string name="profile_exp_designer_date">Jul 2018 - Feb 2019</string>
 </resources>

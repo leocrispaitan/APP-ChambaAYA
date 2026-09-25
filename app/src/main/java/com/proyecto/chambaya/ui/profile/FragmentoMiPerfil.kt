@@ -29,8 +29,7 @@ class FragmentoMiPerfil : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupTopBar(view)
         setupActionButtons(view)
-        setupTabs(view)
-        setupPerkCards(view)
+        setupSkillsAndExperience(view)
     }
 
     override fun onResume() {
@@ -88,47 +87,25 @@ class FragmentoMiPerfil : Fragment() {
         }
     }
 
-    private fun setupTabs(root: View) {
-        val tabPerks = root.findViewById<View>(R.id.tabPerks)
-        val tabAchievements = root.findViewById<View>(R.id.tabAchievements)
-        val tvTabPerks = root.findViewById<TextView>(R.id.tvTabPerks)
-        val tvTabAchievements = root.findViewById<TextView>(R.id.tvTabAchievements)
-        val viewPerksIndicator = root.findViewById<View>(R.id.viewPerksIndicator)
-        val viewAchievementsIndicator = root.findViewById<View>(R.id.viewAchievementsIndicator)
-
-        val activeColor = ContextCompat.getColor(requireContext(), R.color.profile_tab_active)
-        val inactiveColor = ContextCompat.getColor(requireContext(), R.color.profile_tab_inactive)
-
-        tabPerks?.setOnClickListener {
-            tvTabPerks?.setTextColor(activeColor)
-            tvTabAchievements?.setTextColor(inactiveColor)
-            viewPerksIndicator?.visibility = View.VISIBLE
-            viewAchievementsIndicator?.visibility = View.INVISIBLE
+    private fun setupSkillsAndExperience(root: View) {
+        root.findViewById<View>(R.id.skillFigma)?.setOnClickListener {
+            showCardFeedback(it, "Skill: Figma")
+        }
+        root.findViewById<View>(R.id.skillAdobeXd)?.setOnClickListener {
+            showCardFeedback(it, "Skill: Adobe XD")
+        }
+        root.findViewById<View>(R.id.skillSketch)?.setOnClickListener {
+            showCardFeedback(it, "Skill: Sketch")
+        }
+        root.findViewById<View>(R.id.skillInVision)?.setOnClickListener {
+            showCardFeedback(it, "Skill: InVision")
         }
 
-        tabAchievements?.setOnClickListener {
-            tvTabPerks?.setTextColor(inactiveColor)
-            tvTabAchievements?.setTextColor(activeColor)
-            viewPerksIndicator?.visibility = View.INVISIBLE
-            viewAchievementsIndicator?.visibility = View.VISIBLE
+        root.findViewById<View>(R.id.expItem1)?.setOnClickListener {
+            showCardFeedback(it, "Art Director en Pixelsy LTD")
         }
-    }
-
-    private fun setupPerkCards(root: View) {
-        root.findViewById<View>(R.id.cardTurbos)?.setOnClickListener {
-            showCardFeedback(it, "Turbos: 15% de aceleración activado")
-        }
-
-        root.findViewById<View>(R.id.cardFastAdds)?.setOnClickListener {
-            showCardFeedback(it, "Fast Adds: Publicación prioritaria lista")
-        }
-
-        root.findViewById<View>(R.id.cardSpotlights)?.setOnClickListener {
-            showCardFeedback(it, "Spotlights: Mayor visibilidad en resultados")
-        }
-
-        root.findViewById<View>(R.id.cardCommunity)?.setOnClickListener {
-            showCardFeedback(it, "Community: Conectado con la red de creadores")
+        root.findViewById<View>(R.id.expItem2)?.setOnClickListener {
+            showCardFeedback(it, "Designer en Fire Media LLC")
         }
     }
 
