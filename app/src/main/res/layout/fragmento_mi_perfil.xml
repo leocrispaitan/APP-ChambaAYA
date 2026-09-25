@@ -8,16 +8,16 @@
     tools:context=".ui.profile.FragmentoMiPerfil">
 
         <!-- Deep Cosmic Purple Curved Header Graphic -->
-        <ImageView
-            android:id="@+id/ivHeaderBackground"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/bg_profile_header_art"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+    <ImageView
+        android:id="@+id/ivHeaderBackground"
+        android:layout_width="match_parent"
+        android:layout_height="208dp"
+        android:contentDescription="@null"
+        android:scaleType="fitXY"
+        android:src="@drawable/bg_profile_header_art"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
         <!-- Header Top Navigation Bar -->
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -116,7 +116,7 @@
             android:id="@+id/avatarContainer"
             android:layout_width="104dp"
             android:layout_height="104dp"
-            android:layout_marginTop="142dp"
+            android:layout_marginTop="104dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/ivHeaderBackground">
