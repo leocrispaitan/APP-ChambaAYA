@@ -15,19 +15,22 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBarSettings"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:background="@color/white"
         android:paddingHorizontal="16dp"
+        android:paddingTop="36dp"
+        android:paddingBottom="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Back arrow -->
+        <!-- Back arrow: sin fondo oscuro, solo icono con efecto ripple -->
         <FrameLayout
             android:id="@+id/btnSettingsBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/bg_profile_circle_btn"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:contentDescription="@string/auth_back"
             android:focusable="true"
@@ -36,15 +39,15 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:layout_gravity="center"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_profile_arrow_back"
                 app:tint="#1F2937" />
         </FrameLayout>
 
-        <!-- Title "Ajustes" -->
+        <!-- Title "Ajustes" centrado -->
         <TextView
             android:id="@+id/tvSettingsTitle"
             android:layout_width="wrap_content"
@@ -52,34 +55,12 @@
             android:fontFamily="sans-serif-medium"
             android:text="@string/settings_title"
             android:textColor="#111827"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- More dots -->
-        <FrameLayout
-            android:id="@+id/btnSettingsMore"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_profile_circle_btn"
-            android:clickable="true"
-            android:contentDescription="Más opciones"
-            android:focusable="true"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_more_vertical"
-                app:tint="#1F2937" />
-        </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

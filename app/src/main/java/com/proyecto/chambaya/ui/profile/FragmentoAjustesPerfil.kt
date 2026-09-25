@@ -11,6 +11,9 @@ import android.view.Window
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.MainActivity
@@ -37,13 +40,14 @@ class FragmentoAjustesPerfil : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupWindowInsets(view)
         setupTopBar(view)
         setupSettingsRows(view)
     }
 
     override fun onResume() {
         super.onResume()
-        // Status bar blanca para coincidir con el top bar claro
+        // Status bar blanca con iconos oscuros para coincidir con el top bar claro
         BarraEstadoUtils.aplicarColor(
             requireActivity(),
             ContextCompat.getColor(requireContext(), R.color.white)
@@ -59,17 +63,26 @@ class FragmentoAjustesPerfil : Fragment() {
     }
 
     // ─────────────────────────────────────────────────────────────
+    //  WINDOW INSETS (STATUS BAR PADDING)
+    // ─────────────────────────────────────────────────────────────
+
+    private fun setupWindowInsets(root: View) {
+        val topBar = root.findViewById<View>(R.id.topBarSettings) ?: return
+        ViewCompat.setOnApplyWindowInsetsListener(topBar) { v, windowInsets ->
+            val statusBarHeight = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            v.updatePadding(top = statusBarHeight)
+            windowInsets
+        }
+        ViewCompat.requestApplyInsets(topBar)
+    }
+
+    // ─────────────────────────────────────────────────────────────
     //  TOP BAR
     // ─────────────────────────────────────────────────────────────
 
     private fun setupTopBar(root: View) {
         root.findViewById<View>(R.id.btnSettingsBack)?.setOnClickListener {
             navigateBack()
-        }
-
-        root.findViewById<View>(R.id.btnSettingsMore)?.setOnClickListener {
-            animateTap(it)
-            Toast.makeText(requireContext(), "Más opciones", Toast.LENGTH_SHORT).show()
         }
     }
 
