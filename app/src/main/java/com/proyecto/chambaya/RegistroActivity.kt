@@ -19,6 +19,12 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.*
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * Flujo de registro rediseñado:
@@ -400,6 +406,7 @@ class RegistroActivity : AppCompatActivity() {
     }
 
     private fun selectRoleCard(isWorker: Boolean) {
+        val previousRole = selectedRole
         roleSelected = true
         if (isWorker) {
             selectedRole = "TRABAJADOR"
@@ -414,44 +421,60 @@ class RegistroActivity : AppCompatActivity() {
             rbWorkerSelect.isChecked = false
             rbEmployerSelect.isChecked = true
         }
+        // Si el rol cambió, limpiar todo el paso 1 para no conservar datos del rol anterior
+        if (previousRole.isNotEmpty() && previousRole != selectedRole) {
+            clearStep1Fields()
+        }
         btnStep0Next.isEnabled = true
         btnStep0Next.alpha = 1f
     }
 
+    /** Limpia todos los campos y estados de verificación del Paso 1 */
+    private fun clearStep1Fields() {
+        etDni.setText("")
+        etRuc.setText("")
+        isDniVerified = false
+        isRucVerified = false
+        cardDniVerified.visibility = View.GONE
+        cardRucVerified.visibility = View.GONE
+        ivDniCheckIcon.visibility = View.GONE
+        pbReniec.visibility = View.GONE
+        pbSunat.visibility = View.GONE
+        btnConsultReniec.isEnabled = true
+        btnConsultSunat.isEnabled = true
+        identityMode = "DNI"
+    }
+
     // ==================== PASO 1: IDENTIDAD ====================
     private fun setupStep1() {
-        // Inicialmente ocultar el campo del código verificador
+        // Ocultar elementos que no se usan con la API real
         tvDniVerifierLabel.visibility = View.GONE
         etDniVerifier.visibility = View.GONE
         tvDniVerifierHint.visibility = View.GONE
         ivDniCheckIcon.visibility = View.GONE
 
-        // Listener para mostrar check y campo verificador cuando DNI tenga 8 dígitos
+        // Mostrar ícono check verde al completar 8 dígitos y resetear verificación si edita
         etDni.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 val dni = s?.toString() ?: ""
                 if (dni.length == 8) {
-                    // Mostrar check verde
                     ivDniCheckIcon.visibility = View.VISIBLE
-                    
-                    // Mostrar campo código verificador
-                    tvDniVerifierLabel.visibility = View.VISIBLE
-                    etDniVerifier.visibility = View.VISIBLE
-                    tvDniVerifierHint.visibility = View.VISIBLE
-                    
-                    // Focus en código verificador
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        etDniVerifier.requestFocus()
-                    }, 100)
                 } else {
-                    // Ocultar si no hay 8 dígitos
                     ivDniCheckIcon.visibility = View.GONE
-                    tvDniVerifierLabel.visibility = View.GONE
-                    etDniVerifier.visibility = View.GONE
-                    tvDniVerifierHint.visibility = View.GONE
+                    // Si el usuario edita el DNI después de verificar, resetear
+                    if (isDniVerified) resetDniVerifiedUi()
                 }
+            }
+        })
+
+        // Resetear verificación si el usuario edita el campo de RUC
+        etRuc.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (isRucVerified) resetRucVerifiedUi()
             }
         })
 
@@ -475,12 +498,6 @@ class RegistroActivity : AppCompatActivity() {
             consultSunat()
         }
 
-        // Si el usuario edita el DNI, resetear verificación
-        etDni.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus && isDniVerified) {
-                resetDniVerifiedUi()
-            }
-        }
 
         btnStep1Back.setOnClickListener {
             updateStep(0)
@@ -525,31 +542,33 @@ class RegistroActivity : AppCompatActivity() {
     private fun selectIdentityTab(mode: String) {
         // Prevenir cambios innecesarios
         if (identityMode == mode) return
-        
+
+        // Limpiar datos del modo anterior al cambiar de tab
+        if (identityMode == "DNI") {
+            etDni.setText("")
+            isDniVerified = false
+            cardDniVerified.visibility = View.GONE
+            ivDniCheckIcon.visibility = View.GONE
+        } else if (identityMode == "RUC") {
+            etRuc.setText("")
+            isRucVerified = false
+            cardRucVerified.visibility = View.GONE
+        }
+
         identityMode = mode
         val brandColor = ContextCompat.getColor(this, R.color.brand_color)
 
         if (mode == "DNI") {
-            // Aplicar estilos de tabs
             applyTabStyle(btnTabDni, selected = true, brandColor)
             applyTabStyle(btnTabRuc, selected = false, brandColor)
-            
-            // Mostrar/ocultar layouts
             layoutDniForm.visibility = View.VISIBLE
             layoutRucForm.visibility = View.GONE
-            cardRucVerified.visibility = View.GONE
-            
             tvStep1Subtitle.text = getString(R.string.register_step2_subtitle)
         } else {
-            // RUC seleccionado
             applyTabStyle(btnTabRuc, selected = true, brandColor)
             applyTabStyle(btnTabDni, selected = false, brandColor)
-            
-            // Mostrar/ocultar layouts
             layoutRucForm.visibility = View.VISIBLE
             layoutDniForm.visibility = View.GONE
-            cardDniVerified.visibility = View.GONE
-            
             tvStep1Subtitle.text = "Valida tu empresa registrada en SUNAT (RUC Activo/Habido)"
         }
     }
@@ -574,65 +593,90 @@ class RegistroActivity : AppCompatActivity() {
 
     private fun consultReniec() {
         val dni = etDni.text?.toString()?.trim() ?: ""
-        val verifier = etDniVerifier.text?.toString()?.trim() ?: ""
 
-        // Validación básica
         if (dni.length != 8) {
             showToast("Ingresa un DNI de 8 dígitos")
             return
         }
-        
-        if (verifier.isEmpty()) {
-            showToast("Ingresa el código de verificación")
-            return
-        }
 
-        // SIMULACIÓN MOCK - Sin validación real
         pbReniec.visibility = View.VISIBLE
         btnConsultReniec.isEnabled = false
+        cardDniVerified.visibility = View.GONE
+        tvDniAttempts.text = "Consultando RENIEC..."
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            pbReniec.visibility = View.GONE
-            btnConsultReniec.isEnabled = true
-            isDniVerified = true
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = URL("https://apis.aqpfact.pe/api/dni/$dni")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Authorization", "Bearer 8204|89676i7wDZfoYBDJ70rZAQOLx9YgbDObuz0ui3Rw")
+                conn.setRequestProperty("Accept", "application/json")
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
 
-            // Simulación: generar nombre mock basado en DNI
-            tvReniecFullName.text = sampleOfficialName(dni)
-            tvReniecDniDetail.text = "DNI: $dni-$verifier · Ayacucho, Huamanga"
-            cardDniVerified.visibility = View.VISIBLE
-            tvDniAttempts.text = "Verificación confirmada"
+                val responseCode = conn.responseCode
+                val responseBody = if (responseCode == 200) {
+                    BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+                } else {
+                    BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream)).use { it.readText() }
+                }
+                conn.disconnect()
 
-            Snackbar.make(
-                findViewById(R.id.registerRoot),
-                "✓ Identidad verificada correctamente",
-                Snackbar.LENGTH_LONG
-            ).show()
-        }, 1500)
-    }
+                withContext(Dispatchers.Main) {
+                    pbReniec.visibility = View.GONE
+                    btnConsultReniec.isEnabled = true
 
-    private fun sampleOfficialName(dni: String): String {
-        val names = arrayOf(
-            "JUAN CARLOS PÉREZ QUISPE",
-            "MARÍA ELENA QUISPE HUAMÁN",
-            "JOSÉ LUIS GUTIÉRREZ FLORES",
-            "ROSA MARÍA CONDORI AYALA",
-            "PEDRO ANTONIO SULCA VARGAS"
-        )
-        return names[dni.toInt() % names.size]
+                    if (responseCode == 200) {
+                        val json = JSONObject(responseBody)
+                        val success = json.optBoolean("success", false)
+                        if (success) {
+                            val data = json.getJSONObject("data")
+                            val nombreCompleto = data.optString("nombre_completo",
+                                data.optString("name", "Sin nombre"))
+                            val departamento = data.optString("departamento", "")
+                            val provincia = data.optString("provincia", "")
+                            val ubicacion = when {
+                                departamento.isNotEmpty() && provincia.isNotEmpty() -> "$departamento, $provincia"
+                                departamento.isNotEmpty() -> departamento
+                                else -> "Perú"
+                            }
+
+                            isDniVerified = true
+                            tvReniecFullName.text = nombreCompleto
+                            tvReniecDniDetail.text = "DNI: $dni · $ubicacion"
+                            cardDniVerified.visibility = View.VISIBLE
+                            tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
+
+                            Snackbar.make(
+                                findViewById(R.id.registerRoot),
+                                "✓ Identidad verificada: $nombreCompleto",
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                        } else {
+                            val msg = json.optString("message", "DNI no encontrado en RENIEC")
+                            tvDniAttempts.text = "No se pudo verificar el DNI"
+                            showToast("Error: $msg")
+                        }
+                    } else {
+                        tvDniAttempts.text = "Error al consultar RENIEC"
+                        showToast("Error $responseCode al consultar RENIEC. Intenta de nuevo.")
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    pbReniec.visibility = View.GONE
+                    btnConsultReniec.isEnabled = true
+                    tvDniAttempts.text = "Sin conexión a internet"
+                    showToast("Error de conexión: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun resetDniVerifiedUi() {
         isDniVerified = false
         cardDniVerified.visibility = View.GONE
-        tvDniAttempts.text = "Intentos disponibles: 2 de 2"
-        
-        // También resetear el campo código verificador si se edita el DNI
-        if (etDni.text.toString().length != 8) {
-            tvDniVerifierLabel.visibility = View.GONE
-            etDniVerifier.visibility = View.GONE
-            tvDniVerifierHint.visibility = View.GONE
-            etDniVerifier.setText("")
-        }
+        tvDniAttempts.text = "Ingresa tu DNI para verificar"
     }
 
     private fun consultSunat() {
@@ -644,22 +688,73 @@ class RegistroActivity : AppCompatActivity() {
 
         pbSunat.visibility = View.VISIBLE
         btnConsultSunat.isEnabled = false
+        cardRucVerified.visibility = View.GONE
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            pbSunat.visibility = View.GONE
-            btnConsultSunat.isEnabled = true
-            isRucVerified = true
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val url = URL("https://apis.aqpfact.pe/api/ruc/$ruc")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Authorization", "Bearer 8204|89676i7wDZfoYBDJ70rZAQOLx9YgbDObuz0ui3Rw")
+                conn.setRequestProperty("Accept", "application/json")
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
 
-            tvSunatRazonSocial.text = "CONSTRUCTORA & MULTISERVICIOS AYACUCHO S.A.C."
-            tvSunatCondition.text = "Condición: HABIDO | Estado: ACTIVO"
-            cardRucVerified.visibility = View.VISIBLE
+                val responseCode = conn.responseCode
+                val responseBody = if (responseCode == 200) {
+                    BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+                } else {
+                    BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream)).use { it.readText() }
+                }
+                conn.disconnect()
 
-            Snackbar.make(
-                findViewById(R.id.registerRoot),
-                "✓ RUC validado en SUNAT como ACTIVO y HABIDO",
-                Snackbar.LENGTH_SHORT
-            ).show()
-        }, 700)
+                withContext(Dispatchers.Main) {
+                    pbSunat.visibility = View.GONE
+                    btnConsultSunat.isEnabled = true
+
+                    if (responseCode == 200) {
+                        val json = JSONObject(responseBody)
+                        val success = json.optBoolean("success", false)
+                        if (success) {
+                            val data = json.getJSONObject("data")
+                            val razonSocial = data.optString("nombre_o_razon_social",
+                                data.optString("name", "Razón social no disponible"))
+                            val estado = data.optString("estado", "").uppercase()
+                            val condicion = data.optString("condicion", "").uppercase()
+
+                            if (estado == "ACTIVO" && condicion == "HABIDO") {
+                                isRucVerified = true
+                                tvSunatRazonSocial.text = razonSocial
+                                tvSunatCondition.text = "Condición: $condicion  |  Estado: $estado"
+                                cardRucVerified.visibility = View.VISIBLE
+
+                                Snackbar.make(
+                                    findViewById(R.id.registerRoot),
+                                    "✓ RUC validado: ACTIVO y HABIDO en SUNAT",
+                                    Snackbar.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                showToast(
+                                    "RUC no válido: Estado=$estado, Condición=$condicion. " +
+                                    "Solo se aceptan empresas ACTIVAS y HABIDAS."
+                                )
+                            }
+                        } else {
+                            val msg = json.optString("message", "RUC no encontrado en SUNAT")
+                            showToast("Error: $msg")
+                        }
+                    } else {
+                        showToast("Error $responseCode al consultar SUNAT. Intenta de nuevo.")
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    pbSunat.visibility = View.GONE
+                    btnConsultSunat.isEnabled = true
+                    showToast("Error de conexión: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun resetRucVerifiedUi() {

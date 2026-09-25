@@ -863,7 +863,7 @@
                                 android:textSize="12sp" />
                         </LinearLayout>
 
-                        <!-- Intentos disponibles -->
+                        <!-- Estado de la consulta -->
                         <TextView
                             android:id="@+id/tvDniAttempts"
                             android:layout_width="match_parent"
@@ -871,7 +871,7 @@
                             android:layout_marginTop="12dp"
                             android:fontFamily="sans-serif"
                             android:gravity="center"
-                            android:text="Intentos disponibles: 2 de 2"
+                            android:text="Ingresa tu DNI para verificar"
                             android:textColor="#94A3B8"
                             android:textSize="12sp" />
                     </LinearLayout>
