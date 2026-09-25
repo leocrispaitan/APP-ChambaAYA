@@ -92,8 +92,5 @@
         </aapt:attr>
     </path>
 
-    <!-- Seamless organic curved white mask at the bottom -->
-    <path
-        android:pathData="M0,165 C60,185 130,208 206,204 C282,200 345,188 412,208 L412,230 L0,230 Z"
-        android:fillColor="#FFFFFF"/>
+
 </vector>
