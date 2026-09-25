@@ -138,6 +138,30 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.selectedItemId = tabId
     }
 
+    /** Oculta el bottom nav con animación suave (para pantallas de ajustes, etc.). */
+    fun hideBottomNav() {
+        if (bottomNavigation.visibility == View.GONE) return
+        bottomNavigation.animate()
+            .translationY(bottomNavigation.height.toFloat())
+            .alpha(0f)
+            .setDuration(220)
+            .withEndAction { bottomNavigation.visibility = View.GONE }
+            .start()
+    }
+
+    /** Restaura el bottom nav con animación suave. */
+    fun showBottomNav() {
+        if (bottomNavigation.visibility == View.VISIBLE) return
+        bottomNavigation.visibility = View.VISIBLE
+        bottomNavigation.translationY = bottomNavigation.height.toFloat()
+        bottomNavigation.alpha = 0f
+        bottomNavigation.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(240)
+            .start()
+    }
+
     private fun switchToTab(tabId: Int) {
         val tag = tabTag(tabId)
         val fragment = supportFragmentManager.findFragmentByTag(tag) ?: createFragmentForTab(tabId)

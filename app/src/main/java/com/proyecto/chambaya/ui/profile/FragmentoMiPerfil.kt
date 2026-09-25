@@ -39,6 +39,8 @@ class FragmentoMiPerfil : Fragment() {
             requireActivity(),
             ContextCompat.getColor(requireContext(), R.color.profile_header_dark)
         )
+        // Ensure bottom nav is visible when coming back from Settings
+        (activity as? MainActivity)?.showBottomNav()
     }
 
     private fun setupTopBar(root: View) {
@@ -53,7 +55,21 @@ class FragmentoMiPerfil : Fragment() {
         }
 
         root.findViewById<View>(R.id.btnSettings)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Ajustes de perfil", Toast.LENGTH_SHORT).show()
+            // Navegar al fragmento de ajustes (sin bottom nav)
+            val settingsFragment = FragmentoAjustesPerfil()
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.dialog_slide_up,   // enter
+                    android.R.anim.fade_out,  // exit
+                    android.R.anim.fade_in,   // popEnter
+                    R.anim.dialog_slide_down  // popExit
+                )
+                .replace(requireView().parent?.parent.let {
+                    // Usar el contenedor de MainActivity
+                    com.proyecto.chambaya.R.id.fragmentContainer
+                }, settingsFragment, "SETTINGS")
+                .addToBackStack("SETTINGS")
+                .commit()
         }
 
         root.findViewById<View>(R.id.btnPrivacy)?.setOnClickListener {

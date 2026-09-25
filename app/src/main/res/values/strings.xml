@@ -241,4 +241,48 @@
     <string name="profile_reviews_count">(32 reseñas)</string>
     <string name="profile_review_quote">“Puntual y responsable.”</string>
     <string name="profile_review_client">Cliente • 15 abr. 2025</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_user_email">alishon35@gmail.com</string>
+    <string name="settings_edit_btn">Editar</string>
+
+    <!-- Settings: Account -->
+    <string name="settings_section_account">Cuenta</string>
+    <string name="settings_row_account_info">Información de la Cuenta</string>
+    <string name="settings_row_account_info_sub">Datos personales, email y teléfono</string>
+    <string name="settings_row_my_orders">Mis Pedidos y Trabajos</string>
+    <string name="settings_row_my_orders_sub">Historial de solicitudes y contratos</string>
+    <string name="settings_row_address">Gestión de Direcciones</string>
+    <string name="settings_row_address_sub">Ubicaciones guardadas y de trabajo</string>
+    <string name="settings_row_password">Seguridad y Contraseñas</string>
+    <string name="settings_row_password_sub">PIN, contraseña y autenticación</string>
+
+    <!-- Settings: App Preferences -->
+    <string name="settings_section_app">Ajustes de la Aplicación</string>
+    <string name="settings_row_notifications">Notificaciones Push</string>
+    <string name="settings_row_notifications_sub">Alertas de chambas y mensajes</string>
+    <string name="settings_row_language">Idioma</string>
+    <string name="settings_row_language_val">Español (Perú)</string>
+    <string name="settings_row_appearance">Apariencia / Tema</string>
+    <string name="settings_row_appearance_val">Modo Claro</string>
+    <string name="settings_row_privacy">Privacidad y Permisos</string>
+    <string name="settings_row_privacy_sub">Control de cámara, ubicación y datos</string>
+
+    <!-- Settings: Support & Legal -->
+    <string name="settings_section_support">Soporte y Legal</string>
+    <string name="settings_row_help">Centro de Ayuda y FAQ</string>
+    <string name="settings_row_help_sub">Preguntas frecuentes y soporte</string>
+    <string name="settings_row_terms">Términos y Condiciones</string>
+    <string name="settings_row_terms_sub">Políticas de uso y privacidad</string>
+    <string name="settings_row_logout">Cerrar sesión</string>
+    <string name="settings_row_logout_sub">Finalizar sesión en este dispositivo</string>
+    <string name="settings_app_version">ChambAYA v1.0.4 • Hecho con amor en Perú</string>
+
+    <!-- Logout Dialog -->
+    <string name="logout_dialog_title">Cerrar sesión</string>
+    <string name="logout_dialog_question">¿Estás seguro de cerrar sesión?</string>
+    <string name="logout_dialog_subtitle">Tendrás que volver a ingresar tus credenciales para acceder a tus servicios.</string>
+    <string name="logout_dialog_cancel">Cancelar</string>
+    <string name="logout_dialog_confirm">Sí, salir</string>
 </resources>
