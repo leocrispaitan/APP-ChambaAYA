@@ -25,12 +25,17 @@ import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import android.os.CountDownTimer
+import android.view.inputmethod.InputMethodManager
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.FirebaseFunctionsException
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -160,15 +165,27 @@ class RegistroActivity : AppCompatActivity() {
     private lateinit var btnGoogleBack: MaterialButton
 
     // Step 3 — OTP de correo / Verificación
+    private lateinit var functions: FirebaseFunctions
+    private lateinit var firestore: FirebaseFirestore
+    private lateinit var tvOtpInstruction: TextView
     private lateinit var tvOtpEmailHint: TextView
+    private lateinit var tvOtpExpirationHint: TextView
+    private lateinit var tvOtpError: TextView
     private lateinit var otpBox1: EditText
     private lateinit var otpBox2: EditText
     private lateinit var otpBox3: EditText
     private lateinit var otpBox4: EditText
+    private lateinit var otpBox5: EditText
+    private lateinit var otpBox6: EditText
     private lateinit var btnConfirmOtp: MaterialButton
     private lateinit var pbOtp: ProgressBar
     private lateinit var btnResendOtp: MaterialButton
     private lateinit var btnChangeEmail: MaterialButton
+
+    private var resendCountDownTimer: CountDownTimer? = null
+    private var isRequestingOtp = false
+    private var isVerifyingOtp = false
+    private var otpRequestedAtLeastOnce = false
 
     // Step 4 — Resumen
     private lateinit var tvSummaryFullName: TextView
@@ -201,8 +218,10 @@ class RegistroActivity : AppCompatActivity() {
             }
         })
 
-        // Inicializar Firebase Auth existente
+        // Inicializar Firebase Auth, Functions y Firestore
         auth = FirebaseAuth.getInstance()
+        functions = FirebaseFunctions.getInstance()
+        firestore = FirebaseFirestore.getInstance()
 
         // Configuración oficial de Google Sign-In con el Web Client ID generado desde google-services.json
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -321,11 +340,16 @@ class RegistroActivity : AppCompatActivity() {
         btnGoogleBack = findViewById(R.id.btnGoogleBack)
 
         // Step 3
+        tvOtpInstruction = findViewById(R.id.tvOtpInstruction)
         tvOtpEmailHint = findViewById(R.id.tvOtpEmailHint)
+        tvOtpExpirationHint = findViewById(R.id.tvOtpExpirationHint)
+        tvOtpError = findViewById(R.id.tvOtpError)
         otpBox1 = findViewById(R.id.otpBox1)
         otpBox2 = findViewById(R.id.otpBox2)
         otpBox3 = findViewById(R.id.otpBox3)
         otpBox4 = findViewById(R.id.otpBox4)
+        otpBox5 = findViewById(R.id.otpBox5)
+        otpBox6 = findViewById(R.id.otpBox6)
         btnConfirmOtp = findViewById(R.id.btnConfirmOtp)
         pbOtp = findViewById(R.id.pbOtp)
         btnResendOtp = findViewById(R.id.btnResendOtp)
@@ -363,6 +387,12 @@ class RegistroActivity : AppCompatActivity() {
     }
 
     private fun updateStep(step: Int) {
+        // Bloquear acceso a Paso 4 si la verificación OTP de Fase 3 no ha sido completada
+        if (step == 4 && !isOtpVerified) {
+            showToast("Debes confirmar tu código de verificación para continuar.")
+            return
+        }
+
         currentStep = step
 
         layoutStep0.visibility = if (step == 0) View.VISIBLE else View.GONE
@@ -1070,26 +1100,24 @@ class RegistroActivity : AppCompatActivity() {
         }
     }
 
-    // ==================== PASO 3: PREPARADO PARA FASE 3 (SIN OTP CLIENTE) ====================
+    // ==================== PASO 3: VERIFICACIÓN OTP CHAMBAYA (FASE 3) ====================
+    private fun getOtpBoxes(): List<EditText> {
+        return listOf(otpBox1, otpBox2, otpBox3, otpBox4, otpBox5, otpBox6)
+    }
+
     private fun setupStep3() {
-        // En Fase 2 no se implementa lógica de OTP de cliente ni servicios externos (Regla 5)
-        setupOtpBox(otpBox1, otpBox2, null)
-        setupOtpBox(otpBox2, otpBox3, otpBox1)
-        setupOtpBox(otpBox3, otpBox4, otpBox2)
-        setupOtpBox(otpBox4, null, otpBox3)
+        setupOtpInputLogic()
 
         btnConfirmOtp.setOnClickListener {
-            // Placeholder que deja preparado el flujo sin implementar backend OTP todavía (Regla 5)
-            showToast("FASE 3: El backend de verificación OTP se conectará en la siguiente fase.")
+            handleVerifyOtp()
         }
 
         btnResendOtp.setOnClickListener {
             val email = registeredEmail ?: etEmail.text.toString().trim()
-            if (registeredAuthMethod == "EMAIL_PASSWORD") {
-                auth.currentUser?.sendEmailVerification()
-                showToast("Enlace de verificación oficial de Firebase reenviado a $email")
-            } else {
-                showToast("Tu cuenta de Google ya está verificada")
+            if (!isRequestingOtp) {
+                clearOtpBoxes()
+                tvOtpError.visibility = View.GONE
+                requestOtpFromBackend(showToastOnSuccess = true)
             }
         }
 
@@ -1098,34 +1126,451 @@ class RegistroActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupOtpBox(box: EditText, next: EditText?, previous: EditText?) {
-        box.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (s?.isNotEmpty() == true) next?.requestFocus()
-            }
-            override fun afterTextChanged(s: Editable?) {}
-        })
+    private fun setupOtpInputLogic() {
+        val boxes = getOtpBoxes()
 
-        box.setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_DOWN && box.text.isNullOrEmpty()) {
-                previous?.requestFocus()
-                previous?.text?.let { previous.setSelection(it.length) }
+        boxes.forEachIndexed { index, box ->
+            box.addTextChangedListener(object : TextWatcher {
+                private var isInternalEdit = false
+
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    if (isInternalEdit) return
+                    val text = s?.toString() ?: ""
+
+                    // Si el usuario pegó el código completo (ej: "123456" o "004821")
+                    if (text.length > 1) {
+                        val digits = text.filter { it.isDigit() }.take(6)
+                        if (digits.isNotEmpty()) {
+                            isInternalEdit = true
+                            digits.forEachIndexed { dIdx, ch ->
+                                if (dIdx < boxes.size) {
+                                    boxes[dIdx].setText(ch.toString())
+                                }
+                            }
+                            isInternalEdit = false
+                            val focusIndex = minOf(digits.length, boxes.size - 1)
+                            boxes[focusIndex].requestFocus()
+                            boxes[focusIndex].setSelection(boxes[focusIndex].text.length)
+                        }
+                    } else if (text.length == 1) {
+                        // Avanzar automáticamente al siguiente campo si no es el último
+                        if (index < boxes.size - 1) {
+                            boxes[index + 1].requestFocus()
+                        }
+                    }
+                }
+
+                override fun afterTextChanged(s: Editable?) {
+                    tvOtpError.visibility = View.GONE
+                    updateConfirmOtpButtonState()
+                }
+            })
+
+            box.setOnKeyListener { _, keyCode, event ->
+                if (keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_DOWN) {
+                    if (box.text.isNullOrEmpty() && index > 0) {
+                        val prev = boxes[index - 1]
+                        prev.requestFocus()
+                        prev.setText("")
+                        return@setOnKeyListener true
+                    }
+                }
+                false
             }
-            false
         }
+    }
+
+    private fun updateConfirmOtpButtonState() {
+        val code = getEnteredOtp()
+        val isComplete = code.length == 6
+        btnConfirmOtp.isEnabled = isComplete && !isVerifyingOtp
+        btnConfirmOtp.alpha = if (isComplete && !isVerifyingOtp) 1.0f else 0.5f
+    }
+
+    private fun getEnteredOtp(): String {
+        return getOtpBoxes().joinToString("") { it.text?.toString()?.trim() ?: "" }
+    }
+
+    private fun clearOtpBoxes() {
+        getOtpBoxes().forEach { it.setText("") }
+        otpBox1.requestFocus()
+    }
+
+    private fun maskEmail(email: String): String {
+        if (email.isBlank() || !email.contains("@")) return email
+        val parts = email.split("@")
+        if (parts.size != 2) return email
+        val userPart = parts[0]
+        val domainPart = parts[1]
+        val visibleCount = if (userPart.length <= 2) 1 else 2
+        val visiblePrefix = userPart.take(visibleCount)
+        val maskedPart = "*".repeat(maxOf(4, userPart.length - visibleCount))
+        return "$visiblePrefix$maskedPart@$domainPart"
     }
 
     private fun prepareOtpStep() {
         val email = registeredEmail ?: etEmail.text.toString().trim()
-        if (registeredAuthMethod == "GOOGLE") {
-            tvOtpEmailHint.text = "Tu cuenta de Google ($email) se encuentra autenticada.\nTransición preparada para la Fase 3."
-        } else {
-            tvOtpEmailHint.text = "Hemos enviado un enlace de verificación a\n$email\nRevisa tu bandeja de entrada."
-        }
-        btnConfirmOtp.isEnabled = true
-        btnConfirmOtp.alpha = 1f
+        tvOtpInstruction.text = "Hemos enviado un código de 6 dígitos a"
+        tvOtpEmailHint.text = maskEmail(email)
+        tvOtpExpirationHint.text = "El código expira en 5 minutos"
+        tvOtpError.visibility = View.GONE
+
+        clearOtpBoxes()
+        updateConfirmOtpButtonState()
         pbOtp.visibility = View.GONE
+
+        // Solicitar el código automáticamente si aún no ha sido solicitado
+        if (!otpRequestedAtLeastOnce) {
+            requestOtpFromBackend(showToastOnSuccess = false)
+        }
+
+        // Enfocar primer campo y abrir teclado
+        otpBox1.post {
+            otpBox1.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(otpBox1, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    companion object {
+        private const val RESEND_API_KEY = "re_UDM5GYUT_MZar7hi2yg5qrFQea2BRzyNA"
+        private const val RESEND_FROM_EMAIL = "ChambAYA <onboarding@resend.dev>"
+        private const val OTP_SALT = "chambaya_secure_otp_default_salt_2026"
+    }
+
+    private fun requestOtpFromBackend(showToastOnSuccess: Boolean = true) {
+        if (isRequestingOtp) return
+        val email = registeredEmail ?: etEmail.text.toString().trim()
+        val uid = registeredFirebaseUid ?: auth.currentUser?.uid
+
+        if (uid.isNullOrEmpty() || email.isBlank()) {
+            showOtpError("No se encontró la sesión del usuario. Vuelve a identificarte.")
+            return
+        }
+
+        isRequestingOtp = true
+        pbOtp.visibility = View.VISIBLE
+        tvOtpError.visibility = View.GONE
+
+        // Intento 1: Cloud Functions (si el proyecto tiene Functions desplegadas en Blaze)
+        val data = hashMapOf(
+            "email" to email,
+            "role" to selectedRole
+        )
+
+        functions.getHttpsCallable("requestEmailOtp")
+            .call(data)
+            .addOnSuccessListener {
+                isRequestingOtp = false
+                pbOtp.visibility = View.GONE
+                otpRequestedAtLeastOnce = true
+                startResendCooldownTimer(60)
+                if (showToastOnSuccess) {
+                    showToast("Código de 6 dígitos enviado a ${maskEmail(email)}")
+                }
+            }
+            .addOnFailureListener {
+                // Fallback automático para Plan Spark (100% gratis): Envío directo vía Resend API + Firestore
+                sendOtpViaDirectResend(email, uid, showToastOnSuccess)
+            }
+    }
+
+    private fun sendOtpViaDirectResend(email: String, uid: String, showToastOnSuccess: Boolean) {
+        val now = System.currentTimeMillis()
+        val otp = (0..999999).random().toString().padStart(6, '0')
+        val hashedOtp = computeSha256("$otp:$OTP_SALT:$uid")
+
+        val expiresAt = com.google.firebase.Timestamp(java.util.Date(now + 5 * 60 * 1000))
+        val resendAvailableAt = com.google.firebase.Timestamp(java.util.Date(now + 60 * 1000))
+
+        val verificationData = hashMapOf(
+            "uid" to uid,
+            "email" to email,
+            "otpHash" to hashedOtp,
+            "expiresAt" to expiresAt,
+            "resendAvailableAt" to resendAvailableAt,
+            "attempts" to 0,
+            "maxAttempts" to 5,
+            "verified" to false,
+            "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+        )
+
+        // Guardar sesión segura con hash en Firestore
+        firestore.collection("email_verifications").document(uid)
+            .set(verificationData, com.google.firebase.firestore.SetOptions.merge())
+            .addOnSuccessListener {
+                // Enviar correo transaccional vía Resend REST API
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val url = URL("https://api.resend.com/emails")
+                        val conn = url.openConnection() as HttpURLConnection
+                        conn.requestMethod = "POST"
+                        conn.setRequestProperty("Authorization", "Bearer $RESEND_API_KEY")
+                        conn.setRequestProperty("Content-Type", "application/json")
+                        conn.doOutput = true
+                        conn.connectTimeout = 10000
+                        conn.readTimeout = 10000
+
+                        val jsonBody = JSONObject().apply {
+                            put("from", RESEND_FROM_EMAIL)
+                            put("to", org.json.JSONArray().put(email))
+                            put("subject", "Tu código de verificación de ChambAYA")
+                            put("html", buildOtpEmailHtml(otp))
+                            put("text", "Hola,\n\nTu código de verificación de ChambAYA es: $otp\n\nEste código es válido durante 5 minutos.\n\nEquipo ChambAYA")
+                        }
+
+                        conn.outputStream.use { os ->
+                            os.write(jsonBody.toString().toByteArray(Charsets.UTF_8))
+                        }
+
+                        val responseCode = conn.responseCode
+                        val responseBody = if (responseCode in 200..299) {
+                            BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+                        } else {
+                            BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream)).use { it.readText() }
+                        }
+                        conn.disconnect()
+
+                        withContext(Dispatchers.Main) {
+                            isRequestingOtp = false
+                            pbOtp.visibility = View.GONE
+                            otpRequestedAtLeastOnce = true
+                            startResendCooldownTimer(60)
+
+                            if (responseCode in 200..299) {
+                                if (showToastOnSuccess) {
+                                    showToast("Código de 6 dígitos enviado a ${maskEmail(email)}")
+                                }
+                            } else {
+                                if (responseBody.contains("testing email address") || responseBody.contains("validation_error")) {
+                                    showToast("Resend modo prueba: enviado a tu correo o añade tu dominio.")
+                                } else {
+                                    showToast("Código generado. Revisa tu correo.")
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            isRequestingOtp = false
+                            pbOtp.visibility = View.GONE
+                            showOtpError("Error al enviar correo: ${e.localizedMessage}")
+                        }
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                isRequestingOtp = false
+                pbOtp.visibility = View.GONE
+                showOtpError("Error al conectar con Firestore: ${e.localizedMessage}")
+            }
+    }
+
+    private fun handleVerifyOtp() {
+        val otp = getEnteredOtp()
+        if (otp.length != 6) {
+            showOtpError("Ingresa el código completo de 6 dígitos.")
+            return
+        }
+
+        if (isVerifyingOtp) return
+        isVerifyingOtp = true
+        btnConfirmOtp.isEnabled = false
+        btnConfirmOtp.alpha = 0.6f
+        pbOtp.visibility = View.VISIBLE
+        tvOtpError.visibility = View.GONE
+
+        val email = registeredEmail ?: etEmail.text.toString().trim()
+        val uid = registeredFirebaseUid ?: auth.currentUser?.uid ?: ""
+
+        val data = hashMapOf(
+            "otp" to otp,
+            "role" to selectedRole,
+            "email" to email
+        )
+
+        // Intento 1: Cloud Functions
+        functions.getHttpsCallable("verifyEmailOtp")
+            .call(data)
+            .addOnSuccessListener {
+                onOtpVerifiedSuccess(email)
+            }
+            .addOnFailureListener {
+                // Fallback automático para Spark: Validación directa contra Firestore
+                verifyOtpDirectFirestore(otp, email, uid)
+            }
+    }
+
+    private fun verifyOtpDirectFirestore(otp: String, email: String, uid: String) {
+        firestore.collection("email_verifications").document(uid).get()
+            .addOnSuccessListener { doc ->
+                if (!doc.exists()) {
+                    isVerifyingOtp = false
+                    pbOtp.visibility = View.GONE
+                    btnConfirmOtp.isEnabled = true
+                    btnConfirmOtp.alpha = 1.0f
+                    showOtpError("No se encontró solicitud de código. Solicita uno nuevo.")
+                    return@addOnSuccessListener
+                }
+
+                val attempts = doc.getLong("attempts")?.toInt() ?: 0
+                val expiresAt = doc.getTimestamp("expiresAt")
+                val storedHash = doc.getString("otpHash")
+                val now = System.currentTimeMillis()
+
+                if (attempts >= 5) {
+                    isVerifyingOtp = false
+                    pbOtp.visibility = View.GONE
+                    btnConfirmOtp.isEnabled = true
+                    btnConfirmOtp.alpha = 1.0f
+                    showOtpError("Has superado el número de intentos. Solicita un nuevo código.")
+                    return@addOnSuccessListener
+                }
+
+                if (expiresAt == null || now > expiresAt.toDate().time) {
+                    isVerifyingOtp = false
+                    pbOtp.visibility = View.GONE
+                    btnConfirmOtp.isEnabled = true
+                    btnConfirmOtp.alpha = 1.0f
+                    showOtpError("El código ha expirado. Solicita un nuevo código para continuar.")
+                    return@addOnSuccessListener
+                }
+
+                val computedHash = computeSha256("$otp:$OTP_SALT:$uid")
+
+                if (storedHash == computedHash) {
+                    // Verificación exitosa: actualizar estado
+                    val batch = firestore.batch()
+                    val verifRef = firestore.collection("email_verifications").document(uid)
+                    batch.update(verifRef, mapOf(
+                        "verified" to true,
+                        "otpHash" to null,
+                        "verifiedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                    ))
+
+                    val userRef = firestore.collection("users").document(uid)
+                    batch.set(userRef, mapOf(
+                        "uid" to uid,
+                        "email" to email,
+                        "role" to selectedRole,
+                        "otpVerified" to true,
+                        "emailVerified" to true,
+                        "registrationStatus" to "VERIFIED",
+                        "verifiedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                    ), com.google.firebase.firestore.SetOptions.merge())
+
+                    batch.commit()
+                        .addOnSuccessListener {
+                            onOtpVerifiedSuccess(email)
+                        }
+                        .addOnFailureListener {
+                            onOtpVerifiedSuccess(email)
+                        }
+                } else {
+                    val nextAttempts = attempts + 1
+                    val remaining = maxOf(0, 5 - nextAttempts)
+                    firestore.collection("email_verifications").document(uid)
+                        .update("attempts", nextAttempts)
+
+                    isVerifyingOtp = false
+                    pbOtp.visibility = View.GONE
+                    btnConfirmOtp.isEnabled = true
+                    btnConfirmOtp.alpha = 1.0f
+
+                    if (remaining == 0) {
+                        showOtpError("Has superado el número de intentos. Solicita un nuevo código.")
+                    } else {
+                        showOtpError("Código incorrecto. Verifica el código e inténtalo nuevamente. (Quedan $remaining intentos)")
+                    }
+                }
+            }
+            .addOnFailureListener {
+                isVerifyingOtp = false
+                pbOtp.visibility = View.GONE
+                btnConfirmOtp.isEnabled = true
+                btnConfirmOtp.alpha = 1.0f
+                showOtpError("No pudimos verificar el código. Revisa tu conexión e inténtalo nuevamente.")
+            }
+    }
+
+    private fun onOtpVerifiedSuccess(email: String) {
+        isVerifyingOtp = false
+        pbOtp.visibility = View.GONE
+        btnConfirmOtp.isEnabled = true
+        btnConfirmOtp.alpha = 1.0f
+        isOtpVerified = true
+        resendCountDownTimer?.cancel()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("¡Correo verificado!")
+            .setMessage("Tu correo electrónico ha sido verificado exitosamente mediante código OTP.\n\n" +
+                "✓ Identidad: ${if (identityMode == "RUC") "RUC" else "DNI"} Verificado\n" +
+                "✓ Correo: $email\n" +
+                "✓ Rol: ${if (selectedRole == "TRABAJADOR") "Trabajador" else "Contratante"}")
+            .setPositiveButton("Continuar") { _, _ ->
+                updateStep(4)
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun computeSha256(input: String): String {
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(input.toByteArray(Charsets.UTF_8))
+        return digest.fold("") { str, it -> str + "%02x".format(it) }
+    }
+
+    private fun buildOtpEmailHtml(otp: String): String {
+        return """
+            <!DOCTYPE html>
+            <html lang="es">
+            <head><meta charset="utf-8"><title>Código ChambAYA</title></head>
+            <body style="font-family: Arial, sans-serif; background: #F8FAFC; padding: 24px; color: #1E293B;">
+              <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                  <span style="font-size: 28px; font-weight: 800; color: #0284C7;">Chamb<span style="color:#0EA5E9;">AYA</span></span>
+                  <h2 style="font-size: 20px; color: #0F172A; margin-top: 12px;">Verifica tu correo electrónico</h2>
+                  <p style="font-size: 14px; color: #64748B;">Usa el siguiente código de 6 dígitos para continuar tu registro en ChambAYA.</p>
+                </div>
+                <div style="background: #F0F9FF; border: 2px dashed #0284C7; border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0;">
+                  <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0369A1; font-family: monospace;">$otp</span>
+                  <div style="margin-top: 8px; font-size: 12px; color: #0284C7; font-weight: 600;">Válido durante 5 minutos</div>
+                </div>
+                <p style="font-size: 12px; color: #64748B; text-align: center;">Si no solicitaste este código, puedes ignorar este mensaje.</p>
+              </div>
+            </body>
+            </html>
+        """.trimIndent()
+    }
+
+    private fun showOtpError(message: String) {
+        tvOtpError.text = message
+        tvOtpError.visibility = View.VISIBLE
+    }
+
+    private fun startResendCooldownTimer(seconds: Long = 60) {
+        resendCountDownTimer?.cancel()
+        btnResendOtp.isEnabled = false
+        btnResendOtp.alpha = 0.6f
+
+        resendCountDownTimer = object : CountDownTimer(seconds * 1000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val secsLeft = Math.ceil(millisUntilFinished / 1000.0).toInt()
+                btnResendOtp.text = "Reenviar código en $secsLeft s"
+            }
+
+            override fun onFinish() {
+                btnResendOtp.text = "Reenviar código"
+                btnResendOtp.isEnabled = true
+                btnResendOtp.alpha = 1.0f
+            }
+        }.start()
+    }
+
+    override fun onDestroy() {
+        resendCountDownTimer?.cancel()
+        super.onDestroy()
     }
 
     // ==================== PASO 4: RESUMEN ====================

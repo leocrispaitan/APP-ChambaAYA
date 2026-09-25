@@ -1,0 +1,22 @@
+{
+  "name": "chambaya-functions",
+  "version": "1.0.0",
+  "description": "Backend Cloud Functions para ChambAYA - Fase 3 Verificación OTP",
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions,firestore",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0",
+    "resend": "^3.2.0",
+    "nodemailer": "^6.9.13"
+  },
+  "private": true
+}
