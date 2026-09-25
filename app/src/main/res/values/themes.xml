@@ -24,8 +24,8 @@
         <item name="itemIconTint">@color/bottom_nav_icon_selector</item>
         <item name="itemTextColor">@color/bottom_nav_color_selector</item>
         <item name="itemIconSize">24dp</item>
-        <item name="itemPaddingTop">6dp</item>
-        <item name="itemPaddingBottom">6dp</item>
+        <item name="itemPaddingTop">10dp</item>
+        <item name="itemPaddingBottom">4dp</item>
         <item name="activeIndicatorLabelPadding">4dp</item>
         <item name="itemRippleColor">@color/bottom_nav_ripple_selector</item>
         <item name="itemTextAppearanceActive">@style/TextAppearance.ChambAYA.BottomNav.Active</item>
@@ -53,12 +53,14 @@
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textSize">12sp</item>
         <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
     </style>
 
     <style name="TextAppearance.ChambAYA.BottomNav.Inactive" parent="TextAppearance.Material3.LabelMedium">
         <item name="android:fontFamily">sans-serif</item>
         <item name="android:textSize">11sp</item>
         <item name="fontFamily">sans-serif</item>
+        <item name="android:includeFontPadding">false</item>
     </style>
 
     <!-- Map Shape Appearances -->
