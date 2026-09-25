@@ -185,8 +185,8 @@
 
     <!-- Profile Screen (Replica) -->
     <string name="profile_title">Perfil</string>
-    <string name="profile_name_mock">Carlos Quispe</string>
-    <string name="profile_handle_mock">@carlos_quispe_ayacucho</string>
+    <string name="profile_name_mock">Maria Sanchez</string>
+    <string name="profile_handle_mock">@maria_sanchez_ayacucho</string>
     <string name="profile_completion_mock">Perfil 90% completo</string>
     <string name="profile_posts_count">28</string>
     <string name="profile_posts_label">Trabajos</string>

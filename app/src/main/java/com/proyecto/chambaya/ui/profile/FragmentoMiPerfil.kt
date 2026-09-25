@@ -71,10 +71,7 @@ class FragmentoMiPerfil : Fragment() {
                 .addToBackStack("SETTINGS")
                 .commit()
         }
-
-        root.findViewById<View>(R.id.btnPrivacy)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Modo privacidad", Toast.LENGTH_SHORT).show()
-        }
+        
     }
 
     private fun setupActionButtons(root: View) {

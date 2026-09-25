@@ -30,41 +30,19 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <!-- Back Button -->
-            <FrameLayout
-                android:id="@+id/btnBack"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_profile_circle_btn"
-                android:clickable="true"
-                android:contentDescription="@string/auth_back"
-                android:focusable="true"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_profile_arrow_back" />
-            </FrameLayout>
-
             <!-- Screen Title "Profile" -->
             <TextView
                 android:id="@+id/tvHeaderTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
                 android:fontFamily="sans-serif-medium"
                 android:text="@string/profile_title"
                 android:textColor="@color/white"
                 android:textSize="22sp"
                 android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="@id/btnBack"
-                app:layout_constraintStart_toEndOf="@id/btnBack"
-                app:layout_constraintTop_toTopOf="@id/btnBack" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <!-- Settings Button -->
             <FrameLayout
@@ -85,28 +63,6 @@
                     android:layout_gravity="center"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_profile_settings" />
-            </FrameLayout>
-
-            <!-- Privacy / Hide Mode Button -->
-            <FrameLayout
-                android:id="@+id/btnPrivacy"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:layout_marginEnd="10dp"
-                android:background="@drawable/bg_profile_circle_btn"
-                android:clickable="true"
-                android:contentDescription="Privacy"
-                android:focusable="true"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/btnSettings"
-                app:layout_constraintTop_toTopOf="parent">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_profile_eye_slash" />
             </FrameLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
