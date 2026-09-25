@@ -184,40 +184,61 @@
     <string name="register_btn_back">Atrás</string>
 
     <!-- Profile Screen (Replica) -->
-    <string name="profile_title">Profile</string>
-    <string name="profile_name_mock">Katty Abrahams</string>
-    <string name="profile_handle_mock">@kattyabrahams_co</string>
-    <string name="profile_completion_mock">67% Complete</string>
-    <string name="profile_posts_count">230</string>
-    <string name="profile_posts_label">Posts</string>
-    <string name="profile_following_count">890</string>
-    <string name="profile_following_label">Following</string>
-    <string name="profile_followers_count">120K</string>
-    <string name="profile_followers_label">Follower</string>
-    <string name="profile_btn_follow">Follow</string>
-    <string name="profile_btn_message">Message</string>
-    <string name="profile_btn_email">Email</string>
-    <string name="profile_tab_perks">Your Perks</string>
-    <string name="profile_tab_achievements">Achievements</string>
+    <string name="profile_title">Perfil</string>
+    <string name="profile_name_mock">Carlos Quispe</string>
+    <string name="profile_handle_mock">@carlos_quispe_ayacucho</string>
+    <string name="profile_completion_mock">Perfil 90% completo</string>
+    <string name="profile_posts_count">28</string>
+    <string name="profile_posts_label">Trabajos</string>
+    <string name="profile_following_count">4 años</string>
+    <string name="profile_following_label">Experiencia</string>
+    <string name="profile_followers_count">4.9 ★</string>
+    <string name="profile_followers_label">Calificación</string>
+    <string name="profile_btn_follow">Editar perfil</string>
+    <string name="profile_btn_message">Ver perfil público</string>
+    <string name="profile_btn_email">Completar perfil</string>
+    <string name="profile_tab_perks">Beneficios</string>
+    <string name="profile_tab_achievements">Logros</string>
     <string name="profile_perk_turbos">Turbos</string>
-    <string name="profile_perk_fast_adds">Fast Adds</string>
-    <string name="profile_perk_spotlights">Spotlights</string>
-    <string name="profile_perk_community">Community</string>
+    <string name="profile_perk_fast_adds">Destacados</string>
+    <string name="profile_perk_spotlights">Top Chambas</string>
+    <string name="profile_perk_community">Comunidad</string>
 
-    <!-- Profile Redesign: Skills & Experience -->
-    <string name="profile_skills_title">Skills</string>
-    <string name="profile_skills_subtitle">Tools and technologies I use</string>
-    <string name="profile_skill_figma">Figma</string>
-    <string name="profile_skill_adobexd">Adobe XD</string>
-    <string name="profile_skill_sketch">Sketch</string>
-    <string name="profile_skill_invision">InVision</string>
+    <!-- Profile Redesign: Complete Profile, Specialty, Experience, Reviews -->
+    <string name="profile_banner_complete_title">Completa tu perfil</string>
+    <string name="profile_banner_complete_sub">Te falta agregar algunos datos para que más personas confíen en ti.</string>
+    <string name="profile_banner_complete_btn">Completar perfil</string>
+    <string name="profile_btn_edit">Editar perfil</string>
+    <string name="profile_btn_view_public">Ver perfil público</string>
 
-    <string name="profile_experience_title">Experience</string>
-    <string name="profile_experience_subtitle">My professional journey</string>
-    <string name="profile_exp_art_director_title">Art Director</string>
-    <string name="profile_exp_art_director_company">Pixelsy LTD</string>
-    <string name="profile_exp_art_director_date">Feb 2019 - Present</string>
-    <string name="profile_exp_designer_title">Designer</string>
-    <string name="profile_exp_designer_company">Fire Media LLC</string>
-    <string name="profile_exp_designer_date">Jul 2018 - Feb 2019</string>
+    <string name="profile_skills_title">Especialidad</string>
+    <string name="profile_skills_subtitle">Oficios y servicios que realizo</string>
+    <string name="profile_skill_figma">Albañilería</string>
+    <string name="profile_skill_adobexd">Pintura</string>
+    <string name="profile_skill_sketch">Jardinería</string>
+    <string name="profile_skill_invision">Ayudante\ngeneral</string>
+    <string name="profile_skill_masonry">Albañilería</string>
+    <string name="profile_skill_painting">Pintura</string>
+    <string name="profile_skill_gardening">Jardinería</string>
+    <string name="profile_skill_helper">Ayudante general</string>
+
+    <string name="profile_district_label">Distrito</string>
+    <string name="profile_district_value">Carmen Alto</string>
+    <string name="profile_experience_label">Experiencia</string>
+    <string name="profile_experience_value">4 años</string>
+
+    <string name="profile_experience_title">Trabajos realizados</string>
+    <string name="profile_experience_subtitle">Mi experiencia laboral</string>
+    <string name="profile_exp_art_director_title">Ayudante de construcción</string>
+    <string name="profile_exp_art_director_company">Carmen Alto • 5 días</string>
+    <string name="profile_exp_art_director_date">12 - 16 abr. 2025</string>
+    <string name="profile_exp_designer_title">Pintura de vivienda</string>
+    <string name="profile_exp_designer_company">Ayacucho Centro • 3 días</string>
+    <string name="profile_exp_designer_date">3 - 5 mar. 2025</string>
+
+    <string name="profile_ratings_title">Calificaciones y comentarios</string>
+    <string name="profile_rating_value">4.9</string>
+    <string name="profile_reviews_count">(32 reseñas)</string>
+    <string name="profile_review_quote">“Puntual y responsable.”</string>
+    <string name="profile_review_client">Cliente • 15 abr. 2025</string>
 </resources>

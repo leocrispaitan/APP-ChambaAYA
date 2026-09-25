@@ -62,50 +62,42 @@ class FragmentoMiPerfil : Fragment() {
     }
 
     private fun setupActionButtons(root: View) {
-        val btnFollow = root.findViewById<AppCompatButton>(R.id.btnFollow)
-        val btnMessage = root.findViewById<AppCompatButton>(R.id.btnMessage)
-        val btnEmail = root.findViewById<AppCompatButton>(R.id.btnEmail)
+        val btnEdit = root.findViewById<View>(R.id.btnFollow)
+        val btnViewPublic = root.findViewById<View>(R.id.btnMessage)
+        val btnComplete = root.findViewById<View>(R.id.btnEmail)
 
-        btnFollow?.setOnClickListener {
-            isFollowing = !isFollowing
-            if (isFollowing) {
-                btnFollow.text = "Following"
-                btnFollow.alpha = 0.88f
-                Toast.makeText(requireContext(), "¡Siguiendo a Katty Abrahams!", Toast.LENGTH_SHORT).show()
-            } else {
-                btnFollow.text = getString(R.string.profile_btn_follow)
-                btnFollow.alpha = 1f
-            }
+        btnEdit?.setOnClickListener {
+            showCardFeedback(it, "Editar perfil de Carlos Quispe")
         }
 
-        btnMessage?.setOnClickListener {
-            Toast.makeText(requireContext(), "Mensaje a Katty Abrahams", Toast.LENGTH_SHORT).show()
+        btnViewPublic?.setOnClickListener {
+            showCardFeedback(it, "Vista previa de tu perfil público")
         }
 
-        btnEmail?.setOnClickListener {
-            Toast.makeText(requireContext(), "Enviar correo a Katty Abrahams", Toast.LENGTH_SHORT).show()
+        btnComplete?.setOnClickListener {
+            showCardFeedback(it, "Completando información restante del perfil...")
         }
     }
 
     private fun setupSkillsAndExperience(root: View) {
         root.findViewById<View>(R.id.skillFigma)?.setOnClickListener {
-            showCardFeedback(it, "Skill: Figma")
+            showCardFeedback(it, "Especialidad: Albañilería")
         }
         root.findViewById<View>(R.id.skillAdobeXd)?.setOnClickListener {
-            showCardFeedback(it, "Skill: Adobe XD")
+            showCardFeedback(it, "Especialidad: Pintura")
         }
         root.findViewById<View>(R.id.skillSketch)?.setOnClickListener {
-            showCardFeedback(it, "Skill: Sketch")
+            showCardFeedback(it, "Especialidad: Jardinería")
         }
         root.findViewById<View>(R.id.skillInVision)?.setOnClickListener {
-            showCardFeedback(it, "Skill: InVision")
+            showCardFeedback(it, "Especialidad: Ayudante general")
         }
 
         root.findViewById<View>(R.id.expItem1)?.setOnClickListener {
-            showCardFeedback(it, "Art Director en Pixelsy LTD")
+            showCardFeedback(it, "Ayudante de construcción • Carmen Alto (5 días)")
         }
         root.findViewById<View>(R.id.expItem2)?.setOnClickListener {
-            showCardFeedback(it, "Designer en Fire Media LLC")
+            showCardFeedback(it, "Pintura de vivienda • Ayacucho Centro (3 días)")
         }
     }
 
