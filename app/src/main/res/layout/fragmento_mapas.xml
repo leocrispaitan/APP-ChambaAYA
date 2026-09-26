@@ -231,7 +231,7 @@
         android:id="@+id/cardBottomSheet"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:cardBackgroundColor="@color/white"
+        app:cardBackgroundColor="#FFFFFF"
         app:cardElevation="16dp"
         app:cardPreventCornerOverlap="false"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.BottomSheetTopRounded"
@@ -244,12 +244,14 @@
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/white"
             android:overScrollMode="never"
             android:scrollbars="none">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@color/white"
                 android:orientation="vertical"
                 android:paddingBottom="24dp">
 
@@ -274,7 +276,7 @@
                     android:fontFamily="sans-serif-bold"
                     android:letterSpacing="-0.02"
                     android:text="@string/map_whats_nearby"
-                    android:textColor="@color/map_text_title"
+                    android:textColor="#0F172A"
                     android:textSize="20sp" />
 
                 <!-- Section Subtitle: "Everything you need, close to home" -->
@@ -287,7 +289,7 @@
                     android:layout_marginEnd="20dp"
                     android:fontFamily="sans-serif"
                     android:text="@string/map_whats_nearby_subtitle"
-                    android:textColor="@color/map_text_sub"
+                    android:textColor="#64748B"
                     android:textSize="13.5sp" />
 
                 <!-- 4 Quick Category Cards in Row -->
@@ -302,13 +304,21 @@
                     android:weightSum="4">
 
                     <!-- Category 1: Schools -->
-                    <LinearLayout
+                    <com.google.android.material.card.MaterialCardView
                         android:id="@+id/catSchools"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_margin="3dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_map_category_chip"
+                        app:cardBackgroundColor="#F8F9FB"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#E8EBF0"
+                        app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:gravity="center_horizontal"
                         android:orientation="vertical"
                         android:paddingStart="4dp"
@@ -330,7 +340,7 @@
                             android:fontFamily="sans-serif-bold"
                             android:maxLines="1"
                             android:text="@string/map_cat_schools"
-                            android:textColor="@color/map_text_title"
+                            android:textColor="#0F172A"
                             android:textSize="12sp" />
 
                         <TextView
@@ -339,7 +349,7 @@
                             android:layout_marginTop="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:text="@string/map_cat_schools_dist"
-                            android:textColor="#374151"
+                            android:textColor="#1E293B"
                             android:textSize="11.5sp" />
 
                         <TextView
@@ -348,18 +358,27 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="sans-serif"
                             android:text="@string/map_cat_schools_count"
-                            android:textColor="@color/map_text_sub"
+                            android:textColor="#64748B"
                             android:textSize="10.5sp" />
                     </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <!-- Category 2: Shopping -->
-                    <LinearLayout
+                    <com.google.android.material.card.MaterialCardView
                         android:id="@+id/catShopping"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_margin="3dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_map_category_chip"
+                        app:cardBackgroundColor="#F8F9FB"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#E8EBF0"
+                        app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:gravity="center_horizontal"
                         android:orientation="vertical"
                         android:paddingStart="4dp"
@@ -381,7 +400,7 @@
                             android:fontFamily="sans-serif-bold"
                             android:maxLines="1"
                             android:text="@string/map_cat_shopping"
-                            android:textColor="@color/map_text_title"
+                            android:textColor="#0F172A"
                             android:textSize="12sp" />
 
                         <TextView
@@ -390,7 +409,7 @@
                             android:layout_marginTop="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:text="@string/map_cat_shopping_dist"
-                            android:textColor="#374151"
+                            android:textColor="#1E293B"
                             android:textSize="11.5sp" />
 
                         <TextView
@@ -399,18 +418,27 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="sans-serif"
                             android:text="@string/map_cat_shopping_count"
-                            android:textColor="@color/map_text_sub"
+                            android:textColor="#64748B"
                             android:textSize="10.5sp" />
                     </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <!-- Category 3: Parks -->
-                    <LinearLayout
+                    <com.google.android.material.card.MaterialCardView
                         android:id="@+id/catParks"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_margin="3dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_map_category_chip"
+                        app:cardBackgroundColor="#F8F9FB"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#E8EBF0"
+                        app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:gravity="center_horizontal"
                         android:orientation="vertical"
                         android:paddingStart="4dp"
@@ -432,7 +460,7 @@
                             android:fontFamily="sans-serif-bold"
                             android:maxLines="1"
                             android:text="@string/map_cat_parks"
-                            android:textColor="@color/map_text_title"
+                            android:textColor="#0F172A"
                             android:textSize="12sp" />
 
                         <TextView
@@ -441,7 +469,7 @@
                             android:layout_marginTop="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:text="@string/map_cat_parks_dist"
-                            android:textColor="#374151"
+                            android:textColor="#1E293B"
                             android:textSize="11.5sp" />
 
                         <TextView
@@ -450,18 +478,27 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="sans-serif"
                             android:text="@string/map_cat_parks_count"
-                            android:textColor="@color/map_text_sub"
+                            android:textColor="#64748B"
                             android:textSize="10.5sp" />
                     </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
                     <!-- Category 4: Restaurants -->
-                    <LinearLayout
+                    <com.google.android.material.card.MaterialCardView
                         android:id="@+id/catRestaurants"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_margin="3dp"
                         android:layout_weight="1"
-                        android:background="@drawable/bg_map_category_chip"
+                        app:cardBackgroundColor="#F8F9FB"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="#E8EBF0"
+                        app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:gravity="center_horizontal"
                         android:orientation="vertical"
                         android:paddingStart="4dp"
@@ -483,7 +520,7 @@
                             android:fontFamily="sans-serif-bold"
                             android:maxLines="1"
                             android:text="@string/map_cat_restaurants"
-                            android:textColor="@color/map_text_title"
+                            android:textColor="#0F172A"
                             android:textSize="12sp" />
 
                         <TextView
@@ -492,7 +529,7 @@
                             android:layout_marginTop="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:text="@string/map_cat_restaurants_dist"
-                            android:textColor="#374151"
+                            android:textColor="#1E293B"
                             android:textSize="11.5sp" />
 
                         <TextView
@@ -501,9 +538,10 @@
                             android:layout_marginTop="2dp"
                             android:fontFamily="sans-serif"
                             android:text="@string/map_cat_restaurants_count"
-                            android:textColor="@color/map_text_sub"
+                            android:textColor="#64748B"
                             android:textSize="10.5sp" />
                     </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
                 <!-- Nearby Places List -->
@@ -578,7 +616,7 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
                                 android:text="@string/map_place_griffith_dist"
-                                android:textColor="#475569"
+                                android:textColor="#1E293B"
                                 android:textSize="13sp" />
 
                             <!-- Chevron -->
@@ -653,7 +691,7 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
                                 android:text="@string/map_place_grove_dist"
-                                android:textColor="#475569"
+                                android:textColor="#1E293B"
                                 android:textSize="13sp" />
 
                             <!-- Chevron -->
