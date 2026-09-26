@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "categoria": "Jardinería",
+    "puesto": "Jardinero para mantenimiento de condominios",
+    "icono": "https://res.cloudinary.com/vtmk2tgh/image/upload/jardinero.svg",
+    "descripcion": "Se busca personal experimentado para poda de césped, mantenimiento de arbustos y riego en zonas residenciales. Trabajo temporal de 3 días a la semana.",
+    "habilidades_requeridas": [
+      "Poda",
+      "Uso de motoguadaña",
+      "Riego",
+      "Uso de fertilizantes"
+    ]
+  },
+  {
+    "id": 2,
+    "categoria": "Limpieza",
+    "puesto": "Personal de limpieza fin de obra",
+    "icono": "https://res.cloudinary.com/vtmk2tgh/image/upload/limpieza.svg",
+    "descripcion": "Limpieza profunda de departamentos recién construidos. Remoción de restos de pintura, polvo y lavado de lunas. Pago diario.",
+    "habilidades_requeridas": [
+      "Limpieza profunda",
+      "Remoción de pintura",
+      "Lavado de vidrios"
+    ]
+  },
+  {
+    "id": 3,
+    "categoria": "Construcción",
+    "puesto": "Ayudante de albañilería / Peón",
+    "icono": "https://res.cloudinary.com/vtmk2tgh/image/upload/construccion.svg",
+    "descripcion": "Se necesita ayudante para preparación de mezcla, acarreo de materiales (ladrillos, cemento) y habilitación de herramientas en obra residencial.",
+    "habilidades_requeridas": [
+      "Preparación de mezcla",
+      "Carga pesada",
+      "Asentado de ladrillo inicial"
+    ]
+  },
+  {
+    "id": 4,
+    "categoria": "Delivery",
+    "puesto": "Repartidor con moto propia",
+    "icono": "https://res.cloudinary.com/vtmk2tgh/image/upload/delivery.svg",
+    "descripcion": "Reparto de pedidos de comida y encomiendas locales. Horarios flexibles, ingresos basados en entregas diarias realizadas.",
+    "habilidades_requeridas": [
+      "Conducción de moto",
+      "Uso de GPS",
+      "Atención al cliente"
+    ]
+  },
+  {
+    "id": 5,
+    "categoria": "Pintura",
+    "puesto": "Pintor",
+    "icono": "https://res.cloudinary.com/vtmk2tgh/image/upload/pintor.svg",
+    "descripcion": "Servicio de pintura para viviendas, departamentos y otros espacios. Preparación de superficies, aplicación de pintura y acabados.",
+    "habilidades_requeridas": [
+      "Preparación de superficies",
+      "Aplicación de pintura",
+      "Acabados",
+      "Pintura de interiores y exteriores"
+    ]
+  },
+  {
+    "id": 6,
+    "categoria": "Mecánica",
+    "puesto": "Mecánico automotriz",
+    "icono": "https://res.cloudinary.com/vtmk2tgh/image/upload/mecanico.svg",
+    "descripcion": "Servicio de mantenimiento y reparación de vehículos. Diagnóstico de problemas mecánicos y realización de trabajos de mantenimiento preventivo y correctivo.",
+    "habilidades_requeridas": [
+      "Diagnóstico mecánico",
+      "Mantenimiento preventivo",
+      "Mantenimiento correctivo",
+      "Reparación de vehículos"
+    ]
+  }
+]

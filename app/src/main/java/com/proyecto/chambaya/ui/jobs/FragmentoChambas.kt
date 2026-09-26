@@ -7,15 +7,22 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
+import java.io.InputStreamReader
 
 class FragmentoChambas : Fragment() {
 
     private var scrollView: NestedScrollView? = null
     private var recyclerView: RecyclerView? = null
     private var jobCardAdapter: JobCardAdapter? = null
+    
+    private var rvCategories: RecyclerView? = null
+    private var categoriaAdapter: CategoriaAdapter? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,8 +58,14 @@ class FragmentoChambas : Fragment() {
         // Configurar RecyclerView con Adapter
         setupRecyclerView(view)
         
+        // Configurar RecyclerView de categorías
+        setupCategoriasRecyclerView(view)
+        
         // Cargar datos de ejemplo
         loadSampleData()
+        
+        // Cargar categorías desde JSON
+        loadCategoriasFromJson()
         
         return view
     }
@@ -97,6 +110,55 @@ class FragmentoChambas : Fragment() {
             
             // Desactivar animaciones que causan lag
             itemAnimator = null
+        }
+    }
+
+    private fun setupCategoriasRecyclerView(view: View) {
+        rvCategories = view.findViewById(R.id.rvCategories)
+        
+        rvCategories?.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            
+            // Optimizaciones de rendimiento
+            setHasFixedSize(true)
+            isNestedScrollingEnabled = false
+            setItemViewCacheSize(10)
+        }
+    }
+    
+    private fun loadCategoriasFromJson() {
+        try {
+            // Leer el archivo JSON desde assets
+            val inputStream = requireContext().assets.open("api_oficios.json")
+            val reader = InputStreamReader(inputStream)
+            
+            // Parsear JSON usando Gson
+            val gson = Gson()
+            val categoriaListType = object : TypeToken<List<Categoria>>() {}.type
+            val categorias: List<Categoria> = gson.fromJson(reader, categoriaListType)
+            
+            reader.close()
+            
+            // Crear adapter y asignar al RecyclerView
+            categoriaAdapter = CategoriaAdapter(categorias) { categoria ->
+                // Manejar click en categoría
+                Toast.makeText(
+                    requireContext(),
+                    "Categoría seleccionada: ${categoria.categoria}",
+                    Toast.LENGTH_SHORT
+                ).show()
+                // Aquí puedes filtrar los trabajos por categoría
+            }
+            
+            rvCategories?.adapter = categoriaAdapter
+            
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(
+                requireContext(),
+                "Error al cargar categorías: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -223,5 +285,7 @@ class FragmentoChambas : Fragment() {
         scrollView = null
         recyclerView = null
         jobCardAdapter = null
+        rvCategories = null
+        categoriaAdapter = null
     }
 }

@@ -405,153 +405,17 @@
                     app:layout_constraintTop_toTopOf="parent" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Grid de categorías (horizontal) -->
-            <LinearLayout
-                android:id="@+id/llCategories"
+            <!-- Grid de categorías (horizontal) - Carga datos desde api_oficios.json -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCategories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:gravity="center"
-                android:orientation="horizontal"
                 android:paddingStart="12dp"
-                android:paddingEnd="12dp">
-
-                <!-- Categoría 1: Construcción -->
-                <LinearLayout
-                    android:id="@+id/catConstruccion"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="4dp">
-
-                    <FrameLayout
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_category_circle">
-
-                        <ImageView
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_cat_construccion"
-                            android:contentDescription="@string/home_cat_construccion" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif"
-                        android:gravity="center"
-                        android:text="@string/home_cat_construccion"
-                        android:textColor="@color/text_primary"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <!-- Categoría 2: Limpieza -->
-                <LinearLayout
-                    android:id="@+id/catLimpieza"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="4dp">
-
-                    <FrameLayout
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_category_circle">
-
-                        <ImageView
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_cat_limpieza"
-                            android:contentDescription="@string/home_cat_limpieza" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif"
-                        android:gravity="center"
-                        android:text="@string/home_cat_limpieza"
-                        android:textColor="@color/text_primary"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <!-- Categoría 3: Delivery -->
-                <LinearLayout
-                    android:id="@+id/catDelivery"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="4dp">
-
-                    <FrameLayout
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_category_circle">
-
-                        <ImageView
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_cat_delivery"
-                            android:contentDescription="@string/home_cat_delivery" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif"
-                        android:gravity="center"
-                        android:text="@string/home_cat_delivery"
-                        android:textColor="@color/text_primary"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <!-- Categoría 4: Técnico -->
-                <LinearLayout
-                    android:id="@+id/catTecnico"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="4dp">
-
-                    <FrameLayout
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_category_circle">
-
-                        <ImageView
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_cat_tecnico"
-                            android:contentDescription="@string/home_cat_tecnico" />
-                    </FrameLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif"
-                        android:gravity="center"
-                        android:text="@string/home_cat_tecnico"
-                        android:textColor="@color/text_primary"
-                        android:textSize="11sp" />
-                </LinearLayout>
-            </LinearLayout>
+                android:paddingEnd="12dp"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
             <!-- ──────────────────────────────────────────
                  SECCIÓN: Chambas Nuevas (Flash Sale)
