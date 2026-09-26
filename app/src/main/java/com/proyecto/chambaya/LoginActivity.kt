@@ -11,6 +11,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -109,7 +111,13 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        btnBack.setOnClickListener { finish() }
+        btnBack.setOnClickListener { navigateBackToAccessOptions() }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateBackToAccessOptions()
+            }
+        })
 
         // Toggle visibilidad de contraseña
         setupPasswordToggle(etPassword, ivTogglePassword)
@@ -293,7 +301,7 @@ class LoginActivity : AppCompatActivity() {
 
                     // Verificar que el registro está completo
                     if (registrationStatus == "VERIFIED" || registrationStatus == "COMPLETED") {
-                        showToast("¡Bienvenido de nuevo!")
+                        Toast.makeText(this@LoginActivity, "¡Bienvenido de nuevo!", Toast.LENGTH_SHORT).show()
                         navigateToMainActivity()
                     } else {
                         showToast("Tu registro no está completo. Completa el proceso de registro primero.")
@@ -352,10 +360,13 @@ class LoginActivity : AppCompatActivity() {
 
     // ==================== NAVEGACIÓN ====================
     private fun navigateToMainActivity() {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
+        val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
+        finish()
+    }
+
+    private fun navigateBackToAccessOptions() {
+        startActivity(Intent(this, OpcionesAccesoActivity::class.java))
         finish()
     }
 

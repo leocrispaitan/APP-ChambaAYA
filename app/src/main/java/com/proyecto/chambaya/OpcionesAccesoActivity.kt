@@ -58,6 +58,7 @@ class OpcionesAccesoActivity : AppCompatActivity() {
 
     private fun openLogin() {
         startActivity(Intent(this, LoginActivity::class.java))
+        finish()
     }
 
     private fun showLanguagePopup() {
