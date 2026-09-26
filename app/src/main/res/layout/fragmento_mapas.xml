@@ -8,7 +8,7 @@
     android:background="#EDF8F1"
     tools:context=".ui.map.FragmentoMapas">
 
-    <!-- Guideline dividing Map (top ~50%) and Bottom Sheet (~50%) -->
+    <!-- Guideline dividing Map visible area and Bottom Sheet (~50%) -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineBottomSheet"
         android:layout_width="wrap_content"
@@ -16,197 +16,31 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.50" />
 
-    <!-- 1. MAP VIEW CONTAINER -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/mapContainer"
+    <!-- 1. REAL MAP VIEW (Full Screen - covers 100% of display) -->
+    <org.maplibre.android.maps.MapView
+        android:id="@+id/mapView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="-24dp"
-        app:layout_constraintBottom_toTopOf="@+id/guidelineBottomSheet"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Map Vector Illustration Base -->
-        <ImageView
-            android:id="@+id/ivMapBackground"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/bg_map_illustration"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="ContentDescription" />
-
-        <!-- District Labels on Map -->
-        <!-- Beverly Hills (Top Left) -->
-        <TextView
-            android:id="@+id/tvDistrictBeverlyHills"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="100dp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.01"
-            android:text="@string/map_label_beverly_hills"
-            android:textColor="#334155"
-            android:textSize="14sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- West Hollywood (Mid Right) -->
-        <TextView
-            android:id="@+id/tvDistrictWestHollywood"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="136dp"
-            android:fontFamily="sans-serif-medium"
-            android:gravity="end"
-            android:letterSpacing="0.01"
-            android:lineSpacingExtra="-2dp"
-            android:text="West\nHollywood"
-            android:textColor="#334155"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- Los Angeles (Bottom Right) -->
-        <TextView
-            android:id="@+id/tvDistrictLosAngeles"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="64dp"
-            android:layout_marginBottom="36dp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.01"
-            android:text="@string/map_label_los_angeles"
-            android:textColor="#334155"
-            android:textSize="13.5sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- Floating Action: Layers Button (Top Right) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/btnMapLayers"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_marginEnd="18dp"
-            android:layout_marginTop="72dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="22dp"
-            app:cardElevation="5dp"
-            app:strokeWidth="0dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <ImageView
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_map_layers"
-                tools:ignore="ContentDescription" />
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Secondary POI Pin 1: School (Top-Left) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/pinSchoolTopLeft"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:layout_marginStart="44dp"
-            android:layout_marginTop="128dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="19dp"
-            app:cardElevation="4dp"
-            app:strokeWidth="0dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_pin_school"
-                tools:ignore="ContentDescription" />
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Secondary POI Pin 2: Shopping (Mid-Left) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/pinShoppingLeft"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:layout_marginStart="40dp"
-            android:layout_marginBottom="46dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="19dp"
-            app:cardElevation="4dp"
-            app:strokeWidth="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
-
-            <ImageView
-                android:layout_width="19dp"
-                android:layout_height="19dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_pin_shopping"
-                tools:ignore="ContentDescription" />
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Secondary POI Pin 3: School (Bottom-Center) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/pinSchoolBottomCenter"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:layout_marginEnd="18dp"
-            android:layout_marginBottom="20dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="19dp"
-            app:cardElevation="4dp"
-            app:strokeWidth="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_pin_school"
-                tools:ignore="ContentDescription" />
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Secondary POI Pin 4: Restaurant (Mid-Right) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/pinRestaurantRight"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:layout_marginEnd="32dp"
-            android:layout_marginBottom="62dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="19dp"
-            app:cardElevation="4dp"
-            app:strokeWidth="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_pin_restaurant"
-                tools:ignore="ContentDescription" />
-        </com.google.android.material.card.MaterialCardView>
+    <!-- Floating Property Preview Overlay (Active Villa Card & Pin) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/propertyOverlayContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:layout_constraintBottom_toTopOf="@+id/guidelineBottomSheet"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <!-- Active Radar Location Dot (under pin tip) -->
         <View
             android:id="@+id/radarDot"
             android:layout_width="26dp"
             android:layout_height="26dp"
-            android:layout_marginBottom="54dp"
             android:background="@drawable/bg_map_radar_dot"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -292,8 +126,56 @@
                     tools:ignore="ContentDescription" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Floating Action: Expand/Collapse Bottom Sheet Button (Top Right) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/btnToggleBottomSheet"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="18dp"
+        android:layout_marginTop="72dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="6dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/ivToggleSheetIcon"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_collapse_sheet"
+            tools:ignore="ContentDescription" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Floating Action: My Location (GPS) Button (Top Right below Toggle) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/btnMyLocation"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="18dp"
+        android:layout_marginTop="126dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="6dp"
+        app:strokeWidth="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_my_location"
+            tools:ignore="ContentDescription" />
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- 2. TOP HEADER (Overlays the Map) -->
     <androidx.constraintlayout.widget.ConstraintLayout

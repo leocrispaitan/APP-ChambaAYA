@@ -66,6 +66,10 @@ dependencies {
     // Splash screen
     implementation(libs.androidx.core.splashscreen)
 
+    // MapLibre Maps SDK (Native Mapbox Vector Rendering Engine) & Location Services
+    implementation("org.maplibre.gl:android-sdk:11.5.1")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
