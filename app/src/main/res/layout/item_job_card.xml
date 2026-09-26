@@ -306,13 +306,6 @@
 
             </LinearLayout>
 
-            <!-- Degradado inferior para legibilidad del texto -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="120dp"
-                android:layout_gravity="bottom"
-                android:background="@drawable/bg_banner_gradient" />
-
         </FrameLayout>
 
         <!-- ══════════════════════════════════════════

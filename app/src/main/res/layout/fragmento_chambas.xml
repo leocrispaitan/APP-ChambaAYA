@@ -226,7 +226,7 @@
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_banner_dark">
+                    android:background="@drawable/bg_profile_header_art">
 
                     <!-- Degradado superpuesto (izquierda oscuro → transparente derecha) -->
                     <View
