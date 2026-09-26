@@ -49,6 +49,7 @@ import com.proyecto.chambaya.data.model.ValidatedIdentity
 import com.proyecto.chambaya.data.remote.IdentityValidationResult
 import com.proyecto.chambaya.data.remote.IdentityValidationService
 import com.proyecto.chambaya.data.repository.RegistrationRepository
+import com.proyecto.chambaya.data.repository.UserRegistrationState
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -291,6 +292,12 @@ class RegistroActivity : AppCompatActivity() {
         restoreRegistrationDraft()
 
         updateStep(0)
+
+        // Si quedó una cuenta creada en Auth sin registro completado,
+        // ofrecer continuar donde se dejó en lugar de empezar de cero.
+        if (savedInstanceState == null) {
+            offerToResumePendingRegistration()
+        }
     }
 
     private fun initViews() {
@@ -991,6 +998,11 @@ class RegistroActivity : AppCompatActivity() {
                     isEmailVerifiedByAuth = false
                     persistRegistrationDraft()
 
+                    // La cuenta ya existe en Auth desde este momento (aunque el
+                    // registro siga incompleto): se guarda el DNI/RUC ligado al
+                    // uid para poder reanudar si la app se cierra antes del OTP.
+                    persistPendingAccountForResume(user)
+
                     // 5. Enviar correo de verificación oficial mediante Firebase Authentication (Regla 3 y 4)
                     user?.sendEmailVerification()
                         ?.addOnCompleteListener(this) { verifyTask ->
@@ -1009,11 +1021,19 @@ class RegistroActivity : AppCompatActivity() {
                 } else {
                     setStep2Loading(false)
                     val exception = task.exception
+
+                    if (exception is FirebaseAuthUserCollisionException) {
+                        // La cuenta ya existe en Firebase Auth, pero eso NO significa
+                        // que el registro esté completo: puede ser un registro a medias
+                        // del intento anterior. Se verifica el estado real antes de
+                        // bloquear al usuario.
+                        handleExistingAccountOnEmailRegister(email, pwd)
+                        return@addOnCompleteListener
+                    }
+
                     val errorMsg = when (exception) {
                         is FirebaseAuthWeakPasswordException ->
                             "La contraseña es demasiado débil. Ingresa al menos 8 caracteres con números y mayúsculas o símbolos."
-                        is FirebaseAuthUserCollisionException ->
-                            "Ya existe una cuenta registrada con este correo electrónico. Por favor inicia sesión."
                         is FirebaseAuthInvalidCredentialsException ->
                             "El formato del correo electrónico ingresado no es válido."
                         is FirebaseNetworkException ->
@@ -1053,24 +1073,34 @@ class RegistroActivity : AppCompatActivity() {
                     setStep2Loading(false)
                     if (authTask.isSuccessful) {
                         val user = auth.currentUser
-                        registeredFirebaseUid = user?.uid
-                        registeredEmail = user?.email ?: account.email ?: ""
-                        registeredAuthMethod = AuthMethods.GOOGLE
-                        // Cuenta Google se considera verificada por Firebase sin requerir correo extra (Regla 2)
-                        isEmailVerifiedByAuth = true
+                        if (user == null) {
+                            showToast("No pudimos recuperar la cuenta de Google. Inténtalo de nuevo.")
+                            return@addOnCompleteListener
+                        }
 
                         // Nombre y foto que entrega Google (respaldo si el padrón no devuelve nombres)
-                        googleDisplayName = account.displayName.orEmpty()
-                        googlePhotoUrl = user?.photoUrl?.toString().orEmpty()
+                        googleDisplayName = account.displayName.orEmpty().ifBlank { googleDisplayName }
+                        googlePhotoUrl = user.photoUrl?.toString().orEmpty()
                             .ifBlank { account.photoUrl?.toString().orEmpty() }
-
+                            .ifBlank { googlePhotoUrl }
                         persistRegistrationDraft()
-                        showGoogleSuccessModal()
+
+                        // Puede ser una cuenta nueva o un registro a medias del
+                        // intento anterior: se consulta `users/{uid}` para decidir.
+                        resolveRegistrationAfterAuth(
+                            user = user,
+                            authMethod = AuthMethods.GOOGLE,
+                            email = user.email ?: account.email.orEmpty()
+                        )
                     } else {
                         val exception = authTask.exception
+
+                        if (exception is FirebaseAuthUserCollisionException) {
+                            handleExistingAccountOnGoogleRegister(account.email.orEmpty())
+                            return@addOnCompleteListener
+                        }
+
                         val errorMsg = when (exception) {
-                            is FirebaseAuthUserCollisionException ->
-                                "Ya existe una cuenta con este correo utilizando otro método de acceso."
                             is FirebaseNetworkException ->
                                 "Error de conexión a internet con Firebase. Intenta nuevamente."
                             else ->
@@ -1098,6 +1128,270 @@ class RegistroActivity : AppCompatActivity() {
         } catch (e: Exception) {
             setStep2Loading(false)
             showToast("Error inesperado en Google Sign-In: ${e.localizedMessage}")
+        }
+    }
+
+    // ==================== FASE 1: REANUDACIÓN DE REGISTROS A MEDIAS ====================
+
+    /**
+     * Una cuenta puede existir en Firebase Authentication sin que su documento
+     * `users/{uid}` esté completo: el usuario cerró la app antes de validar el
+     * OTP. En ese caso NO se muestra "cuenta ya registrada", se retoma el
+     * registro desde el sub-paso de verificación.
+     */
+    private fun handleExistingAccountOnEmailRegister(email: String, pwd: String) {
+        setStep2Loading(true)
+        tvOtpError.visibility = View.GONE
+
+        // La contraseña escrita es la prueba de titularidad de la cuenta.
+        // Si coincide, se puede retomar el registro sin crear nada nuevo.
+        auth.signInWithEmailAndPassword(email, pwd)
+            .addOnCompleteListener(this) { signInTask ->
+                val signedIn = auth.currentUser
+                if (signInTask.isSuccessful && signedIn != null) {
+                    resolveRegistrationAfterAuth(signedIn, AuthMethods.EMAIL_PASSWORD, email)
+                    return@addOnCompleteListener
+                }
+
+                setStep2Loading(false)
+
+                // No se pudo probar la titularidad de la cuenta, así que no se
+                // intenta leer su documento: las reglas de Firestore solo
+                // permiten leer `users/{uid}` al propio dueño.
+                showExistingAccountDialog(email)
+            }
+    }
+
+    /**
+     * Google no permite demostrar la titularidad con una contraseña: si el
+     * correo ya pertenece a una cuenta de correo+contraseña, se orienta al
+     * usuario al inicio de sesión para que retome su registro allí.
+     */
+    private fun handleExistingAccountOnGoogleRegister(email: String) {
+        if (email.isBlank()) {
+            showToast("Ya existe una cuenta con este correo. Inicia sesión para continuar.")
+            return
+        }
+
+        showToast(
+            "El correo ${maskEmail(email)} ya pertenece a una cuenta creada con correo " +
+                "y contraseña. Inicia sesión con ese correo para completar tu registro."
+        )
+    }
+
+    /**
+     * Decide qué hacer con una cuenta ya autenticada dentro del flujo de
+     * registro: si `users/{uid}` está completo se informa que ya está
+     * registrada; si está ausente o incompleto se retoma el registro.
+     */
+    private fun resolveRegistrationAfterAuth(
+        user: FirebaseUser,
+        authMethod: String,
+        email: String
+    ) {
+        registeredFirebaseUid = user.uid
+        registeredEmail = email
+        registeredAuthMethod = authMethod
+        // Google ya confirma el dominio del correo (Regla 2); con correo y
+        // contraseña manda el estado real de `emailVerified` de Firebase.
+        isEmailVerifiedByAuth = if (authMethod == AuthMethods.GOOGLE) {
+            true
+        } else {
+            user.isEmailVerified
+        }
+
+        // Recuperar el DNI/RUC validado en el intento anterior, si la app se
+        // cerró antes de completar el OTP.
+        adoptStoredIdentityIfMissing(email, user.uid)
+        persistRegistrationDraft()
+
+        lifecycleScope.launch {
+            val state = registrationRepository.fetchRegistrationState(user.uid)
+            setStep2Loading(false)
+
+            // Si ya había un registro ligado a este `uid`, el usuario cerró la
+            // app en el intento anterior: hay que reanudarlo, no empezar de cero.
+            val isResumed = pendingRegistrationStore.loadPending(user.uid) != null
+
+            when {
+                state == UserRegistrationState.COMPLETE ->
+                    showAlreadyRegisteredDialog(email)
+
+                // Registro a medias: este mismo dispositivo ya tenía un registro
+                // ligado a la cuenta, o el documento existe pero está incompleto.
+                isResumed || authMethod != AuthMethods.GOOGLE ||
+                    state == UserRegistrationState.INCOMPLETE ->
+                    resumeRegistrationOrAskIdentity(user)
+
+                else -> {
+                    // Cuenta de Google recién creada: comportamiento normal.
+                    persistPendingAccountForResume(user)
+                    showGoogleSuccessModal()
+                }
+            }
+        }
+    }
+
+    /**
+     * Reanuda un registro a medias: guarda el DNI/RUC ligado a la cuenta y
+     * ofrece continuar en el sub-paso de verificación. Si no hay identidad
+     * recuperable, devuelve al usuario al sub-paso 1.
+     */
+    private fun resumeRegistrationOrAskIdentity(firebaseUser: FirebaseUser) {
+        persistPendingAccountForResume(firebaseUser)
+
+        if (validatedIdentity == null) {
+            showToast("Recuperamos tu cuenta. Vuelve a verificar tu identidad para continuar.")
+            updateStep(1)
+        } else {
+            showResumeRegistrationDialog(registeredEmail.orEmpty())
+        }
+    }
+
+    /**
+     * Guarda el registro ligado al `uid` en cuanto Firebase Auth crea la cuenta
+     * (sub-paso 2). Así el DNI/RUC validado no se pierde si el usuario cierra
+     * la app antes de confirmar el OTP.
+     */
+    private fun persistPendingAccountForResume(firebaseUser: FirebaseUser?) {
+        val pending = buildPendingRegistration(firebaseUser) ?: return
+        pendingRegistrationStore.savePending(pending)
+    }
+
+    /**
+     * Si no hay identidad en memoria, recupera la que ya fue validada en el
+     * intento anterior (guardada en `PendingRegistrationStore`).
+     */
+    private fun adoptStoredIdentityIfMissing(email: String, uid: String) {
+        if (validatedIdentity != null) return
+
+        val stored = pendingRegistrationStore.loadPendingByEmail(email)
+            ?: pendingRegistrationStore.loadPending(uid)
+        val identity = stored?.identity ?: return
+
+        validatedIdentity = identity
+        googleDisplayName = googleDisplayName.ifBlank { stored.accountDisplayName }
+        googlePhotoUrl = googlePhotoUrl.ifBlank { stored.accountPhotoUrl }
+        restoreRoleIntoUi(stored.role.ifBlank { selectedRole })
+        applyIdentityIntoUi(identity)
+    }
+
+    /** Diálogo: el registro quedó a medias y se puede continuar. */
+    private fun showResumeRegistrationDialog(email: String) {
+        val identity = validatedIdentity
+        val documentLabel = when (identity?.documentType) {
+            IdentityDocumentTypes.RUC -> "RUC ${identity.documentNumber}"
+            else -> "DNI ${identity?.documentNumber ?: "validado"}"
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Retoma tu registro")
+            .setMessage(
+                "Ya habías iniciado tu registro con ${maskEmail(email)} y solo falta " +
+                    "confirmar el código de verificación.\n\n" +
+                    "✓ $documentLabel ya está validado\n" +
+                    "✓ No necesitas crear la cuenta de nuevo\n\n" +
+                    "¿Quieres continuar donde lo dejaste?"
+            )
+            .setPositiveButton("Continuar verificación") { _, _ -> resumeAtVerificationStep() }
+            .setNegativeButton("Volver al inicio") { _, _ -> updateStep(0) }
+            .setCancelable(false)
+            .show()
+    }
+
+    /** Lleva al sub-paso 3 respetando la verificación obligatoria. */
+    private fun resumeAtVerificationStep() {
+        isPhase2Completed = true
+        isOtpVerified = false
+        otpRequestedAtLeastOnce = false
+        updateStep(3)
+
+        // Si Firebase ya tiene el correo verificado de un intento anterior,
+        // la verificación ya está cumplida y se puede cerrar el registro.
+        val user = auth.currentUser
+        if (user != null && user.isEmailVerified &&
+            registeredAuthMethod == AuthMethods.EMAIL_PASSWORD
+        ) {
+            checkEmailVerificationAndProceed()
+        }
+    }
+
+    /** Diálogo: la cuenta ya tiene un registro completo. */
+    private fun showAlreadyRegisteredDialog(email: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Esta cuenta ya está registrada")
+            .setMessage(
+                "El correo ${maskEmail(email)} ya tiene un registro completado en " +
+                    "ChambAYA.\n\nInicia sesión con ese correo y contraseña para entrar a tu cuenta."
+            )
+            .setPositiveButton("Iniciar sesión") { _, _ ->
+                auth.signOut()
+                startActivity(
+                    Intent(this, LoginActivity::class.java).apply {
+                        putExtra(LoginActivity.EXTRA_PREFILL_EMAIL, email)
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    }
+                )
+                finish()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    /** La cuenta existe pero no se pudo probar la titularidad con la contraseña. */
+    private fun showExistingAccountDialog(email: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Esa cuenta ya existe")
+            .setMessage(
+                "Ya existe una cuenta con ${maskEmail(email)} y la contraseña no " +
+                    "coincide.\n\nSi olvidaste tu contraseña, recupérala desde el inicio de " +
+                    "sesión. Si no te registraste tú, revisa que el correo sea correcto."
+            )
+            .setPositiveButton("Ir a iniciar sesión") { _, _ ->
+                startActivity(
+                    Intent(this, LoginActivity::class.java).apply {
+                        putExtra(LoginActivity.EXTRA_PREFILL_EMAIL, email)
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    }
+                )
+                finish()
+            }
+            .setNegativeButton("Usar otro correo", null)
+            .show()
+    }
+
+    /**
+     * Al abrir la app: si la sesión actual tiene un registro a medias, ofrecer
+     * continuar en el sub-paso de verificación en lugar de empezar de cero.
+     */
+    private fun offerToResumePendingRegistration() {
+        val user = auth.currentUser ?: return
+        val stored = pendingRegistrationStore.loadPending(user.uid) ?: return
+
+        lifecycleScope.launch {
+            val state = registrationRepository.fetchRegistrationState(user.uid)
+
+            // Con una lectura indeterminada (sin red) no se afirma nada: el
+            // usuario sigue el flujo normal y decide con los pasos a la vista.
+            if (state == UserRegistrationState.COMPLETE ||
+                state == UserRegistrationState.UNKNOWN
+            ) {
+                return@launch
+            }
+
+            registeredFirebaseUid = user.uid
+            registeredEmail = stored.email
+            registeredAuthMethod = stored.authMethod
+
+            // Sin identidad recuperable no se puede prometer nada: se vuelve
+            // al sub-paso 1 para validarla de nuevo.
+            if (validatedIdentity == null) {
+                showToast("Recuperamos tu cuenta. Vuelve a verificar tu identidad para continuar.")
+                updateStep(1)
+                return@launch
+            }
+
+            showResumeRegistrationDialog(stored.email)
         }
     }
 
@@ -1971,38 +2265,8 @@ class RegistroActivity : AppCompatActivity() {
         googlePhotoUrl = draft.accountPhotoUrl
         validatedIdentity = draft.identity
 
-        if (UserRoles.isValid(draft.role)) {
-            selectedRole = draft.role
-            roleSelected = true
-            applyRoleSelectionUi(isWorker = draft.role == UserRoles.TRABAJADOR)
-            btnStep0Next.isEnabled = true
-            btnStep0Next.alpha = 1f
-        }
-
-        when (draft.identity.documentType) {
-            IdentityDocumentTypes.DNI -> {
-                identityMode = IdentityDocumentTypes.DNI
-                isDniVerified = true
-                etDni.setText(draft.identity.documentNumber)
-                etDni.setSelection(draft.identity.documentNumber.length)
-                ivDniCheckIcon.visibility = View.VISIBLE
-                tvReniecFullName.text = draft.identity.fullName
-                tvReniecDniDetail.text =
-                    "DNI: ${draft.identity.documentNumber} · ${draft.identity.locationLabel.orEmpty()}"
-                tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
-                cardDniVerified.visibility = View.VISIBLE
-            }
-
-            IdentityDocumentTypes.RUC -> {
-                identityMode = IdentityDocumentTypes.RUC
-                isRucVerified = true
-                etRuc.setText(draft.identity.documentNumber)
-                etRuc.setSelection(draft.identity.documentNumber.length)
-                tvSunatRazonSocial.text = draft.identity.legalName ?: draft.identity.fullName
-                tvSunatCondition.text = "Condición: ${draft.identity.statusLabel.orEmpty()}"
-                cardRucVerified.visibility = View.VISIBLE
-            }
-        }
+        restoreRoleIntoUi(draft.role)
+        applyIdentityIntoUi(draft.identity)
 
         // Si ya existía una cuenta de Firebase para este registro, recuperar el resto
         auth.currentUser?.let { user ->
@@ -2010,6 +2274,45 @@ class RegistroActivity : AppCompatActivity() {
                 registeredFirebaseUid = pending.uid
                 registeredEmail = pending.email
                 registeredAuthMethod = pending.authMethod
+                isEmailVerifiedByAuth = pending.otpVerified
+            }
+        }
+    }
+
+    /** Restaura el rol elegido en el sub-paso 0 (también usado al reanudar). */
+    private fun restoreRoleIntoUi(role: String?) {
+        if (role == null || !UserRoles.isValid(role)) return
+        selectedRole = role
+        roleSelected = true
+        applyRoleSelectionUi(isWorker = role == UserRoles.TRABAJADOR)
+        btnStep0Next.isEnabled = true
+        btnStep0Next.alpha = 1f
+    }
+
+    /** Pinta la tarjeta de identidad validada (DNI o RUC) en el sub-paso 1. */
+    private fun applyIdentityIntoUi(identity: ValidatedIdentity) {
+        when (identity.documentType) {
+            IdentityDocumentTypes.DNI -> {
+                identityMode = IdentityDocumentTypes.DNI
+                isDniVerified = true
+                etDni.setText(identity.documentNumber)
+                etDni.setSelection(identity.documentNumber.length)
+                ivDniCheckIcon.visibility = View.VISIBLE
+                tvReniecFullName.text = identity.fullName
+                tvReniecDniDetail.text =
+                    "DNI: ${identity.documentNumber} · ${identity.locationLabel.orEmpty()}"
+                tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
+                cardDniVerified.visibility = View.VISIBLE
+            }
+
+            IdentityDocumentTypes.RUC -> {
+                identityMode = IdentityDocumentTypes.RUC
+                isRucVerified = true
+                etRuc.setText(identity.documentNumber)
+                etRuc.setSelection(identity.documentNumber.length)
+                tvSunatRazonSocial.text = identity.legalName ?: identity.fullName
+                tvSunatCondition.text = "Condición: ${identity.statusLabel.orEmpty()}"
+                cardRucVerified.visibility = View.VISIBLE
             }
         }
     }

@@ -51,10 +51,11 @@ class PendingRegistrationStore(context: Context) {
     // ==================== REGISTRO PENDIENTE (ya existe el uid) ====================
 
     fun savePending(pending: PendingRegistration) {
+        val email = pending.email.trim().lowercase()
         prefs.edit()
             .putString(KEY_PENDING_UID, pending.uid)
             .putString(KEY_PENDING_ROLE, pending.role)
-            .putString(KEY_PENDING_EMAIL, pending.email)
+            .putString(KEY_PENDING_EMAIL, email)
             .putString(KEY_PENDING_PROVIDER, pending.provider)
             .putString(KEY_PENDING_AUTH_METHOD, pending.authMethod)
             .putString(KEY_PENDING_VERIFICATION_METHOD, pending.verificationMethod)
@@ -62,7 +63,27 @@ class PendingRegistrationStore(context: Context) {
             .putString(KEY_PENDING_DISPLAY_NAME, pending.accountDisplayName)
             .putString(KEY_PENDING_PHOTO_URL, pending.accountPhotoUrl)
             .putString(KEY_PENDING_IDENTITY, identityToJson(pending.identity).toString())
+            // Índice correo -> uid: permite recuperar el registro aunque el
+            // usuario haya perdido la sesión de Firebase Authentication.
+            .putString(KEY_INDEX_EMAIL, email)
+            .putString(KEY_INDEX_EMAIL_UID, pending.uid)
             .apply()
+    }
+
+    /**
+     * Recupera el registro a medias por correo electrónico.
+     * Se usa cuando el usuario vuelve a escribir el mismo correo en el
+     * sub-paso 2 y Firebase responde "cuenta ya registrada".
+     */
+    fun loadPendingByEmail(email: String): PendingRegistration? {
+        val normalized = email.trim().lowercase()
+        if (normalized.isEmpty()) return null
+
+        val indexedEmail = prefs.getString(KEY_INDEX_EMAIL, null) ?: return null
+        if (indexedEmail != normalized) return null
+
+        val uid = prefs.getString(KEY_INDEX_EMAIL_UID, null) ?: return null
+        return loadPending(uid)
     }
 
     fun loadPending(uid: String): PendingRegistration? {
@@ -140,5 +161,8 @@ class PendingRegistrationStore(context: Context) {
         private const val KEY_PENDING_DISPLAY_NAME = "pending_display_name"
         private const val KEY_PENDING_PHOTO_URL = "pending_photo_url"
         private const val KEY_PENDING_IDENTITY = "pending_identity"
+
+        private const val KEY_INDEX_EMAIL = "index_email"
+        private const val KEY_INDEX_EMAIL_UID = "index_email_uid"
     }
 }

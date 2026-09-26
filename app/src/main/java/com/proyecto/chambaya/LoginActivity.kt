@@ -96,6 +96,7 @@ class LoginActivity : AppCompatActivity() {
 
         initViews()
         setupListeners()
+        prefillEmailFromIntent()
     }
 
     private fun initViews() {
@@ -439,5 +440,18 @@ class LoginActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Snackbar.make(findViewById(R.id.loginRoot), message, Snackbar.LENGTH_LONG).show()
+    }
+
+    /** Rellena el correo si se navega desde el registro ("cuenta ya registrada"). */
+    private fun prefillEmailFromIntent() {
+        val email = intent.getStringExtra(EXTRA_PREFILL_EMAIL)?.trim().orEmpty()
+        if (email.isNotEmpty()) {
+            etEmail.setText(email)
+            etPassword.requestFocus()
+        }
+    }
+
+    companion object {
+        const val EXTRA_PREFILL_EMAIL = "prefill_email"
     }
 }

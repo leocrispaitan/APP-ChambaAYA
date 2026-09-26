@@ -18,6 +18,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
+ * Estado real del registro de una cuenta, para distinguir
+ * "cuenta ya registrada" de "registro a medias" (bug de reanudación de FASE 1).
+ */
+enum class UserRegistrationState {
+    /** No existe documento `users/{uid}`: la cuenta de Auth quedó huérfana. */
+    MISSING,
+
+    /** Existe `users/{uid}` pero el registro todavía no se completó. */
+    INCOMPLETE,
+
+    /** Registro completo: la cuenta ya está dada de alta en ChambAYA. */
+    COMPLETE,
+
+    /** No se pudo consultar (sin red o error de permisos): estado indeterminado. */
+    UNKNOWN
+}
+
+/**
  * FASE 1 — Repositorio de `users/{uid}`.
  *
  * Única fuente de verdad para crear el documento de usuario al terminar el registro.
@@ -81,6 +99,39 @@ class RegistrationRepository(
 
             Tasks.await(userRef.set(payload, SetOptions.merge()))
         }.map { }
+    }
+
+    /**
+     * Consulta el estado real del registro de `users/{uid}`.
+     *
+     * Se usa antes de mostrar "esta cuenta ya está registrada": si el documento
+     * no existe o está incompleto, el registro debe **reanudarse** en lugar de
+     * bloquear al usuario.
+     */
+    suspend fun fetchRegistrationState(uid: String): UserRegistrationState =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val snapshot = Tasks.await(
+                    firestore.collection(COLLECTION_USERS).document(uid).get()
+                )
+                when {
+                    !snapshot.exists() -> UserRegistrationState.MISSING
+                    isRegistered(snapshot) -> UserRegistrationState.COMPLETE
+                    else -> UserRegistrationState.INCOMPLETE
+                }
+            }.getOrDefault(UserRegistrationState.UNKNOWN)
+        }
+
+    /**
+     * Mismo criterio que usa `LoginActivity` para dar acceso a la app.
+     * Garantiza el invariante: *si el usuario puede entrar por login,
+     * no se le debe ofrecer un registro nuevo*.
+     */
+    fun isRegistered(snapshot: DocumentSnapshot): Boolean {
+        val registrationStatus = snapshot.getString("registrationStatus").orEmpty()
+        val accountStatus = snapshot.getString("accountStatus").orEmpty()
+        return registrationStatus in RegistrationStatuses.REGISTERED ||
+            accountStatus == AccountStatuses.ACTIVE
     }
 
     /**

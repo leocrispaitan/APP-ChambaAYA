@@ -57,6 +57,15 @@ object RegistrationStatuses {
     const val PENDING = "PENDING"
     const val INCOMPLETE = "INCOMPLETE"
     const val VERIFIED = "VERIFIED"
+
+    /**
+     * Registros válidos creados por versiones anteriores de la app.
+     * Se acepta igual que [VERIFIED] para no bloquear el acceso.
+     */
+    const val COMPLETED = "COMPLETED"
+
+    /** Estados en los que el usuario ya está dado de alta en ChambAYA. */
+    val REGISTERED = setOf(VERIFIED, COMPLETED)
 }
 
 object IdentitySources {
