@@ -1,16 +1,164 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Verificación de correo OTP (Compatible con plan Spark sin Cloud Functions)
-    // El usuario autenticado solo puede acceder a su propio registro de verificación
-    match /email_verifications/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    // =============================================================
+    //  Helpers FASE 1
+    // =============================================================
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
     }
 
-    // Perfil del usuario autenticado
+    function isValidRole(role) {
+      return role is string && role in ['TRABAJADOR', 'CONTRATANTE'];
+    }
+
+    function isValidDocumentType(documentType) {
+      return documentType is string && documentType in ['DNI', 'RUC'];
+    }
+
+    // DNI = 8 dígitos, RUC = 11 dígitos
+    function isValidDocumentNumber(documentType, documentNumber) {
+      return documentNumber is string
+        && ((documentType == 'DNI' && documentNumber.matches('^[0-9]{8}$'))
+          || (documentType == 'RUC' && documentNumber.matches('^[0-9]{11}$')));
+    }
+
+    // Bloque `identity` de `users/{uid}` (FASE 1)
+    function hasValidIdentity() {
+      let identity = request.resource.data.identity;
+      return identity is map
+        && identity.keys().hasAll([
+             'documentType',
+             'documentNumber',
+             'documentNumberMasked',
+             'identityVerified',
+             'verifiedWith',
+             'identityName',
+             'verifiedAt'
+           ])
+        && isValidDocumentType(identity.documentType)
+        && isValidDocumentNumber(identity.documentType, identity.documentNumber)
+        && identity.documentNumberMasked is string
+        && identity.documentNumberMasked.size() > 0
+        && identity.identityVerified == true
+        && identity.verifiedWith in ['RENIEC', 'SUNAT']
+        && identity.identityName is string
+        && identity.identityName.size() > 2
+        && identity.verifiedAt != null;
+    }
+
+    // Bloque `auth` de `users/{uid}` (FASE 1). Nunca se guarda contraseña.
+    function hasValidAuthBlock() {
+      let authData = request.resource.data.auth;
+      return authData is map
+        && authData.keys().hasAll(['provider', 'email', 'emailVerified'])
+        && authData.provider in ['EMAIL', 'GOOGLE']
+        && authData.email is string
+        && authData.email.size() > 3
+        && authData.emailVerified == true;
+    }
+
+    // `roles` / `activeRole` deben ser coherentes entre sí.
+    function hasValidRoles() {
+      let roles = request.resource.data.roles;
+      return roles is list
+        && roles.size() >= 1
+        && roles.size() <= 2
+        && roles.hasOnly(['TRABAJADOR', 'CONTRATANTE'])
+        && isValidRole(request.resource.data.activeRole)
+        && request.resource.data.activeRole in roles;
+    }
+
+    function isActiveAndVerified() {
+      return request.resource.data.registrationStatus == 'VERIFIED'
+        && request.resource.data.accountStatus == 'ACTIVE';
+    }
+
+    function isCompleteRegistration() {
+      return request.resource.data.uid != null
+        && isActiveAndVerified()
+        && hasValidRoles()
+        && hasValidAuthBlock()
+        && hasValidIdentity();
+    }
+
+    // El documento de identidad solo se puede rellenar una vez.
+    // Si ya existía, el número de documento no puede cambiar.
+    function keepsDocumentNumber() {
+      let oldIdentity = resource.data.identity;
+      return !(oldIdentity is map)
+        || oldIdentity.documentNumber == request.resource.data.identity.documentNumber;
+    }
+
+    // Campos que el usuario siempre puede tocar en su propio documento.
+    function onlyAuditFieldsChanged() {
+      return request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasOnly(['updatedAt', 'lastLoginAt', 'lastSeenAt']);
+    }
+
+    // =============================================================
+    //  Verificación de correo OTP
+    //  (compatible con plan Spark: la app escribe el hash directamente)
+    // =============================================================
+    function isValidOtpSession(ownerUid, verifiedState) {
+      let data = request.resource.data;
+      return data.keys().hasAll(['email', 'otpHash', 'verified'])
+        && data.uid == ownerUid
+        && data.email is string
+        && data.email.size() > 3
+        && data.otpHash is string
+        && data.otpHash.size() > 0
+        && data.verified == verifiedState;
+    }
+
+    match /email_verifications/{uid} {
+      allow read: if isOwner(uid);
+
+      // Crear o refrescar la sesión OTP (reenvío). Una sesión ya verificada
+      // no se puede reutilizar ni sobrescribir.
+      allow create, update: if isOwner(uid) && isValidOtpSession(uid, false);
+
+      // Marcar el OTP como usado: es la única transición permitida sobre `verified`.
+      allow update: if isOwner(uid)
+        && resource.data.verified == false
+        && request.resource.data.verified == true
+        && request.resource.data.diff(resource.data)
+             .affectedKeys()
+             .hasOnly(['verified', 'otpHash', 'verifiedAt']);
+
+      allow delete: if isOwner(uid);
+    }
+
+    // =============================================================
+    //  users/{uid} — FASE 1
+    // =============================================================
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // Sin listados: el DNI/RUC nunca debe exponerse en consultas masivas.
+      allow list: if false;
+
+      // El dueño puede leer su propio documento (login, perfil, resumen).
+      allow get: if isOwner(uid);
+
+      // Alta: solo el propio usuario, con identidad validada por padrón oficial.
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid
+        && isCompleteRegistration();
+
+      // Actualización:
+      //  1) Solo campos de auditoría (último ingreso), o
+      //  2) completar el registro cuando aún no estaba VERIFIED, o
+      //  3) migración única de cuentas creadas antes de la FASE 1.
+      allow update: if isOwner(uid)
+        && (onlyAuditFieldsChanged()
+          || (!(resource.data.identity is map) && isCompleteRegistration())
+          || (resource.data.registrationStatus != 'VERIFIED'
+            && isCompleteRegistration()
+            && keepsDocumentNumber()));
+
+      allow delete: if false;
     }
   }
 }

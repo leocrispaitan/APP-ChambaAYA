@@ -26,6 +26,128 @@ const OTP_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutos
 const RESEND_COOLDOWN_MS = 60 * 1000;     // 60 segundos
 const MAX_ATTEMPTS = 5;                   // Máximo 5 intentos por código
 
+// =============================================================
+//  Constantes FASE 1 - Esquema de `users/{uid}`
+// =============================================================
+const VALID_ROLES = ["TRABAJADOR", "CONTRATANTE"];
+const VALID_DOCUMENT_TYPES = ["DNI", "RUC"];
+const VALID_IDENTITY_SOURCES = ["RENIEC", "SUNAT"];
+const DEFAULT_COUNTRY = "Peru";
+
+/**
+ * Versión segura del número de documento para vistas públicas.
+ */
+function maskDocumentNumber(documentType, documentNumber) {
+    if (documentType === "RUC") {
+        return `***${documentNumber.slice(-4)}`;
+    }
+    return `****${documentNumber.slice(-4)}`;
+}
+
+/**
+ * Valida y normaliza el bloque `identity` que envía el cliente.
+ * Devuelve `null` si el documento no tiene formato válido (DNI/RUC).
+ */
+function normalizeIdentity(rawIdentity) {
+    if (!rawIdentity || typeof rawIdentity !== "object") {
+        return null;
+    }
+
+    const documentType = String(rawIdentity.documentType || "").toUpperCase();
+    const documentNumber = String(rawIdentity.documentNumber || "").trim();
+    const identityName = String(rawIdentity.identityName || "").trim();
+
+    if (VALID_DOCUMENT_TYPES.indexOf(documentType) === -1) {
+        return null;
+    }
+
+    const expectedLength = documentType === "DNI" ? 8 : 11;
+    if (!/^[0-9]+$/.test(documentNumber) || documentNumber.length !== expectedLength) {
+        return null;
+    }
+
+    if (identityName.length <= 2) {
+        return null;
+    }
+
+    const verifiedWith = VALID_IDENTITY_SOURCES.indexOf(rawIdentity.verifiedWith) !== -1
+        ? rawIdentity.verifiedWith
+        : (documentType === "RUC" ? "SUNAT" : "RENIEC");
+
+    return {
+        documentType: documentType,
+        documentNumber: documentNumber,
+        documentNumberMasked: String(rawIdentity.documentNumberMasked || "").trim()
+            || maskDocumentNumber(documentType, documentNumber),
+        identityVerified: true,
+        verifiedWith: verifiedWith,
+        identityName: identityName,
+        identityStatus: String(rawIdentity.identityStatus || "").trim(),
+        location: String(rawIdentity.location || "").trim(),
+        firstName: String(rawIdentity.firstName || "").trim(),
+        lastName: String(rawIdentity.lastName || "").trim()
+    };
+}
+
+/**
+ * Arma el documento de `users/{uid}` de la FASE 1: nombre oficial del padrón,
+ * DNI/RUC, roles y verificaciones. Nunca incluye la contraseña.
+ * Incluye el espejo de campos raíz que la app ya leía (`email`, `role`, etc.).
+ */
+function buildUserDocument(options) {
+    const uid = options.uid;
+    const identity = options.identity || null;
+    const profile = options.profile || {};
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    const safeRole = VALID_ROLES.indexOf(options.role) !== -1 ? options.role : "TRABAJADOR";
+    const email = options.email || "";
+    const otpVerified = options.otpVerified === true;
+    const photoUrl = String(profile.profilePhotoUrl || "").trim();
+    const fullName = identity && identity.identityName
+        ? identity.identityName
+        : String(profile.fullName || "").trim();
+
+    const userDoc = {
+        uid: uid,
+        accountStatus: "ACTIVE",
+        registrationStatus: "VERIFIED",
+        roles: [safeRole],
+        activeRole: safeRole,
+        auth: {
+            provider: options.provider === "GOOGLE" ? "GOOGLE" : "EMAIL",
+            email: email,
+            emailVerified: true,
+            otpVerified: otpVerified,
+            verificationMethod: otpVerified ? "CHAMBAYA_OTP" : "FIREBASE_EMAIL_LINK"
+        },
+        profile: {
+            firstName: identity ? identity.firstName : "",
+            lastName: identity ? identity.lastName : "",
+            fullName: fullName,
+            profilePhotoUrl: photoUrl,
+            profilePhotoPublicId: "",
+            profilePhotoSource: photoUrl ? "GOOGLE" : "DEFAULT",
+            country: DEFAULT_COUNTRY
+        },
+        createdAt: options.existingCreatedAt || admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: now,
+        lastLoginAt: now,
+        // Espejo de compatibilidad con las versiones previas de la app
+        email: email,
+        role: safeRole,
+        emailVerified: true,
+        otpVerified: otpVerified,
+        authMethod: options.authMethod === "GOOGLE" ? "GOOGLE" : "EMAIL_PASSWORD",
+        verifiedAt: now
+    };
+
+    if (identity) {
+        userDoc.identity = Object.assign({}, identity, { verifiedAt: now });
+    }
+
+    return userDoc;
+}
+
 /**
  * Obtener la sal secreta del entorno
  */
@@ -308,6 +430,32 @@ exports.verifyEmailOtp = functions.https.onCall(async (data, context) => {
         );
     }
 
+    // FASE 1: preparar `users/{uid}` con el nombre oficial y el DNI/RUC
+    const userDocRef = db.collection("users").doc(uid);
+    const userRole = (data && data.role) ? data.role : "TRABAJADOR";
+    const userEmail = (data && data.email) ? String(data.email).trim().toLowerCase() : (verificationData.email || "");
+    const identity = normalizeIdentity(data ? data.identity : null);
+
+    if ((data && data.identity) && !identity) {
+        // El cliente envió una identidad con formato inválido: no se marca el OTP
+        // como usado para que el cliente pueda reintentar la verificación.
+        throw new functions.https.HttpsError(
+            "invalid-argument",
+            "Los datos de identidad enviados no son válidos. Vuelve a verificar tu DNI o RUC."
+        );
+    }
+
+    // Preservar `createdAt` si el documento ya existía
+    let existingCreatedAt = null;
+    try {
+        const existingUserDoc = await userDocRef.get();
+        if (existingUserDoc.exists && existingUserDoc.data().createdAt) {
+            existingCreatedAt = existingUserDoc.data().createdAt;
+        }
+    } catch (readErr) {
+        console.warn("[verifyEmailOtp] No se pudo leer el documento previo:", readErr.message);
+    }
+
     // 5. Código correcto: Actualización atómica en backend
     const batch = db.batch();
 
@@ -319,21 +467,18 @@ exports.verifyEmailOtp = functions.https.onCall(async (data, context) => {
         attempts: currentAttempts
     });
 
-    // Actualizar o crear registro en colección `users` con el UID y rol
-    const userDocRef = db.collection("users").doc(uid);
-    const userRole = (data && data.role) ? data.role : "TRABAJADOR";
-    const userEmail = verificationData.email || "";
 
-    batch.set(userDocRef, {
+    batch.set(userDocRef, buildUserDocument({
         uid: uid,
-        email: userEmail,
         role: userRole,
-        otpVerified: true,
-        emailVerified: true,
-        registrationStatus: "VERIFIED",
-        verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+        email: userEmail,
+        provider: data && data.provider,
+        authMethod: data && data.authMethod,
+        identity: identity,
+        profile: data ? data.profile : null,
+        existingCreatedAt: existingCreatedAt,
+        otpVerified: true
+    }), { merge: true });
 
     await batch.commit();
 
@@ -343,6 +488,7 @@ exports.verifyEmailOtp = functions.https.onCall(async (data, context) => {
         success: true,
         verified: true,
         registrationStatus: "VERIFIED",
+        identitySaved: identity !== null,
         message: "Código verificado exitosamente."
     };
 });

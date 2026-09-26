@@ -17,6 +17,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -30,6 +31,10 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.proyecto.chambaya.data.model.AccountStatuses
+import com.proyecto.chambaya.data.model.UserRoles
+import com.proyecto.chambaya.data.repository.RegistrationRepository
+import kotlinx.coroutines.launch
 
 /**
  * LoginActivity - Inicio de sesión con Firebase Authentication
@@ -294,14 +299,31 @@ class LoginActivity : AppCompatActivity() {
                 setLoading(false)
 
                 if (document.exists()) {
-                    // Usuario existe en Firestore - Login exitoso
-                    val email = document.getString("email") ?: ""
-                    val role = document.getString("role") ?: "TRABAJADOR"
+                    // FASE 1: el documento guarda los datos dentro de `auth` e `identity`.
+                    // Se mantiene el fallback a los campos raíz de las cuentas creadas
+                    // antes de esta fase para no dejar fuera a ningún usuario.
+                    val email = document.getString("auth.email")
+                        ?: document.getString("email")
+                        ?: ""
+                    val role = document.getString("activeRole")
+                        ?: document.getString("role")
+                        ?: UserRoles.TRABAJADOR
                     val registrationStatus = document.getString("registrationStatus") ?: ""
+                    val accountStatus = document.getString("accountStatus") ?: ""
 
                     // Verificar que el registro está completo
-                    if (registrationStatus == "VERIFIED" || registrationStatus == "COMPLETED") {
+                    val registrationComplete =
+                        registrationStatus in listOf("VERIFIED", "COMPLETED") ||
+                            accountStatus == AccountStatuses.ACTIVE
+
+                    if (registrationComplete) {
                         Toast.makeText(this@LoginActivity, "¡Bienvenido de nuevo!", Toast.LENGTH_SHORT).show()
+
+                        // Registrar el último ingreso (solo `updatedAt` / `lastLoginAt`)
+                        lifecycleScope.launch {
+                            RegistrationRepository(firestore).touchLastLogin(uid)
+                        }
+
                         navigateToMainActivity()
                     } else {
                         showToast("Tu registro no está completo. Completa el proceso de registro primero.")

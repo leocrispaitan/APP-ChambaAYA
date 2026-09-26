@@ -27,15 +27,28 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import android.os.CountDownTimer
 import android.view.inputmethod.InputMethodManager
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.functions.FirebaseFunctionsException
+import com.proyecto.chambaya.data.local.PendingRegistrationStore
+import com.proyecto.chambaya.data.model.AuthMethods
+import com.proyecto.chambaya.data.model.AuthProviders
+import com.proyecto.chambaya.data.model.EmailVerificationMethods
+import com.proyecto.chambaya.data.model.IdentityDocumentTypes
+import com.proyecto.chambaya.data.model.PendingRegistration
+import com.proyecto.chambaya.data.model.RegistrationDraft
+import com.proyecto.chambaya.data.model.UserRoles
+import com.proyecto.chambaya.data.model.ValidatedIdentity
+import com.proyecto.chambaya.data.remote.IdentityValidationResult
+import com.proyecto.chambaya.data.remote.IdentityValidationService
+import com.proyecto.chambaya.data.repository.RegistrationRepository
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -44,12 +57,15 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Flujo de registro ChambAYA:
+ * Flujo de registro ChambAYA (FASE 1 del plan maestro):
  *  - Paso 0: Selección de rol (Trabajador / Contratante) — sin stepper
  *  - Paso 1: Identidad (Trabajador: DNI+RENIEC | Contratante: DNI o RUC)
  *  - Paso 2: Credenciales (Correo + Contraseña o Google Auth con Firebase)
- *  - Paso 3: Verificación (Preparado para Fase 3)
- *  - Paso 4: Resumen final
+ *  - Paso 3: Verificación (OTP de ChambAYA o correo de verificación de Firebase)
+ *  - Paso 4: Resumen final + creación de `users/{uid}`
+ *
+ * La escritura de `users/{uid}` la realiza `RegistrationRepository`, que guarda
+ * el nombre oficial obtenido de RENIEC/SUNAT junto con el DNI/RUC validado.
  */
 class RegistroActivity : AppCompatActivity() {
 
@@ -59,8 +75,19 @@ class RegistroActivity : AppCompatActivity() {
     private var isRucVerified = false
     private var roleSelected = false
     private var selectedRole = ""
-    private var identityMode = "DNI" // "DNI" | "RUC" (solo empleador/contratante)
+    private var identityMode = IdentityDocumentTypes.DNI // "DNI" | "RUC" (solo empleador/contratante)
     private var pendingOtp = ""
+
+    // Identidad validada en la FASE 1 (antes solo vivía en los TextView)
+    private var validatedIdentity: ValidatedIdentity? = null
+    private var googleDisplayName: String = ""
+    private var googlePhotoUrl: String = ""
+    private var isSavingUserDocument = false
+
+    // Capa de datos de la FASE 1
+    private lateinit var identityValidationService: IdentityValidationService
+    private lateinit var registrationRepository: RegistrationRepository
+    private lateinit var pendingRegistrationStore: PendingRegistrationStore
 
     // Firebase Auth & Google Sign-In
     private lateinit var auth: FirebaseAuth
@@ -70,10 +97,10 @@ class RegistroActivity : AppCompatActivity() {
     // Estado conservado de Fase 2
     private var registeredFirebaseUid: String? = null
     private var registeredEmail: String? = null
-    private var registeredAuthMethod: String = "" // "EMAIL_PASSWORD" | "GOOGLE"
+    private var registeredAuthMethod: String = "" // AuthMethods.EMAIL_PASSWORD | AuthMethods.GOOGLE
     private var isEmailVerifiedByAuth: Boolean = false
     private var isPhase2Completed: Boolean = false
-    private var currentAuthMethod: String = "EMAIL" // "EMAIL" | "GOOGLE"
+    private var currentAuthMethod: String = AuthProviders.EMAIL // "EMAIL" | "GOOGLE"
 
     // Stepper views (4 pasos)
     private lateinit var stepperTimelineContainer: LinearLayout
@@ -236,6 +263,11 @@ class RegistroActivity : AppCompatActivity() {
         functions = FirebaseFunctions.getInstance()
         firestore = FirebaseFirestore.getInstance()
 
+        // Capa de datos de la FASE 1 (identidad oficial + creación de users/{uid})
+        identityValidationService = IdentityValidationService()
+        registrationRepository = RegistrationRepository(firestore)
+        pendingRegistrationStore = PendingRegistrationStore(this)
+
         // Configuración oficial de Google Sign-In con el Web Client ID generado desde google-services.json
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
@@ -254,6 +286,9 @@ class RegistroActivity : AppCompatActivity() {
         setupStep2()
         setupStep3()
         setupStep4()
+
+        // Recuperar el registro en curso si Android recreó la Activity
+        restoreRegistrationDraft()
 
         updateStep(0)
     }
@@ -513,25 +548,32 @@ class RegistroActivity : AppCompatActivity() {
     private fun selectRoleCard(isWorker: Boolean) {
         val previousRole = selectedRole
         roleSelected = true
+        selectedRole = if (isWorker) UserRoles.TRABAJADOR else UserRoles.CONTRATANTE
+        applyRoleSelectionUi(isWorker)
+
+        // Si el rol cambió, limpiar todo el paso 1 para no conservar datos del rol anterior
+        if (previousRole.isNotEmpty() && previousRole != selectedRole) {
+            clearStep1Fields()
+        } else {
+            persistRegistrationDraft()
+        }
+        btnStep0Next.isEnabled = true
+        btnStep0Next.alpha = 1f
+    }
+
+    /** Refleja la selección de rol en las tarjetas sin disparar su listener. */
+    private fun applyRoleSelectionUi(isWorker: Boolean) {
         if (isWorker) {
-            selectedRole = "TRABAJADOR"
             cardRoleWorkerSelect.setBackgroundResource(R.drawable.bg_card_selected)
             cardRoleEmployerSelect.setBackgroundResource(R.drawable.bg_card_selectable)
             rbWorkerSelect.isChecked = true
             rbEmployerSelect.isChecked = false
         } else {
-            selectedRole = "CONTRATANTE"
             cardRoleWorkerSelect.setBackgroundResource(R.drawable.bg_card_selectable)
             cardRoleEmployerSelect.setBackgroundResource(R.drawable.bg_card_selected)
             rbWorkerSelect.isChecked = false
             rbEmployerSelect.isChecked = true
         }
-        // Si el rol cambió, limpiar todo el paso 1 para no conservar datos del rol anterior
-        if (previousRole.isNotEmpty() && previousRole != selectedRole) {
-            clearStep1Fields()
-        }
-        btnStep0Next.isEnabled = true
-        btnStep0Next.alpha = 1f
     }
 
     /** Limpia todos los campos y estados de verificación del Paso 1 */
@@ -540,6 +582,7 @@ class RegistroActivity : AppCompatActivity() {
         etRuc.setText("")
         isDniVerified = false
         isRucVerified = false
+        validatedIdentity = null
         cardDniVerified.visibility = View.GONE
         cardRucVerified.visibility = View.GONE
         ivDniCheckIcon.visibility = View.GONE
@@ -547,7 +590,8 @@ class RegistroActivity : AppCompatActivity() {
         pbSunat.visibility = View.GONE
         btnConsultReniec.isEnabled = true
         btnConsultSunat.isEnabled = true
-        identityMode = "DNI"
+        identityMode = IdentityDocumentTypes.DNI
+        pendingRegistrationStore.clear()
     }
 
     // ==================== PASO 1: IDENTIDAD ====================
@@ -585,13 +629,13 @@ class RegistroActivity : AppCompatActivity() {
 
         // Listeners del switch DNI/RUC - prevenir clicks repetidos en el mismo tab
         btnTabDni.setOnClickListener {
-            if (identityMode != "DNI") {  // Solo cambiar si no está ya seleccionado
-                selectIdentityTab("DNI")
+            if (identityMode != IdentityDocumentTypes.DNI) {  // Solo cambiar si no está ya seleccionado
+                selectIdentityTab(IdentityDocumentTypes.DNI)
             }
         }
         btnTabRuc.setOnClickListener {
-            if (identityMode != "RUC") {  // Solo cambiar si no está ya seleccionado
-                selectIdentityTab("RUC")
+            if (identityMode != IdentityDocumentTypes.RUC) {  // Solo cambiar si no está ya seleccionado
+                selectIdentityTab(IdentityDocumentTypes.RUC)
             }
         }
 
@@ -611,36 +655,46 @@ class RegistroActivity : AppCompatActivity() {
         btnStep1Next.setOnClickListener {
             val dni = etDni.text.toString().trim()
             val ruc = etRuc.text.toString().trim()
+            val identity = validatedIdentity
 
             when {
-                identityMode == "DNI" && dni.length != 8 ->
+                identityMode == IdentityDocumentTypes.DNI && dni.length != 8 ->
                     showToast("Ingresa tu DNI de 8 dígitos para continuar")
-                identityMode == "DNI" && !isDniVerified ->
+                identityMode == IdentityDocumentTypes.DNI && !isDniVerified ->
                     showToast("Primero verifica tu identidad")
-                identityMode == "RUC" && ruc.length != 11 ->
+                identityMode == IdentityDocumentTypes.DNI &&
+                    identity?.documentType != IdentityDocumentTypes.DNI ->
+                    showToast("Vuelve a consultar tu DNI en RENIEC para continuar")
+                identityMode == IdentityDocumentTypes.RUC && ruc.length != 11 ->
                     showToast("Ingresa un RUC válido de 11 dígitos")
-                identityMode == "RUC" && !isRucVerified ->
+                identityMode == IdentityDocumentTypes.RUC && !isRucVerified ->
                     showToast("Primero confirma tu empresa en SUNAT")
+                identityMode == IdentityDocumentTypes.RUC &&
+                    identity?.documentType != IdentityDocumentTypes.RUC ->
+                    showToast("Vuelve a consultar tu RUC en SUNAT para continuar")
                 else -> updateStep(2)
             }
         }
     }
 
     private fun configureIdentityStep() {
-        val isWorker = selectedRole == "TRABAJADOR"
+        val isWorker = selectedRole == UserRoles.TRABAJADOR
         if (isWorker) {
             // Modo trabajador: solo DNI
             layoutIdentityTypeTabs.visibility = View.GONE
             layoutDniForm.visibility = View.VISIBLE
             layoutRucForm.visibility = View.GONE
-            identityMode = "DNI"
+            identityMode = IdentityDocumentTypes.DNI
             tvStep1Subtitle.text = getString(R.string.register_step2_subtitle)
         } else {
             // Modo empleador: mostrar tabs DNI/RUC
             layoutIdentityTypeTabs.visibility = View.VISIBLE
-            // Resetear a DNI por defecto y aplicar estilos
+            // Mantener el RUC cuando ya fue validado en este mismo registro
             identityMode = ""  // Forzar que selectIdentityTab procese el cambio
-            selectIdentityTab("DNI")
+            val keepRuc = validatedIdentity?.documentType == IdentityDocumentTypes.RUC
+            selectIdentityTab(
+                if (keepRuc) IdentityDocumentTypes.RUC else IdentityDocumentTypes.DNI
+            )
         }
     }
 
@@ -649,21 +703,27 @@ class RegistroActivity : AppCompatActivity() {
         if (identityMode == mode) return
 
         // Limpiar datos del modo anterior al cambiar de tab
-        if (identityMode == "DNI") {
+        if (identityMode == IdentityDocumentTypes.DNI) {
             etDni.setText("")
             isDniVerified = false
             cardDniVerified.visibility = View.GONE
             ivDniCheckIcon.visibility = View.GONE
-        } else if (identityMode == "RUC") {
+            if (validatedIdentity?.documentType == IdentityDocumentTypes.DNI) {
+                validatedIdentity = null
+            }
+        } else if (identityMode == IdentityDocumentTypes.RUC) {
             etRuc.setText("")
             isRucVerified = false
             cardRucVerified.visibility = View.GONE
+            if (validatedIdentity?.documentType == IdentityDocumentTypes.RUC) {
+                validatedIdentity = null
+            }
         }
 
         identityMode = mode
         val brandColor = ContextCompat.getColor(this, R.color.brand_color)
 
-        if (mode == "DNI") {
+        if (mode == IdentityDocumentTypes.DNI) {
             applyTabStyle(btnTabDni, selected = true, brandColor)
             applyTabStyle(btnTabRuc, selected = false, brandColor)
             layoutDniForm.visibility = View.VISIBLE
@@ -675,6 +735,10 @@ class RegistroActivity : AppCompatActivity() {
             layoutRucForm.visibility = View.VISIBLE
             layoutDniForm.visibility = View.GONE
             tvStep1Subtitle.text = "Valida tu empresa registrada en SUNAT (RUC Activo/Habido)"
+        }
+
+        if (validatedIdentity == null) {
+            pendingRegistrationStore.clear()
         }
     }
 
@@ -709,72 +773,45 @@ class RegistroActivity : AppCompatActivity() {
         cardDniVerified.visibility = View.GONE
         tvDniAttempts.text = "Consultando RENIEC..."
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val url = URL("https://apis.aqpfact.pe/api/dni/$dni")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-                conn.setRequestProperty("Authorization", "Bearer 8204|89676i7wDZfoYBDJ70rZAQOLx9YgbDObuz0ui3Rw")
-                conn.setRequestProperty("Accept", "application/json")
-                conn.connectTimeout = 10000
-                conn.readTimeout = 10000
+        lifecycleScope.launch {
+            when (val result = identityValidationService.validateDni(dni)) {
+                is IdentityValidationResult.Success -> {
+                    val identity = result.identity
+                    isDniVerified = true
+                    validatedIdentity = identity
+                    tvReniecFullName.text = identity.fullName
+                    tvReniecDniDetail.text =
+                        "DNI: ${identity.documentNumber} · ${identity.locationLabel.orEmpty()}"
+                    cardDniVerified.visibility = View.VISIBLE
+                    tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
 
-                val responseCode = conn.responseCode
-                val responseBody = if (responseCode == 200) {
-                    BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
-                } else {
-                    BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream)).use { it.readText() }
+                    Snackbar.make(
+                        findViewById(R.id.registerRoot),
+                        "✓ Identidad verificada: ${identity.fullName}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+
+                    persistRegistrationDraft()
                 }
-                conn.disconnect()
 
-                withContext(Dispatchers.Main) {
-                    pbReniec.visibility = View.GONE
-                    btnConsultReniec.isEnabled = true
-
-                    if (responseCode == 200) {
-                        val json = JSONObject(responseBody)
-                        val success = json.optBoolean("success", false)
-                        if (success) {
-                            val data = json.getJSONObject("data")
-                            val nombreCompleto = data.optString("nombre_completo",
-                                data.optString("name", "Sin nombre"))
-                            val departamento = data.optString("departamento", "")
-                            val provincia = data.optString("provincia", "")
-                            val ubicacion = when {
-                                departamento.isNotEmpty() && provincia.isNotEmpty() -> "$departamento, $provincia"
-                                departamento.isNotEmpty() -> departamento
-                                else -> "Perú"
-                            }
-
-                            isDniVerified = true
-                            tvReniecFullName.text = nombreCompleto
-                            tvReniecDniDetail.text = "DNI: $dni · $ubicacion"
-                            cardDniVerified.visibility = View.VISIBLE
-                            tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
-
-                            Snackbar.make(
-                                findViewById(R.id.registerRoot),
-                                "✓ Identidad verificada: $nombreCompleto",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        } else {
-                            val msg = json.optString("message", "DNI no encontrado en RENIEC")
-                            tvDniAttempts.text = "No se pudo verificar el DNI"
-                            showToast("Error: $msg")
-                        }
-                    } else {
-                        tvDniAttempts.text = "Error al consultar RENIEC"
-                        showToast("Error $responseCode al consultar RENIEC. Intenta de nuevo.")
-                    }
+                is IdentityValidationResult.Rejected -> {
+                    tvDniAttempts.text = "No se pudo verificar el DNI"
+                    showToast("Error: ${result.message}")
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    pbReniec.visibility = View.GONE
-                    btnConsultReniec.isEnabled = true
+
+                is IdentityValidationResult.ServiceError -> {
+                    tvDniAttempts.text = "Error al consultar RENIEC"
+                    showToast("Error ${result.httpCode} al consultar RENIEC. Intenta de nuevo.")
+                }
+
+                is IdentityValidationResult.NetworkError -> {
                     tvDniAttempts.text = "Sin conexión a internet"
-                    showToast("Error de conexión: ${e.message}")
+                    showToast("Error de conexión: ${result.cause}")
                 }
             }
+
+            pbReniec.visibility = View.GONE
+            btnConsultReniec.isEnabled = true
         }
     }
 
@@ -782,6 +819,10 @@ class RegistroActivity : AppCompatActivity() {
         isDniVerified = false
         cardDniVerified.visibility = View.GONE
         tvDniAttempts.text = "Ingresa tu DNI para verificar"
+        if (validatedIdentity?.documentType == IdentityDocumentTypes.DNI) {
+            validatedIdentity = null
+            pendingRegistrationStore.clear()
+        }
     }
 
     private fun consultSunat() {
@@ -795,85 +836,59 @@ class RegistroActivity : AppCompatActivity() {
         btnConsultSunat.isEnabled = false
         cardRucVerified.visibility = View.GONE
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val url = URL("https://apis.aqpfact.pe/api/ruc/$ruc")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.requestMethod = "GET"
-                conn.setRequestProperty("Authorization", "Bearer 8204|89676i7wDZfoYBDJ70rZAQOLx9YgbDObuz0ui3Rw")
-                conn.setRequestProperty("Accept", "application/json")
-                conn.connectTimeout = 10000
-                conn.readTimeout = 10000
+        lifecycleScope.launch {
+            when (val result = identityValidationService.validateRuc(ruc)) {
+                is IdentityValidationResult.Success -> {
+                    val identity = result.identity
+                    isRucVerified = true
+                    validatedIdentity = identity
+                    tvSunatRazonSocial.text = identity.legalName ?: identity.fullName
+                    tvSunatCondition.text = "Condición: ${identity.statusLabel.orEmpty()}"
+                    cardRucVerified.visibility = View.VISIBLE
 
-                val responseCode = conn.responseCode
-                val responseBody = if (responseCode == 200) {
-                    BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
-                } else {
-                    BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream)).use { it.readText() }
+                    Snackbar.make(
+                        findViewById(R.id.registerRoot),
+                        "✓ RUC validado: ACTIVO y HABIDO en SUNAT",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+
+                    persistRegistrationDraft()
                 }
-                conn.disconnect()
 
-                withContext(Dispatchers.Main) {
-                    pbSunat.visibility = View.GONE
-                    btnConsultSunat.isEnabled = true
-
-                    if (responseCode == 200) {
-                        val json = JSONObject(responseBody)
-                        val success = json.optBoolean("success", false)
-                        if (success) {
-                            val data = json.getJSONObject("data")
-                            val razonSocial = data.optString("nombre_o_razon_social",
-                                data.optString("name", "Razón social no disponible"))
-                            val estado = data.optString("estado", "").uppercase()
-                            val condicion = data.optString("condicion", "").uppercase()
-
-                            if (estado == "ACTIVO" && condicion == "HABIDO") {
-                                isRucVerified = true
-                                tvSunatRazonSocial.text = razonSocial
-                                tvSunatCondition.text = "Condición: $condicion  |  Estado: $estado"
-                                cardRucVerified.visibility = View.VISIBLE
-
-                                Snackbar.make(
-                                    findViewById(R.id.registerRoot),
-                                    "✓ RUC validado: ACTIVO y HABIDO en SUNAT",
-                                    Snackbar.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                showToast(
-                                    "RUC no válido: Estado=$estado, Condición=$condicion. " +
-                                    "Solo se aceptan empresas ACTIVAS y HABIDAS."
-                                )
-                            }
-                        } else {
-                            val msg = json.optString("message", "RUC no encontrado en SUNAT")
-                            showToast("Error: $msg")
-                        }
-                    } else {
-                        showToast("Error $responseCode al consultar SUNAT. Intenta de nuevo.")
-                    }
+                is IdentityValidationResult.Rejected -> {
+                    showToast(result.message)
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    pbSunat.visibility = View.GONE
-                    btnConsultSunat.isEnabled = true
-                    showToast("Error de conexión: ${e.message}")
+
+                is IdentityValidationResult.ServiceError -> {
+                    showToast("Error ${result.httpCode} al consultar SUNAT. Intenta de nuevo.")
+                }
+
+                is IdentityValidationResult.NetworkError -> {
+                    showToast("Error de conexión: ${result.cause}")
                 }
             }
+
+            pbSunat.visibility = View.GONE
+            btnConsultSunat.isEnabled = true
         }
     }
 
     private fun resetRucVerifiedUi() {
         isRucVerified = false
         cardRucVerified.visibility = View.GONE
+        if (validatedIdentity?.documentType == IdentityDocumentTypes.RUC) {
+            validatedIdentity = null
+            pendingRegistrationStore.clear()
+        }
     }
 
     // ==================== PASO 2: CREDENCIALES ====================
     private fun setupStep2() {
         btnTabEmailMethod.setOnClickListener {
-            if (currentAuthMethod != "EMAIL") selectAuthMethod("EMAIL")
+            if (currentAuthMethod != AuthProviders.EMAIL) selectAuthMethod(AuthProviders.EMAIL)
         }
         btnTabGoogleMethod.setOnClickListener {
-            if (currentAuthMethod != "GOOGLE") selectAuthMethod("GOOGLE")
+            if (currentAuthMethod != AuthProviders.GOOGLE) selectAuthMethod(AuthProviders.GOOGLE)
         }
 
         setupPasswordToggle(etPassword, ivTogglePassword)
@@ -906,7 +921,7 @@ class RegistroActivity : AppCompatActivity() {
         currentAuthMethod = method
         val brandColor = ContextCompat.getColor(this, R.color.brand_color)
 
-        if (method == "EMAIL") {
+        if (method == AuthProviders.EMAIL) {
             applyTabStyle(btnTabEmailMethod, selected = true, brandColor)
             applyTabStyle(btnTabGoogleMethod, selected = false, brandColor)
             layoutEmailForm.visibility = View.VISIBLE
@@ -972,8 +987,9 @@ class RegistroActivity : AppCompatActivity() {
                     val user = auth.currentUser
                     registeredFirebaseUid = user?.uid
                     registeredEmail = email
-                    registeredAuthMethod = "EMAIL_PASSWORD"
+                    registeredAuthMethod = AuthMethods.EMAIL_PASSWORD
                     isEmailVerifiedByAuth = false
+                    persistRegistrationDraft()
 
                     // 5. Enviar correo de verificación oficial mediante Firebase Authentication (Regla 3 y 4)
                     user?.sendEmailVerification()
@@ -1039,10 +1055,16 @@ class RegistroActivity : AppCompatActivity() {
                         val user = auth.currentUser
                         registeredFirebaseUid = user?.uid
                         registeredEmail = user?.email ?: account.email ?: ""
-                        registeredAuthMethod = "GOOGLE"
+                        registeredAuthMethod = AuthMethods.GOOGLE
                         // Cuenta Google se considera verificada por Firebase sin requerir correo extra (Regla 2)
                         isEmailVerifiedByAuth = true
 
+                        // Nombre y foto que entrega Google (respaldo si el padrón no devuelve nombres)
+                        googleDisplayName = account.displayName.orEmpty()
+                        googlePhotoUrl = user?.photoUrl?.toString().orEmpty()
+                            .ifBlank { account.photoUrl?.toString().orEmpty() }
+
+                        persistRegistrationDraft()
                         showGoogleSuccessModal()
                     } else {
                         val exception = authTask.exception
@@ -1085,7 +1107,7 @@ class RegistroActivity : AppCompatActivity() {
             .setTitle("¡Registro exitoso!")
             .setMessage("Tu cuenta se ha creado correctamente con Google.\n\n" +
                 "✓ Correo: ${registeredEmail ?: ""}\n" +
-                "✓ Rol: ${if (selectedRole == "TRABAJADOR") "Trabajador" else "Contratante"}")
+                "✓ Rol: ${if (selectedRole == UserRoles.TRABAJADOR) "Trabajador" else "Contratante"}")
             .setPositiveButton("Continuar") { _, _ ->
                 onPhase2Completed()
             }
@@ -1178,27 +1200,24 @@ class RegistroActivity : AppCompatActivity() {
             if (reloadTask.isSuccessful) {
                 val freshUser = auth.currentUser
                 if (freshUser?.isEmailVerified == true) {
-                    // Correo verificado: actualizar Firestore y pasar a Fase 4
+                    // Correo verificado: crear/actualizar users/{uid} y pasar a Fase 4
                     isOtpVerified = true
                     isEmailVerifiedByAuth = true
                     tvEmailWaitingStatus.text = "✅ ¡Correo verificado!"
                     tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#059669"))
 
-                    val uid = freshUser.uid
                     val email = registeredEmail ?: freshUser.email ?: ""
-                    firestore.collection("users").document(uid)
-                        .set(mapOf(
-                            "uid" to uid,
-                            "email" to email,
-                            "role" to selectedRole,
-                            "emailVerified" to true,
-                            "registrationStatus" to "VERIFIED",
-                            "authMethod" to "EMAIL_PASSWORD",
-                            "verifiedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
-                        ), com.google.firebase.firestore.SetOptions.merge())
-                        .addOnCompleteListener {
+                    finalizeUserAccount(freshUser) { saved ->
+                        if (saved) {
                             showEmailVerifiedSuccessAndProceed(email)
+                        } else {
+                            tvEmailWaitingStatus.text = "⏳ Guardando tu cuenta..."
+                            tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
+                            tvEmailWaitingError.text =
+                                "No pudimos guardar tu cuenta. Pulsa \"Verificar de nuevo\" para reintentar."
+                            tvEmailWaitingError.visibility = View.VISIBLE
                         }
+                    }
                 } else {
                     tvEmailWaitingStatus.text = "⏳ Pendiente de verificación"
                     tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
@@ -1332,7 +1351,7 @@ class RegistroActivity : AppCompatActivity() {
     private fun prepareOtpStep() {
         val email = registeredEmail ?: etEmail.text.toString().trim()
 
-        if (registeredAuthMethod == "EMAIL_PASSWORD") {
+        if (registeredAuthMethod == AuthMethods.EMAIL_PASSWORD) {
             // Mostrar sub-panel de espera de verificación de correo
             layoutEmailWaiting.visibility = View.VISIBLE
             layoutOtpContent.visibility = View.GONE
@@ -1388,9 +1407,13 @@ class RegistroActivity : AppCompatActivity() {
         tvOtpError.visibility = View.GONE
 
         // Intento 1: Cloud Functions (si el proyecto tiene Functions desplegadas en Blaze)
-        val data = hashMapOf(
+        val data = hashMapOf<String, Any>(
             "email" to email,
-            "role" to selectedRole
+            "role" to selectedRole,
+            "provider" to currentProviderId(),
+            "authMethod" to registeredAuthMethod,
+            "identity" to identityPayloadForBackend(),
+            "profile" to profilePayloadForBackend()
         )
 
         functions.getHttpsCallable("requestEmailOtp")
@@ -1517,10 +1540,14 @@ class RegistroActivity : AppCompatActivity() {
         val email = registeredEmail ?: etEmail.text.toString().trim()
         val uid = registeredFirebaseUid ?: auth.currentUser?.uid ?: ""
 
-        val data = hashMapOf(
+        val data = hashMapOf<String, Any>(
             "otp" to otp,
             "role" to selectedRole,
-            "email" to email
+            "email" to email,
+            "provider" to currentProviderId(),
+            "authMethod" to registeredAuthMethod,
+            "identity" to identityPayloadForBackend(),
+            "profile" to profilePayloadForBackend()
         )
 
         // Intento 1: Cloud Functions
@@ -1573,33 +1600,26 @@ class RegistroActivity : AppCompatActivity() {
                 val computedHash = computeSha256("$otp:$OTP_SALT:$uid")
 
                 if (storedHash == computedHash) {
-                    // Verificación exitosa: actualizar estado
-                    val batch = firestore.batch()
+                    // Verificación exitosa.
+                    // El documento `users/{uid}` lo crea `finalizeUserAccount()` con el
+                    // nombre del usuario y su DNI/RUC; aquí solo se invalida el OTP.
                     val verifRef = firestore.collection("email_verifications").document(uid)
-                    batch.update(verifRef, mapOf(
-                        "verified" to true,
-                        "otpHash" to null,
-                        "verifiedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
-                    ))
-
-                    val userRef = firestore.collection("users").document(uid)
-                    batch.set(userRef, mapOf(
-                        "uid" to uid,
-                        "email" to email,
-                        "role" to selectedRole,
-                        "otpVerified" to true,
-                        "emailVerified" to true,
-                        "registrationStatus" to "VERIFIED",
-                        "verifiedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
-                    ), com.google.firebase.firestore.SetOptions.merge())
-
-                    batch.commit()
-                        .addOnSuccessListener {
-                            onOtpVerifiedSuccess(email)
-                        }
-                        .addOnFailureListener {
-                            onOtpVerifiedSuccess(email)
-                        }
+                    firestore.runTransaction { transaction ->
+                        transaction.update(
+                            verifRef,
+                            mapOf(
+                                "verified" to true,
+                                "otpHash" to null,
+                                "verifiedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                            )
+                        )
+                        null
+                    }.addOnSuccessListener {
+                        onOtpVerifiedSuccess(email)
+                    }.addOnFailureListener {
+                        // El código era correcto: se continúa para no perder el registro
+                        onOtpVerifiedSuccess(email)
+                    }
                 } else {
                     val nextAttempts = attempts + 1
                     val remaining = maxOf(0, 5 - nextAttempts)
@@ -1634,6 +1654,14 @@ class RegistroActivity : AppCompatActivity() {
         btnConfirmOtp.alpha = 1.0f
         isOtpVerified = true
         resendCountDownTimer?.cancel()
+
+        // FASE 1 completa: con el correo verificado se crea `users/{uid}`
+        // con el nombre oficial (RENIEC/SUNAT) y el DNI/RUC validado.
+        finalizeUserAccount(auth.currentUser) { saved ->
+            if (!saved) {
+                showToast("No pudimos guardar tu cuenta. Reintenta desde el resumen final.")
+            }
+        }
         updateStep(4)
     }
 
@@ -1702,8 +1730,26 @@ class RegistroActivity : AppCompatActivity() {
         }
 
         btnFinalizeRegister.setOnClickListener {
-            showSuccessRegistrationDialog()
+            if (isSavingUserDocument) return@setOnClickListener
+            setStep4Saving(true)
+            finalizeUserAccount(auth.currentUser) { saved ->
+                setStep4Saving(false)
+                if (saved) {
+                    showSuccessRegistrationDialog()
+                } else {
+                    showToast("No pudimos guardar tu cuenta. Revisa tu conexión e inténtalo otra vez.")
+                }
+            }
         }
+    }
+
+    private fun setStep4Saving(saving: Boolean) {
+        isSavingUserDocument = saving
+        btnFinalizeRegister.isEnabled = !saving
+        btnFinalizeRegister.alpha = if (saving) 0.6f else 1f
+        btnFinalizeRegister.text =
+            if (saving) getString(R.string.register_btn_saving)
+            else getString(R.string.register_btn_finish)
     }
 
     private fun populateSummary() {
@@ -1712,22 +1758,23 @@ class RegistroActivity : AppCompatActivity() {
 
         tvSummaryPhone.text = "No requerido"
 
-        val isWorker = selectedRole == "TRABAJADOR"
-        val dni = etDni.text.toString().trim()
+        val isWorker = selectedRole == UserRoles.TRABAJADOR
+        val identity = validatedIdentity
 
-        if (identityMode == "RUC" && isRucVerified) {
+        if (identity != null && identity.isCompany) {
             layoutSummaryRucRow.visibility = View.VISIBLE
             layoutSummaryDniRow.visibility = View.GONE
-            tvSummaryRuc.text = "${etRuc.text.toString().trim()} (Activo/Habido)"
-            tvSummaryFullName.text = tvSunatRazonSocial.text.toString()
+            tvSummaryRuc.text = "${identity.documentNumber} (${identity.statusLabel ?: "Activo/Habido"})"
+            tvSummaryFullName.text = identity.legalName ?: identity.fullName
             tvSummaryVerifiedBadge.text = "✓ Empresa Verificada Oficial (SUNAT)"
         } else {
             layoutSummaryRucRow.visibility = View.GONE
             layoutSummaryDniRow.visibility = View.VISIBLE
+            val dni = identity?.documentNumber ?: etDni.text.toString().trim()
             tvSummaryDni.text = if (dni.isNotEmpty()) dni else "72345678"
-            tvSummaryFullName.text =
-                if (isDniVerified && tvReniecFullName.text.isNotBlank()) tvReniecFullName.text
-                else "Perfil Verificado"
+            tvSummaryFullName.text = identity?.fullName?.takeIf { it.isNotBlank() }
+                ?: googleDisplayName.takeIf { it.isNotBlank() }
+                ?: "Perfil Verificado"
             tvSummaryVerifiedBadge.text = "✓ Perfil Verificado Oficial (RENIEC)"
         }
 
@@ -1736,21 +1783,19 @@ class RegistroActivity : AppCompatActivity() {
 
     private fun showSuccessRegistrationDialog() {
         val email = registeredEmail ?: etEmail.text.toString().trim()
-        val fullName = if (identityMode == "RUC" && isRucVerified) {
-            tvSunatRazonSocial.text.toString()
-        } else if (isDniVerified) {
-            tvReniecFullName.text.toString()
-        } else {
-            email
-        }
-        val roleLabel = if (selectedRole == "TRABAJADOR") "Trabajador" else "Contratante"
-        val methodLabel = if (registeredAuthMethod == "GOOGLE") "Google" else "Correo y contraseña"
+        val identity = validatedIdentity
+        val fullName = identity?.displayName?.takeIf { it.isNotBlank() }
+            ?: googleDisplayName.takeIf { it.isNotBlank() }
+            ?: email
+        val roleLabel = if (selectedRole == UserRoles.TRABAJADOR) "Trabajador" else "Contratante"
+        val methodLabel =
+            if (registeredAuthMethod == AuthMethods.GOOGLE) "Google" else "Correo y contraseña"
+        val sourceLabel = if (identity != null && identity.isCompany) "SUNAT" else "RENIEC"
 
-        // Dialog moderno de bienvenida con datos del usuario
-        val dialogView = android.view.LayoutInflater.from(this)
-            .inflate(android.R.layout.simple_list_item_1, null) // usaremos AlertDialog con mensaje enriquecido
-
-        MaterialAlertDialogBuilder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog_Centered)
+        MaterialAlertDialogBuilder(
+            this,
+            com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog_Centered
+        )
             .setIcon(android.R.drawable.ic_dialog_email)
             .setTitle("🎉 ¡Bienvenido a ChambAYA!")
             .setMessage(
@@ -1759,11 +1804,13 @@ class RegistroActivity : AppCompatActivity() {
                 "📧  $email\n" +
                 "💼  $roleLabel\n" +
                 "🔐  Acceso vía: $methodLabel\n\n" +
-                "✅ Identidad verificada (${if (identityMode == "RUC") "SUNAT" else "RENIEC"})\n" +
+                "✅ Identidad verificada ($sourceLabel)\n" +
                 "✅ Correo verificado\n" +
                 "✅ Perfil guardado en Cloud Firestore"
             )
             .setPositiveButton("Ir a ChambAYA →") { _, _ ->
+                // El registro terminó: se limpia el borrador local
+                pendingRegistrationStore.clear()
                 val intent = Intent(this, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
@@ -1807,5 +1854,163 @@ class RegistroActivity : AppCompatActivity() {
 
     private fun showToast(msg: String) {
         Snackbar.make(findViewById(R.id.registerRoot), msg, Snackbar.LENGTH_SHORT).show()
+    }
+
+    // ==================== FASE 1: PERSISTENCIA DEL REGISTRO ====================
+
+    /**
+     * Guarda el borrador (rol + identidad oficial + datos de Google) para que el
+     * nombre del usuario no se pierda si Android recrea la pantalla.
+     */
+    private fun persistRegistrationDraft() {
+        val identity = validatedIdentity ?: return
+        if (selectedRole.isEmpty()) return
+
+        pendingRegistrationStore.saveDraft(
+            RegistrationDraft(
+                role = selectedRole,
+                identity = identity,
+                accountDisplayName = googleDisplayName,
+                accountPhotoUrl = googlePhotoUrl
+            )
+        )
+    }
+
+    /**
+     * Reconstruye el registro completo cuando Firebase Auth ya tiene el `uid`.
+     * Recupera los datos guardados si la Activity fue recreada.
+     */
+    private fun buildPendingRegistration(firebaseUser: FirebaseUser?): PendingRegistration? {
+        val uid = firebaseUser?.uid ?: registeredFirebaseUid ?: return null
+        val identity = validatedIdentity ?: return null
+        val role = selectedRole.ifEmpty { UserRoles.TRABAJADOR }
+        val email = (registeredEmail ?: firebaseUser?.email ?: etEmail.text.toString().trim())
+            .trim().lowercase()
+        val stored = pendingRegistrationStore.loadPending(uid)
+        val isGoogle = registeredAuthMethod == AuthMethods.GOOGLE ||
+            firebaseUser?.providerData?.any { it.providerId == AuthProviders.GOOGLE } == true
+
+        return PendingRegistration(
+            uid = uid,
+            role = role,
+            email = email,
+            provider = if (isGoogle) AuthProviders.GOOGLE else AuthProviders.EMAIL,
+            authMethod = if (isGoogle) AuthMethods.GOOGLE else AuthMethods.EMAIL_PASSWORD,
+            verificationMethod = if (isOtpVerified) {
+                EmailVerificationMethods.CHAMBAYA_OTP
+            } else {
+                EmailVerificationMethods.FIREBASE_EMAIL_LINK
+            },
+            otpVerified = isOtpVerified,
+            identity = identity,
+            accountDisplayName = googleDisplayName.ifBlank { stored?.accountDisplayName.orEmpty() },
+            accountPhotoUrl = googlePhotoUrl.ifBlank { stored?.accountPhotoUrl.orEmpty() }
+        )
+    }
+
+    /**
+     * Crea o actualiza `users/{uid}` con los datos mínimos de la FASE 1:
+     * nombre oficial, DNI/RUC, roles y verificaciones.
+     * Es idempotente: se puede volver a llamar desde el resumen final.
+     */
+    private fun finalizeUserAccount(firebaseUser: FirebaseUser?, onFinished: (Boolean) -> Unit) {
+        val pending = buildPendingRegistration(firebaseUser)
+
+        if (pending == null) {
+            showToast("No pudimos recuperar los datos de tu identidad. Vuelve a verificarla.")
+            onFinished(false)
+            return
+        }
+
+        lifecycleScope.launch {
+            val result = registrationRepository.finalizeRegistration(pending, firebaseUser)
+            if (result.isSuccess) {
+                pendingRegistrationStore.savePending(pending)
+            }
+            onFinished(result.isSuccess)
+        }
+    }
+
+    /** Proveedor de autenticación de la cuenta actual ("EMAIL" o "GOOGLE"). */
+    private fun currentProviderId(): String =
+        if (registeredAuthMethod == AuthMethods.GOOGLE) AuthProviders.GOOGLE else AuthProviders.EMAIL
+
+    /** Datos de identidad que se envían a la Cloud Function (mismo esquema que Firestore). */
+    private fun identityPayloadForBackend(): Map<String, Any> {
+        val identity = validatedIdentity ?: return emptyMap()
+        return mapOf(
+            "documentType" to identity.documentType,
+            "documentNumber" to identity.documentNumber,
+            "documentNumberMasked" to identity.maskedDocumentNumber,
+            "identityVerified" to true,
+            "verifiedWith" to identity.source,
+            "identityName" to identity.displayName,
+            "identityStatus" to (identity.statusLabel ?: ""),
+            "location" to (identity.locationLabel ?: ""),
+            "firstName" to identity.firstName,
+            "lastName" to identity.lastName
+        )
+    }
+
+    private fun profilePayloadForBackend(): Map<String, Any> {
+        val identity = validatedIdentity ?: return emptyMap()
+        return mapOf(
+            "fullName" to identity.displayName.ifBlank { googleDisplayName },
+            "profilePhotoUrl" to googlePhotoUrl
+        )
+    }
+
+    /**
+     * Restaura el estado del registro si la Activity fue recreada
+     * (rotación o el sistema mató el proceso).
+     */
+    private fun restoreRegistrationDraft() {
+        val draft = pendingRegistrationStore.loadDraft() ?: return
+
+        googleDisplayName = draft.accountDisplayName
+        googlePhotoUrl = draft.accountPhotoUrl
+        validatedIdentity = draft.identity
+
+        if (UserRoles.isValid(draft.role)) {
+            selectedRole = draft.role
+            roleSelected = true
+            applyRoleSelectionUi(isWorker = draft.role == UserRoles.TRABAJADOR)
+            btnStep0Next.isEnabled = true
+            btnStep0Next.alpha = 1f
+        }
+
+        when (draft.identity.documentType) {
+            IdentityDocumentTypes.DNI -> {
+                identityMode = IdentityDocumentTypes.DNI
+                isDniVerified = true
+                etDni.setText(draft.identity.documentNumber)
+                etDni.setSelection(draft.identity.documentNumber.length)
+                ivDniCheckIcon.visibility = View.VISIBLE
+                tvReniecFullName.text = draft.identity.fullName
+                tvReniecDniDetail.text =
+                    "DNI: ${draft.identity.documentNumber} · ${draft.identity.locationLabel.orEmpty()}"
+                tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
+                cardDniVerified.visibility = View.VISIBLE
+            }
+
+            IdentityDocumentTypes.RUC -> {
+                identityMode = IdentityDocumentTypes.RUC
+                isRucVerified = true
+                etRuc.setText(draft.identity.documentNumber)
+                etRuc.setSelection(draft.identity.documentNumber.length)
+                tvSunatRazonSocial.text = draft.identity.legalName ?: draft.identity.fullName
+                tvSunatCondition.text = "Condición: ${draft.identity.statusLabel.orEmpty()}"
+                cardRucVerified.visibility = View.VISIBLE
+            }
+        }
+
+        // Si ya existía una cuenta de Firebase para este registro, recuperar el resto
+        auth.currentUser?.let { user ->
+            pendingRegistrationStore.loadPending(user.uid)?.let { pending ->
+                registeredFirebaseUid = pending.uid
+                registeredEmail = pending.email
+                registeredAuthMethod = pending.authMethod
+            }
+        }
     }
 }

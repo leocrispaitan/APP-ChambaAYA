@@ -178,8 +178,9 @@
     <string name="register_experience_label">Años de Experiencia</string>
 
     <string name="register_step5_title">¡Todo listo para empezar!</string>
-    <string name="register_step5_subtitle">Tu cuenta ha sido validada y está lista para guardarse</string>
-    <string name="register_btn_finish">Crear Cuenta en ChambAYA</string>
+    <string name="register_step5_subtitle">Tu cuenta fue creada y verificada correctamente</string>
+    <string name="register_btn_finish">Entrar a ChambAYA</string>
+    <string name="register_btn_saving">Guardando tu cuenta…</string>
     <string name="register_btn_continue">Continuar</string>
     <string name="register_btn_back">Atrás</string>
 
