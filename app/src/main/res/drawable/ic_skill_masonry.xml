@@ -4,12 +4,98 @@
     android:height="28dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Brick wall base -->
+
+    <!-- Pared de ladrillos -->
     <path
-        android:fillColor="#E05A47"
-        android:pathData="M3,11h8v4H3v-4zm10,0h8v4h-8v-4zm-10,6h5v4H3v-4zm7,0h8v4h-8v-4zm10,0h1v4h-1v-4z" />
-    <!-- Trowel tool overlapping -->
+        android:fillColor="#D95745"
+        android:pathData="
+            M3,10
+            C3,9.45 3.45,9 4,9
+            H20
+            C20.55,9 21,9.45 21,10
+            V20
+            C21,20.55 20.55,21 20,21
+            H4
+            C3.45,21 3,20.55 3,20
+            Z" />
+
+    <!-- Juntas de mortero / separación de ladrillos -->
     <path
-        android:fillColor="#7047EB"
-        android:pathData="M16.5,3.5L12,8l3,3 4.5,-4.5L16.5,3.5zM20.5,10.5l-1.5,-1.5 1,-1 1.5,1.5 -1,1z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M3,14
+            H21
+            V15
+            H3
+            Z
+            M9,9
+            H10
+            V14
+            H9
+            Z
+            M16,9
+            H17
+            V14
+            H16
+            Z
+            M6,15
+            H7
+            V21
+            H6
+            Z
+            M13,15
+            H14
+            V21
+            H13
+            Z
+            M20,15
+            H21
+            V21
+            H20
+            Z" />
+
+    <!-- Paleta de albañil: hoja -->
+    <path
+        android:fillColor="#6C4CE8"
+        android:pathData="
+            M12.25,8.55
+            L17.85,2.95
+            C18.25,2.55 18.9,2.55 19.3,2.95
+            L21.05,4.7
+            C21.45,5.1 21.45,5.75 21.05,6.15
+            L15.45,11.75
+            Z" />
+
+    <!-- Unión de la paleta -->
+    <path
+        android:fillColor="#5035B8"
+        android:pathData="
+            M14.9,10.05
+            L16.35,11.5
+            L18.15,9.7
+            L16.7,8.25
+            Z" />
+
+    <!-- Mango de la paleta -->
+    <path
+        android:fillColor="#6C4CE8"
+        android:pathData="
+            M17.55,11.15
+            L19.05,9.65
+            L21.45,12.05
+            C21.85,12.45 21.85,13.1 21.45,13.5
+            C21.05,13.9 20.4,13.9 20,13.5
+            Z" />
+
+    <!-- Detalle del mango -->
+    <path
+        android:fillColor="#3E2A91"
+        android:pathData="
+            M20.05,12.15
+            L20.75,11.45
+            L21.65,12.35
+            C21.95,12.65 21.95,13.15 21.65,13.45
+            C21.35,13.75 20.85,13.75 20.55,13.45
+            Z" />
+
 </vector>

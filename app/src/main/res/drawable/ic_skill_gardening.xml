@@ -4,11 +4,172 @@
     android:height="28dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Green plant leaves / sprout -->
+
+    <!-- ========================= -->
+    <!-- TIERRA -->
+    <!-- ========================= -->
+
+    <!-- Montículo principal -->
+    <path
+        android:fillColor="#7A402B"
+        android:pathData="
+            M4,20
+            C4,18.2 5.4,17 7.2,17
+            C7.8,15.5 9.2,14.7 11,15
+            C12.1,13.8 14.2,13.7 15.5,15
+            C17.8,14.6 20,16.2 20,18.5
+            C20,19.4 19.5,20.2 18.8,20.8
+            H5
+            C4.45,20.8 4,20.45 4,20
+            Z" />
+
+    <!-- Sombra de tierra -->
+    <path
+        android:fillColor="#5C3024"
+        android:pathData="
+            M5.5,19.2
+            C7,17.8 8.8,17.4 10.4,18
+            C12,16.9 14.2,17 15.5,18
+            C16.8,17.5 18.1,17.9 19,18.8
+            C19.3,19.15 19.5,19.55 19.55,20
+            H5.5
+            Z" />
+
+    <!-- ========================= -->
+    <!-- TALLO -->
+    <!-- ========================= -->
+
     <path
         android:fillColor="#16A34A"
-        android:pathData="M12,3c0,0 -4,1 -4,6 0,3.31 2.69,6 6,6 0,-5 5,-7 5,-7 -3.31,-0.69 -7,-1 -7,-5z" />
+        android:pathData="
+            M11.2,17.2
+            C11.35,14.5 11.4,11.9 11.9,9.5
+            H13.05
+            C12.65,12.1 12.65,14.7 12.8,17.2
+            Z" />
+
+    <!-- ========================= -->
+    <!-- HOJA IZQUIERDA -->
+    <!-- ========================= -->
+
     <path
         android:fillColor="#22C55E"
-        android:pathData="M12,21v-6c-3.31,0 -6,-2.69 -6,-6 0,0 4,-1 6,2.5V21z" />
+        android:pathData="
+            M12,11
+            C9.15,11 6.4,9.45 5.7,6.35
+            C8.45,5.85 11.1,6.65 12.35,9.05
+            C12.65,9.65 12.55,10.4 12,11
+            Z" />
+
+    <!-- Detalle hoja izquierda -->
+    <path
+        android:fillColor="#86EFAC"
+        android:pathData="
+            M6.65,6.85
+            C8.65,7.05 10.15,7.8 11.55,9.55
+            C9.95,8.35 8.45,7.65 6.65,6.85
+            Z" />
+
+    <!-- ========================= -->
+    <!-- HOJA DERECHA -->
+    <!-- ========================= -->
+
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="
+            M12.2,10.2
+            C12.2,6.25 15.15,4.25 18.75,4.15
+            C19.1,7.75 17.05,10.65 12.2,11.25
+            Z" />
+
+    <!-- Detalle hoja derecha -->
+    <path
+        android:fillColor="#86EFAC"
+        android:pathData="
+            M13,9.95
+            C14.65,8.05 16.15,6.65 18.15,5.15
+            C16.45,7.15 15.05,8.65 13,9.95
+            Z" />
+
+    <!-- ========================= -->
+    <!-- HOJA SUPERIOR -->
+    <!-- ========================= -->
+
+    <path
+        android:fillColor="#4ADE80"
+        android:pathData="
+            M12.35,8.9
+            C10.75,6.35 11.45,3.9 13.95,2.75
+            C15.25,5.1 14.75,7.25 12.35,8.9
+            Z" />
+
+    <!-- Nervadura hoja superior -->
+    <path
+        android:fillColor="#BBF7D0"
+        android:pathData="
+            M12.55,8.25
+            C12.9,6.25 13.35,4.9 13.9,3.55
+            C13.65,5.4 13.35,6.85 12.55,8.25
+            Z" />
+
+    <!-- ========================= -->
+    <!-- PALA DE JARDINERÍA -->
+    <!-- ========================= -->
+
+    <!-- Mango -->
+    <path
+        android:fillColor="#6C4CE8"
+        android:pathData="
+            M18.15,10.7
+            L19.25,9.6
+            L21.35,11.7
+            C21.75,12.1 21.75,12.75 21.35,13.15
+            C20.95,13.55 20.3,13.55 19.9,13.15
+            Z" />
+
+    <!-- Detalle del mango -->
+    <path
+        android:fillColor="#5035B8"
+        android:pathData="
+            M20.05,11.45
+            L20.75,10.75
+            L21.55,11.55
+            C21.9,11.9 21.9,12.45 21.55,12.8
+            L21.25,13.1
+            Z" />
+
+    <!-- Cuello de la pala -->
+    <path
+        android:fillColor="#4B5563"
+        android:pathData="
+            M17.65,12.35
+            L19.1,13.8
+            L17.4,15.5
+            L15.95,14.05
+            Z" />
+
+    <!-- Hoja metálica de la pala -->
+    <path
+        android:fillColor="#64748B"
+        android:pathData="
+            M15.95,13.65
+            C16.25,13.45 16.7,13.5 17,13.8
+            L19.2,16
+            C19.45,16.25 19.45,16.65 19.25,16.95
+            L16.35,20.35
+            C16.05,20.7 15.5,20.75 15.15,20.45
+            L12.85,18.15
+            C12.55,17.85 12.55,17.4 12.8,17.05
+            Z" />
+
+    <!-- Brillo de la hoja metálica -->
+    <path
+        android:fillColor="#CBD5E1"
+        android:pathData="
+            M15.85,14.35
+            L17.05,15.55
+            L14,19.35
+            L13.45,18.8
+            Z" />
+
 </vector>
