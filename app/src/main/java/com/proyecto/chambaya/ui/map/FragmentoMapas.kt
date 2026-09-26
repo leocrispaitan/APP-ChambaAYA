@@ -106,6 +106,8 @@ class FragmentoMapas : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        applyWhiteStatusBar()
+
         // Header Views
         tvHeaderTitle = view.findViewById(R.id.tvHeaderTitle)
         tvHeaderSubtitle = view.findViewById(R.id.tvHeaderSubtitle)
@@ -117,8 +119,12 @@ class FragmentoMapas : Fragment() {
         topBarContainer?.let { topBar ->
             ViewCompat.setOnApplyWindowInsetsListener(topBar) { v, insets ->
                 val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-                val baseTopPadding = (10 * resources.displayMetrics.density).toInt()
-                v.updatePadding(top = statusBar.top + baseTopPadding)
+                val baseTopPadding = (8 * resources.displayMetrics.density).toInt()
+                val bottomPadding = (12 * resources.displayMetrics.density).toInt()
+                v.updatePadding(
+                    top = statusBar.top + baseTopPadding,
+                    bottom = bottomPadding
+                )
                 insets
             }
         }
@@ -129,6 +135,13 @@ class FragmentoMapas : Fragment() {
 
         mapView?.getMapAsync { map ->
             maplibreMap = map
+
+            // Disable default compass needle to prevent overlapping status bar or custom action buttons
+            map.uiSettings.apply {
+                isCompassEnabled = false
+                isLogoEnabled = false
+                isAttributionEnabled = false
+            }
 
             // Initial camera position centered on Ayacucho, Perú
             map.cameraPosition = CameraPosition.Builder()
@@ -488,7 +501,19 @@ class FragmentoMapas : Fragment() {
     override fun onResume() {
         super.onResume()
         mapView?.onResume()
-        BarraEstadoUtils.aplicarColor(requireActivity(), Color.parseColor("#EDF8F1"))
+        applyWhiteStatusBar()
+    }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (!hidden) {
+            applyWhiteStatusBar()
+        }
+    }
+
+    private fun applyWhiteStatusBar() {
+        val act = activity ?: return
+        BarraEstadoUtils.aplicarColor(act, Color.WHITE)
     }
 
     override fun onPause() {
