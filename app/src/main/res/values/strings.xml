@@ -285,4 +285,19 @@
     <string name="logout_dialog_subtitle">¡Gracias y nos vemos pronto! ❤️</string>
     <string name="logout_dialog_cancel">Cancelar</string>
     <string name="logout_dialog_confirm">Sí, salir</string>
+
+    <!-- Edit Profile Screen -->
+    <string name="edit_profile_title">Editar Perfil</string>
+    <string name="edit_profile_label_full_name">Nombre Completo</string>
+    <string name="edit_profile_hint_full_name">Ingresa tu nombre completo</string>
+    <string name="edit_profile_label_birth_date">Fecha de Nacimiento</string>
+    <string name="edit_profile_label_email">Correo Electrónico</string>
+    <string name="edit_profile_hint_email">correo@ejemplo.com</string>
+    <string name="edit_profile_label_location">Ubicación</string>
+    <string name="edit_profile_default_location">Estados Unidos</string>
+    <string name="edit_profile_label_phone">Teléfono</string>
+    <string name="edit_profile_hint_phone">+1 111 467 378 399</string>
+    <string name="edit_profile_btn_update">Actualizar Perfil</string>
+    <string name="edit_profile_photo_desc">Foto de perfil</string>
+    <string name="edit_profile_change_photo">Cambiar foto</string>
 </resources>

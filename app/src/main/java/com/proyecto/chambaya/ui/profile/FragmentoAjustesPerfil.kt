@@ -1,21 +1,23 @@
 package com.proyecto.chambaya.ui.profile
 
-import android.app.Dialog
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import com.proyecto.chambaya.BarraEstadoUtils
+import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.MainActivity
 import com.proyecto.chambaya.R
 
@@ -29,6 +31,17 @@ import com.proyecto.chambaya.R
  *  4. Fila "Cerrar sesión" muestra el dialog de confirmación
  */
 class FragmentoAjustesPerfil : Fragment() {
+
+    // Launcher para recibir resultado de EditarPerfilActivity
+    private val editProfileLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // El perfil fue actualizado exitosamente
+            Toast.makeText(requireContext(), "✓ Perfil actualizado", Toast.LENGTH_SHORT).show()
+            // Aquí podrías recargar datos del perfil si es necesario
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -95,7 +108,7 @@ class FragmentoAjustesPerfil : Fragment() {
         // Edit Profile
         root.findViewById<View>(R.id.btnSettingsEditProfile)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Editar perfil", Toast.LENGTH_SHORT).show()
+            openEditProfileScreen()
         }
 
         // Section: Cuenta
@@ -203,6 +216,23 @@ class FragmentoAjustesPerfil : Fragment() {
     // ─────────────────────────────────────────────────────────────
     //  HELPERS
     // ─────────────────────────────────────────────────────────────
+
+    private fun openEditProfileScreen() {
+        val intent = Intent(requireContext(), EditarPerfilActivity::class.java)
+        editProfileLauncher.launch(intent)
+        
+        // Aplicar transición compatible con todas las versiones
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            requireActivity().overrideActivityTransition(
+                Activity.OVERRIDE_TRANSITION_OPEN,
+                R.anim.dialog_slide_up,
+                android.R.anim.fade_out
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            requireActivity().overridePendingTransition(R.anim.dialog_slide_up, android.R.anim.fade_out)
+        }
+    }
 
     private fun navigateBack() {
         parentFragmentManager.popBackStack()

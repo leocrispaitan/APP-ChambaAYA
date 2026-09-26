@@ -70,6 +70,9 @@ dependencies {
     implementation("org.maplibre.gl:android-sdk:11.8.3")
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

@@ -92,4 +92,48 @@
         <item name="android:windowEnterAnimation">@anim/dialog_slide_up</item>
         <item name="android:windowExitAnimation">@anim/dialog_slide_down</item>
     </style>
+
+    <!-- Custom DatePicker Theme -->
+    <style name="CustomDatePickerTheme" parent="Theme.Material3.Light.Dialog">
+        <item name="colorPrimary">#5B67F7</item>
+        <item name="colorAccent">#5B67F7</item>
+        <item name="android:textColorPrimary">#1F2937</item>
+        <item name="android:textColorSecondary">#6B7280</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/CustomDatePickerButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/CustomDatePickerButton</item>
+    </style>
+
+    <style name="CustomDatePickerButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">#5B67F7</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Custom AlertDialog Theme -->
+    <style name="CustomAlertDialog" parent="Theme.Material3.Light.Dialog.Alert">
+        <item name="colorPrimary">#5B67F7</item>
+        <item name="android:textColorPrimary">#1F2937</item>
+        <item name="android:textColorSecondary">#6B7280</item>
+        <item name="buttonBarPositiveButtonStyle">@style/CustomAlertDialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/CustomAlertDialogButton</item>
+        <item name="android:background">@android:color/white</item>
+    </style>
+
+    <style name="CustomAlertDialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">#5B67F7</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Edit Profile Activity Theme (Full screen with custom transitions) -->
+    <style name="Theme.ChambAYA.EditProfile" parent="Theme.ChambAYA">
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowAnimationStyle">@style/EditProfileAnimation</item>
+    </style>
+
+    <style name="EditProfileAnimation">
+        <item name="android:windowEnterAnimation">@anim/dialog_slide_up</item>
+        <item name="android:windowExitAnimation">@anim/dialog_slide_down</item>
+    </style>
 </resources>
