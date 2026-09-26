@@ -5,16 +5,16 @@
     android:id="@+id/mapRootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#EDF8F1"
+    android:background="@color/white"
     tools:context=".ui.map.FragmentoMapas">
 
-    <!-- Guideline dividing Map visible area and Bottom Sheet (~50%) -->
+    <!-- Guideline dividing Map visible area and Bottom Sheet (~65%) -->
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guidelineBottomSheet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.50" />
+        app:layout_constraintGuide_percent="0.65" />
 
     <!-- 1. TOP HEADER & STATUS BAR BACKGROUND (Solid White Bar covering Status Bar and Title) -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -244,7 +244,6 @@
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true"
             android:overScrollMode="never"
             android:scrollbars="none">
 
@@ -261,6 +260,7 @@
                     android:layout_height="4.5dp"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="12dp"
+                    android:layout_marginBottom="4dp"
                     android:background="@drawable/bg_bottom_sheet_handle" />
 
                 <!-- Section Title: "What's Nearby" -->
