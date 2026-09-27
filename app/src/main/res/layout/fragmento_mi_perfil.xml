@@ -425,7 +425,7 @@
                         </LinearLayout>
                     </FrameLayout>
 
-                    <!-- Ver perfil público (Outlined Button) -->
+                    <!-- Ver fotos (Outlined Button) -->
                     <FrameLayout
                         android:id="@+id/btnMessage"
                         android:layout_width="0dp"
@@ -447,14 +447,14 @@
                                 android:layout_width="18dp"
                                 android:layout_height="18dp"
                                 android:contentDescription="@null"
-                                android:src="@drawable/ic_profile_eye_view" />
+                                android:src="@drawable/ic_profile_photos" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="7dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="@string/profile_btn_view_public"
+                                android:text="@string/profile_btn_view_photos"
                                 android:textColor="#635BFF"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />

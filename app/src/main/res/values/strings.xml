@@ -210,7 +210,7 @@
     <string name="profile_banner_complete_sub">Te falta agregar algunos datos para que más personas confíen en ti.</string>
     <string name="profile_banner_complete_btn">Completar perfil</string>
     <string name="profile_btn_edit">Editar perfil</string>
-    <string name="profile_btn_view_public">Ver perfil público</string>
+    <string name="profile_btn_view_photos">Ver fotos</string>
 
     <string name="profile_skills_title">Especialidad</string>
     <string name="profile_skills_subtitle">Oficios y servicios que realizo</string>
