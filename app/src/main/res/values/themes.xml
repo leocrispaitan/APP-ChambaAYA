@@ -87,6 +87,12 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <!-- Rounded corner 12dp for photo grid items -->
+    <style name="ShapeAppearance.RoundedCorner12" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <!-- Circular Image Style for Profile Photos -->
     <style name="CircularImageStyle" parent="ShapeAppearance.Circle">
         <item name="cornerFamily">rounded</item>

@@ -30,6 +30,8 @@ class FragmentoMiPerfil : Fragment() {
         setupTopBar(view)
         setupActionButtons(view)
         setupSkillsAndExperience(view)
+        setupTabNavigation(view)
+        setupEmptyStateButtons(view)
     }
 
     override fun onResume() {
@@ -75,16 +77,16 @@ class FragmentoMiPerfil : Fragment() {
     }
 
     private fun setupActionButtons(root: View) {
-        val btnEdit = root.findViewById<View>(R.id.btnFollow)
-        val btnViewPublic = root.findViewById<View>(R.id.btnMessage)
+        val btnEditarPerfil = root.findViewById<View>(R.id.btnEditarPerfil)
+        val btnCompartirPerfil = root.findViewById<View>(R.id.btnCompartirPerfil)
         val btnComplete = root.findViewById<View>(R.id.btnEmail)
 
-        btnEdit?.setOnClickListener {
-            showCardFeedback(it, "Editar perfil de Carlos Quispe")
+        btnEditarPerfil?.setOnClickListener {
+            showCardFeedback(it, "Editar perfil de Katty Huaman")
         }
 
-        btnViewPublic?.setOnClickListener {
-            showCardFeedback(it, "Vista previa de tu perfil público")
+        btnCompartirPerfil?.setOnClickListener {
+            showCardFeedback(it, "Compartir tu perfil")
         }
 
         btnComplete?.setOnClickListener {
@@ -129,5 +131,136 @@ class FragmentoMiPerfil : Fragment() {
             .start()
 
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Configura la navegación entre tabs: Sobre Mí, Fotos, Reseñas
+     * Muestra/oculta el contenido apropiado y actualiza los estilos de tabs
+     */
+    private fun setupTabNavigation(root: View) {
+        val tabSobreMi = root.findViewById<View>(R.id.tabSobreMi)
+        val tabFotos = root.findViewById<View>(R.id.tabFotos)
+        val tabResenas = root.findViewById<View>(R.id.tabResenas)
+
+        val contentSobreMi = root.findViewById<View>(R.id.contentTabSobreMi)
+        val contentFotos = root.findViewById<View>(R.id.contentTabFotos)
+        val contentResenas = root.findViewById<View>(R.id.contentTabResenas)
+
+        // Tab 1: Sobre Mí (por defecto activo)
+        tabSobreMi?.setOnClickListener {
+            activateTab(
+                root,
+                selectedTab = it,
+                contentToShow = contentSobreMi,
+                allTabs = listOf(tabSobreMi, tabFotos, tabResenas),
+                allContents = listOf(contentSobreMi, contentFotos, contentResenas)
+            )
+        }
+
+        // Tab 2: Fotos
+        tabFotos?.setOnClickListener {
+            activateTab(
+                root,
+                selectedTab = it,
+                contentToShow = contentFotos,
+                allTabs = listOf(tabSobreMi, tabFotos, tabResenas),
+                allContents = listOf(contentSobreMi, contentFotos, contentResenas)
+            )
+        }
+
+        // Tab 3: Reseñas
+        tabResenas?.setOnClickListener {
+            activateTab(
+                root,
+                selectedTab = it,
+                contentToShow = contentResenas,
+                allTabs = listOf(tabSobreMi, tabFotos, tabResenas),
+                allContents = listOf(contentSobreMi, contentFotos, contentResenas)
+            )
+        }
+    }
+
+    /**
+     * Activa un tab específico, actualiza su estilo y muestra el contenido correspondiente
+     */
+    private fun activateTab(
+        root: View,
+        selectedTab: View,
+        contentToShow: View?,
+        allTabs: List<View?>,
+        allContents: List<View?>
+    ) {
+        // Ocultar todos los contenidos
+        allContents.forEach { it?.visibility = View.GONE }
+        // Mostrar el contenido seleccionado
+        contentToShow?.visibility = View.VISIBLE
+
+        // Actualizar estilos de todos los tabs
+        allTabs.forEachIndexed { index, tab ->
+            tab?.let {
+                val isActive = tab == selectedTab
+                
+                // Actualizar background
+                it.setBackgroundResource(
+                    if (isActive) R.drawable.bg_profile_tab_active 
+                    else R.drawable.bg_profile_tab_inactive
+                )
+
+                // Actualizar color de icono y texto según estado
+                val iconId = when (index) {
+                    0 -> R.id.iconTabSobreMi
+                    1 -> R.id.iconTabFotos
+                    2 -> R.id.iconTabResenas
+                    else -> null
+                }
+                val textId = when (index) {
+                    0 -> R.id.tvTabSobreMi
+                    1 -> R.id.tvTabFotos
+                    2 -> R.id.tvTabResenas
+                    else -> null
+                }
+
+                iconId?.let { id ->
+                    root.findViewById<android.widget.ImageView>(id)?.imageTintList = 
+                        ContextCompat.getColorStateList(
+                            requireContext(),
+                            if (isActive) R.color.brand_color else R.color.profile_text_stat_label
+                        )
+                }
+                
+                textId?.let { id ->
+                    root.findViewById<TextView>(id)?.setTextColor(
+                        ContextCompat.getColor(
+                            requireContext(),
+                            if (isActive) R.color.brand_color else R.color.profile_text_stat_label
+                        )
+                    )
+                }
+            }
+        }
+
+        // Feedback visual de tap
+        selectedTab.animate()
+            .scaleX(0.97f)
+            .scaleY(0.97f)
+            .setDuration(70)
+            .withEndAction {
+                selectedTab.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(100)
+                    .start()
+            }
+            .start()
+    }
+
+    /**
+     * Configura los botones de los empty states (Subir foto, etc.)
+     */
+    private fun setupEmptyStateButtons(root: View) {
+        // Botón: Subir foto (en tab de Fotos)
+        root.findViewById<View>(R.id.btnSubirFoto)?.setOnClickListener {
+            showCardFeedback(it, "Próximamente: Subir fotos de tus trabajos")
+        }
     }
 }
