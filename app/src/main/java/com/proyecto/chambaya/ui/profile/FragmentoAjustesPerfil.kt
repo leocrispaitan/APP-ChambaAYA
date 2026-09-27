@@ -49,8 +49,16 @@ class FragmentoAjustesPerfil : Fragment() {
 
     private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
 
-    /** Último perfil leído, para pintar sin volver a ir a Firestore. */
-    private var perfil: UserProfile? = null
+    /**
+     * Último perfil leído, para pintar sin volver a ir a Firestore.
+     *
+     * Se inicializa desde [ProfileCache]: esta pantalla se recrea de cero cada
+     * vez que se abre (`FragmentoAjustesPerfil()` en el `replace(...)` de
+     * `FragmentoMiPerfil`), así que sin esto siempre arrancaba en `null` y
+     * dependía de una nueva consulta a Firestore — que es lo que causaba el
+     * parpadeo de datos mock en cada entrada.
+     */
+    private var perfil: UserProfile? = ProfileCache.perfil
 
     // Launcher para recibir resultado de EditarPerfilActivity
     private val editProfileLauncher = registerForActivityResult(
@@ -219,6 +227,7 @@ class FragmentoAjustesPerfil : Fragment() {
             repository.loadProfile(uid)
                 .onSuccess { datos ->
                     perfil = datos
+                    ProfileCache.perfil = datos
                     view?.let { pintarUsuario(it, datos) }
                 }
                 .onFailure { error ->
@@ -352,6 +361,7 @@ class FragmentoAjustesPerfil : Fragment() {
      */
     private fun performLogout() {
         auth.signOut()
+        ProfileCache.limpiar()
 
         Toast.makeText(requireContext(), R.string.settings_sesion_cerrada, Toast.LENGTH_SHORT)
             .show()

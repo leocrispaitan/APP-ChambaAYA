@@ -117,7 +117,7 @@
                     android:layout_height="54dp"
                     android:contentDescription="Avatar"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/avatar_katty"
+                    android:src="@drawable/ic_user_circle"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.Circle" />
 
                 <!-- Name & email -->

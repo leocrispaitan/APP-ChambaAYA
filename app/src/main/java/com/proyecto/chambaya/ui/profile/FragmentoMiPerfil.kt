@@ -58,8 +58,14 @@ class FragmentoMiPerfil : Fragment() {
 
     private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
 
-    /** Último perfil leído de Firestore; sobrevive a los recreados de vista. */
-    private var perfil: UserProfile? = null
+    /**
+     * Último perfil leído de Firestore; sobrevive a los recreados de vista.
+     *
+     * Se inicializa desde [ProfileCache] para que, si `FragmentoAjustesPerfil`
+     * ya lo cargó segundos antes, esta pantalla pinte esos datos de inmediato
+     * en vez de esperar una nueva consulta.
+     */
+    private var perfil: UserProfile? = ProfileCache.perfil
 
     /** Evita dos escrituras de inicialización simultáneas. */
     private var cargando = false
@@ -160,6 +166,7 @@ class FragmentoMiPerfil : Fragment() {
             }
 
             perfil = datos
+            ProfileCache.perfil = datos
             pintar(root, datos)
 
             // Solo si faltan (las cuentas de la FASE 1 no los tienen) y solo
@@ -186,6 +193,7 @@ class FragmentoMiPerfil : Fragment() {
             repository.ensureProfileInitialized(uid)
                 .onSuccess { datos ->
                     perfil = datos
+                    ProfileCache.perfil = datos
                     view?.let { pintar(it, datos) }
                 }
                 .onFailure { error ->

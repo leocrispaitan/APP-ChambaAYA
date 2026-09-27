@@ -186,14 +186,25 @@
 
     <!-- Profile Screen (Replica) -->
     <string name="profile_title">Perfil</string>
-    <string name="profile_name_mock">Maria Sanchez</string>
-    <string name="profile_handle_mock">@maria_sanchez_ayacucho</string>
-    <string name="profile_completion_mock">Perfil 90% completo</string>
-    <string name="profile_posts_count">28</string>
+    <!--
+      Antes estos 3 strings tenían un usuario inventado ("Maria Sanchez",
+      "@maria_sanchez_ayacucho", "Perfil 90% completo") como valor por
+      defecto del layout. Como pintarCabecera()/pintarUsuario() tardan lo que
+      tarda Firestore en responder, ese usuario falso se veía por un
+      instante en cada apertura de Mi Perfil y de Ajustes. Se dejan vacíos:
+      así, mientras carga, no se ve nada en vez de verse un dato falso.
+    -->
+    <string name="profile_name_mock"></string>
+    <string name="profile_handle_mock"></string>
+    <string name="profile_completion_mock"></string>
+    <!-- profile_posts_count/following_count/followers_count ya no se usan en
+         el layout (pintarEstadisticas() los pinta 100% desde Firestore); se
+         dejan comentados por si sirven de referencia.
+    <string name="profile_posts_count">28</string> -->
     <string name="profile_posts_label">Trabajos</string>
-    <string name="profile_following_count">4 años</string>
+    <!-- <string name="profile_following_count">4 años</string> -->
     <string name="profile_following_label">Experiencia</string>
-    <string name="profile_followers_count">4.9 ★</string>
+    <!-- <string name="profile_followers_count">4.9 ★</string> -->
     <string name="profile_followers_label">Calificación</string>
     <string name="profile_btn_follow">Editar perfil</string>
     <string name="profile_btn_message">Ver perfil público</string>
@@ -224,9 +235,9 @@
     <string name="profile_skill_helper">Ayudante general</string>
 
     <string name="profile_district_label">Distrito</string>
-    <string name="profile_district_value">Carmen Alto</string>
+    <!-- <string name="profile_district_value">Carmen Alto</string> ya no se usa: tvDistrito lo pinta pintarUbicacionYExperiencia() -->
     <string name="profile_experience_label">Experiencia</string>
-    <string name="profile_experience_value">4 años</string>
+    <!-- <string name="profile_experience_value">4 años</string> ya no se usa: tvExperiencia lo pinta pintarUbicacionYExperiencia() -->
 
     <string name="profile_experience_title">Trabajos realizados</string>
     <string name="profile_experience_subtitle">Mi experiencia laboral</string>
@@ -245,7 +256,10 @@
     
     <!-- Settings Screen -->
     <string name="settings_title">Ajustes</string>
-    <string name="settings_user_email">alishon35@gmail.com</string>
+    <!-- Antes tenía un correo inventado ("alishon35@gmail.com") que se veía
+         por un instante al abrir Ajustes, antes de que pintarUsuario() (en
+         FragmentoAjustesPerfil) lo reemplace por el correo real. -->
+    <string name="settings_user_email"></string>
     <string name="settings_edit_btn">Editar</string>
 
     <!-- Settings: Account -->
