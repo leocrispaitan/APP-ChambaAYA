@@ -11,12 +11,17 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.auth.FirebaseAuth
+import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.ui.chat.FragmentoMensajes
 import com.proyecto.chambaya.ui.jobs.FragmentoChambas
 import com.proyecto.chambaya.ui.map.FragmentoMapas
 import com.proyecto.chambaya.ui.profile.FragmentoMiPerfil
+import com.proyecto.chambaya.ui.profile.ProfileCache
 import com.proyecto.chambaya.ui.publish.FragmentoPublicar
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -56,6 +61,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupBottomNavigation()
+        precargarPerfil()
 
         if (savedInstanceState == null) {
             switchToTab(R.id.nav_jobs)
@@ -63,6 +69,41 @@ class MainActivity : AppCompatActivity() {
             activeFragment = supportFragmentManager.fragments.firstOrNull {
                 it.id == R.id.fragmentContainer && !it.isHidden
             }
+        }
+    }
+
+    /**
+     * Adelanta la lectura de `users/{uid}` apenas se entra a `MainActivity`,
+     * sin esperar a que el usuario toque la pestaña "Perfil".
+     *
+     * Antes, `FragmentoMiPerfil` solo empezaba a pedir el perfil cuando su
+     * `onViewCreated` corría — es decir, la primera vez que el usuario tocaba
+     * esa pestaña. Si el usuario navegaba antes por otras pestañas (Chambas,
+     * Mapa, ...), ese tiempo no servía de nada: la consulta a Firestore ni
+     * siquiera había empezado. Entonces, al final, tanto "Mi Perfil" como
+     * "Ajustes" mostraban el mismo parpadeo aunque el usuario llevara rato
+     * usando la app.
+     *
+     * `MainActivity` es el único punto de entrada real al shell de la app
+     * (login, acceso rápido y registro navegan todos aquí), así que es el
+     * lugar correcto para arrancar esta lectura una sola vez por sesión de
+     * proceso: cuando el usuario finalmente entra a "Mi Perfil" o a
+     * "Ajustes", lo más probable es que [ProfileCache] ya tenga el dato listo
+     * y no haya nada que esperar.
+     *
+     * Es "fire and forget": no toca ninguna vista de `MainActivity`, no
+     * muestra ningún Toast y no bloquea `switchToTab`. Si falla (sin red, por
+     * ejemplo), no pasa nada aquí — `FragmentoMiPerfil` reintenta solo cuando
+     * el usuario entra de verdad, y ahí sí avisa si algo salió mal.
+     */
+    private fun precargarPerfil() {
+        if (ProfileCache.perfil != null) return
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        lifecycleScope.launch {
+            ProfileRepository().loadProfile(uid)
+                .onSuccess { ProfileCache.perfil = it }
+                // Fallo silencioso a propósito: ver el comentario de la función.
         }
     }
 
