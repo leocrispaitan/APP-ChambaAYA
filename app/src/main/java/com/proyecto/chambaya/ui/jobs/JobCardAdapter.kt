@@ -48,7 +48,6 @@ class JobCardAdapter(
         private val tvProfileName: TextView = itemView.findViewById(R.id.tvProfileName)
         private val tvLocation: TextView = itemView.findViewById(R.id.tvLocation)
         private val tvTimeAgo: TextView = itemView.findViewById(R.id.tvTimeAgo)
-        private val btnPostular: TextView = itemView.findViewById(R.id.btnPostular)
         private val btnMoreOptions: ImageButton = itemView.findViewById(R.id.btnMoreOptions)
 
         // Descripción del trabajo
@@ -69,8 +68,8 @@ class JobCardAdapter(
         
         // Barra de interacciones (simplificada)
         private val btnComment: ImageButton = itemView.findViewById(R.id.btnComment)
-        private val btnBookmark: ImageButton = itemView.findViewById(R.id.btnBookmark)
         private val tvCommentsCount: TextView = itemView.findViewById(R.id.tvCommentsCount)
+        private val btnVerTrabajo: com.google.android.material.button.MaterialButton = itemView.findViewById(R.id.btnVerTrabajo)
 
         // Pie de tarjeta
         private val tvJobRating: TextView = itemView.findViewById(R.id.tvJobRating)
@@ -158,7 +157,7 @@ class JobCardAdapter(
 
             // ── Clicks ────────────────────────────────────
             cardJob.setOnClickListener { onJobClick(jobCard) }
-            btnPostular.setOnClickListener { onJobClick(jobCard) }
+            btnVerTrabajo.setOnClickListener { onJobClick(jobCard) }
 
             btnMoreOptions.setOnClickListener {
                 showOptionsBottomSheet(itemView.context, jobCard)
@@ -172,8 +171,6 @@ class JobCardAdapter(
                 
                 onFavoriteClick(jobCard)
             }
-
-            btnBookmark.setOnClickListener { onJobClick(jobCard) }
         }
 
         private fun showOptionsBottomSheet(context: android.content.Context, jobCard: JobCard) {
@@ -181,31 +178,40 @@ class JobCardAdapter(
             val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_job_options, null)
             bottomSheetDialog.setContentView(dialogView)
 
-            // 1. Compartir publicación (NUEVA)
+            // 1. Guardar publicación (NUEVA)
+            dialogView.findViewById<View>(R.id.optionSave)?.setOnClickListener {
+                // Cambiar el estado de guardado
+                jobCard.isFavorito = !jobCard.isFavorito
+                val mensaje = if (jobCard.isFavorito) "Publicación guardada" else "Guardado eliminado"
+                android.widget.Toast.makeText(context, mensaje, android.widget.Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+
+            // 2. Compartir publicación
             dialogView.findViewById<View>(R.id.optionShare)?.setOnClickListener {
                 shareJobCard(context, jobCard)
                 bottomSheetDialog.dismiss()
             }
 
-            // 2. Por qué ves esto
+            // 3. Por qué ves esto
             dialogView.findViewById<View>(R.id.optionWhy)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Por qué ves esta publicación de ${jobCard.empleador}", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
-            // 3. Calificar publicación
+            // 4. Calificar publicación
             dialogView.findViewById<View>(R.id.optionRate)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Calificando publicación: ${jobCard.titulo}", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
-            // 4. No me interesa
+            // 5. No me interesa
             dialogView.findViewById<View>(R.id.optionNotInterested)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Marcar 'No me interesa'", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
-            // 5. Denunciar publicación
+            // 6. Denunciar publicación
             dialogView.findViewById<View>(R.id.optionReport)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Denunciar publicación", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()

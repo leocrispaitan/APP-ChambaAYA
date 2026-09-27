@@ -29,7 +29,7 @@
 
         <!-- ══════════════════════════════════════════
              CABECERA — 
-             (Avatar + Nombre + Ubicación + Postular + ⋮)
+             (Avatar + Nombre + Ubicación + ⋮)
              ══════════════════════════════════════════ -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -82,7 +82,7 @@
                 android:orientation="vertical"
                 android:layout_marginStart="10dp"
                 app:layout_constraintStart_toEndOf="@id/frameAvatar"
-                app:layout_constraintEnd_toStartOf="@id/btnPostular"
+                app:layout_constraintEnd_toStartOf="@id/btnMoreOptions"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
@@ -152,23 +152,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Botón "Postular" (reemplaza "Seguir") -->
-            <TextView
-                android:id="@+id/btnPostular"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:background="@drawable/bg_postular_btn"
-                android:fontFamily="sans-serif-medium"
-                android:gravity="center"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:text="Postular"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                android:layout_marginEnd="8dp"
-                app:layout_constraintEnd_toStartOf="@id/btnMoreOptions"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
+
 
             <!-- Menú tres puntos ⋮ -->
             <ImageButton
@@ -349,7 +333,7 @@
 
         <!-- ══════════════════════════════════════════
              BARRA DE INTERACCIONES (simplificada)
-             Solo: Comentarios + Guardar
+             Comentarios (izquierda) + Botón Ver Trabajo (derecha)
              ══════════════════════════════════════════ -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -357,7 +341,7 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:paddingTop="8dp"
-            android:paddingBottom="4dp">
+            android:paddingBottom="8dp">
 
             <!-- Botón + Contador de Comentarios (izquierda) -->
             <LinearLayout
@@ -388,19 +372,24 @@
                     android:fontFamily="sans-serif"
                     android:textColor="#262626"
                     android:textSize="14sp"
-                    tools:text="134" />
+                    tools:text="22" />
             </LinearLayout>
 
-            <!-- Botón Guardar (bookmark) a la derecha -->
-            <ImageButton
-                android:id="@+id/btnBookmark"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_bookmark_outline"
-                android:contentDescription="Guardar"
-                android:scaleType="center"
-                android:padding="6dp"
+            <!-- Botón Ver Trabajo (derecha, alineado horizontalmente) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVerTrabajo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ver Trabajo"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                app:backgroundTint="#0D6EFD"
+                app:cornerRadius="20dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />

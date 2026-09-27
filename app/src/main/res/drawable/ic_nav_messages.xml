@@ -3,11 +3,37 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+
+    <!-- Burbujas de mensajes -->
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#000000"
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M22,2L11,13 M22,2L15,22L11,13L2,9L22,2z" />
+        android:pathData="
+            M19.95,10.05
+            A7,7 0,0 1,21.362,17.922
+            A1,1 0,0 0,21.304,18.709
+            L21.979,20.798
+            A1,1 0,0 1,20.743,21.966
+            L18.588,21.335
+            A1,1 0,0 0,17.843,21.395
+            A7,7 0,0 1,10.05,19.95" />
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M2.696,12.708
+            A1,1 0,0 0,2.638,11.923
+            A7,7 0,1 1,6.156,15.396
+            A1,1 0,0 0,5.412,15.335
+            L3.257,15.965
+            A1,1 0,0 1,2.021,14.798
+            Z" />
+
 </vector>
