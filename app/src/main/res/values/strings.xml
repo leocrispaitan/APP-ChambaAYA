@@ -360,6 +360,9 @@
 
     <!-- Wizard: datos de solo lectura -->
     <string name="edit_perfil_dni_no_verificado">Sin verificar</string>
+    <string name="edit_perfil_dni_nota">✓ Verificado con RENIEC · No se puede modificar</string>
+    <string name="edit_perfil_ruc_nota">✓ Verificado con SUNAT · No se puede modificar</string>
+    <string name="edit_perfil_padron_nota">✓ Verificado con %1$s · Hemos completado lo que ya sabíamos de tu documento</string>
 
     <!-- Wizard: fecha y ubicación -->
     <string name="edit_perfil_fecha_vacia">Selecciona tu fecha</string>
@@ -382,6 +385,7 @@
     <string name="edit_perfil_error_especialidades">Puedes elegir hasta %1$d especialidades</string>
     <string name="edit_perfil_error_titulo">Revisa tus datos</string>
     <string name="edit_perfil_error_guardar">No se pudo guardar el perfil: %1$s</string>
+    <string name="edit_perfil_error_guardar_permisos">No se pudo guardar: la app no tiene permiso para escribir en tu perfil. Es un problema de configuración, no de tus datos.</string>
 
     <!-- Wizard: resumen de completitud (paso 4) -->
     <string name="edit_perfil_resumen_completo">✨ ¡Tu perfil está completo!</string>

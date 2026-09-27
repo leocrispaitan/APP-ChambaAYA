@@ -181,10 +181,14 @@ class CloudinaryUploader(
             return PhotoUploadResult.Rejected(message)
         }
 
-        val url = root.optString("secure_url").ifBlank { root.optString("url") }
+        // Solo `secure_url` (https). Antes se caía a `url` (http) si faltaba, y esa
+        // URL la rechaza `isOwnCloudinaryPhoto` en `firestore.rules` al guardar: el
+        // usuario habría visto un `PERMISSION_DENIED` sin motivo aparente. Es mejor
+        // un aviso claro aquí.
+        val url = root.optString("secure_url")
         val publicId = root.optString("public_id")
         if (url.isBlank() || publicId.isBlank()) {
-            return PhotoUploadResult.Rejected("Cloudinary no devolvió la URL de la imagen.")
+            return PhotoUploadResult.Rejected("Cloudinary no devolvió una URL segura de la imagen.")
         }
         return PhotoUploadResult.Success(UploadedImage(url, publicId))
     }

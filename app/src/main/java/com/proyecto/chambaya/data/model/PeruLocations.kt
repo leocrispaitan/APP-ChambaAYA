@@ -1,4 +1,4 @@
-﻿package com.proyecto.chambaya.data.model
+package com.proyecto.chambaya.data.model
 
 /**
  * FASE 2 — Cascada de ubicación del Perú.
@@ -284,6 +284,36 @@ object PeruLocations {
 
     /** `true` para la opción de reserva, venga en mayúsculas o no. */
     fun esOtro(valor: String?): Boolean = normalizar(valor) == normalizar(OTRO)
+
+    /**
+     * Nombre del catálogo tal y como se escribe en la app.
+     *
+     * RENIEC y SUNAT devuelven la ubicación en MAYÚSCULAS ("LIMA",
+     * "SAN JUAN DE MIRAFLORES"). `esDepartamentoValido` ya compara sin distinguir
+     * mayúsculas, así que el guardado no fallaría, pero el texto se vería raro
+     * junto al resto de la lista, así que se devuelve la forma canónica.
+     *
+     * Si el catálogo no lo conoce se devuelve el texto tal cual: mejor un nombre
+     * en mayúsculas del padrón que perder el dato.
+     */
+    fun nombreCanonico(valor: String?): String {
+        val texto = valor?.trim().orEmpty()
+        if (texto.isEmpty() || esOtro(texto)) return ""
+        return buscar(texto)?.nombre ?: texto
+    }
+
+    /**
+     * Provincia canónica dentro de un departamento, o el texto tal cual.
+     * Mismo criterio que [nombreCanonico]: primero el catálogo, luego sin cambios.
+     */
+    fun provinciaCanonica(departamento: String?, provincia: String?): String {
+        val texto = provincia?.trim().orEmpty()
+        if (texto.isEmpty() || esOtro(texto)) return ""
+        val lista = buscar(departamento)?.provincias
+            ?: buscar(nombreCanonico(departamento))?.provincias
+            ?: return texto
+        return lista.firstOrNull { normalizar(it) == normalizar(texto) } ?: texto
+    }
 
     /** "Carmen Alto, Huamanga, Ayacucho": lo que se guarda y lo que se muestra. */
     fun etiqueta(distrito: String?, provincia: String?, departamento: String?): String =

@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.remote
 
+import com.proyecto.chambaya.data.model.Genders
 import com.proyecto.chambaya.data.model.IdentityDocumentTypes
 import com.proyecto.chambaya.data.model.IdentityNameParser
 import com.proyecto.chambaya.data.model.IdentitySources
@@ -11,6 +12,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 
 /**
  * Resultado de una consulta de identidad.
@@ -73,6 +75,27 @@ class IdentityValidationService(
         }
     }
 
+    /**
+     * Vuelve a consultar el padrón de un documento **ya validado** para completar
+     * los campos que el registro no se quedó: cumpleaños, género y ubicación
+     * oficial.
+     *
+     * No es una validación nueva (para eso están [validateDni] y [validateRuc]):
+     * el documento ya pasó por RENIEC/SUNAT en el registro, así que aquí solo se
+     * recupera lo que la API devolvió y se dejó en el camino. Si el documento ya
+     * no existe en el padrón o el servicio no responde, se devuelve el fallo tal
+     * cual y quien llama lo trata como información: el campo queda vacío y el
+     * usuario lo rellena a mano.
+     */
+    suspend fun consultarPadron(
+        documentType: String,
+        documentNumber: String
+    ): IdentityValidationResult = when (documentType) {
+        IdentityDocumentTypes.DNI -> validateDni(documentNumber)
+        IdentityDocumentTypes.RUC -> validateRuc(documentNumber)
+        else -> IdentityValidationResult.Rejected("El tipo de documento no se puede consultar.")
+    }
+
     // ==================== PARSEO ====================
 
     private fun parseDniResponse(root: JSONObject, dni: String): IdentityValidationResult {
@@ -106,7 +129,21 @@ class IdentityValidationService(
                 firstName = IdentityNameParser.toDisplayCase(split.firstName),
                 lastName = IdentityNameParser.toDisplayCase(split.lastName),
                 source = IdentitySources.RENIEC,
-                locationLabel = location
+                locationLabel = location,
+                // La API de RENIEC ya devuelve el cumpleaños y el sexo: antes se
+                // ignoraban y el usuario tenía que escribirlos a mano en
+                // "Editar perfil".
+                birthDate = normalizarFecha(
+                    data.optString("fecha_nacimiento", data.optString("fechaNacimiento", ""))
+                ),
+                gender = normalizarSexo(data.optString("sexo", data.optString("gender", ""))),
+                department = departamento,
+                province = provincia,
+                district = data.optString("distrito", "").trim(),
+                address = data.optString(
+                    "direccion_completa",
+                    data.optString("direccion", "")
+                ).trim()
             )
         )
     }
@@ -133,6 +170,10 @@ class IdentityValidationService(
             )
         }
 
+        val departamento = data.optString("departamento", "").trim()
+        val provincia = data.optString("provincia", "").trim()
+        val distrito = data.optString("distrito", "").trim()
+
         return IdentityValidationResult.Success(
             ValidatedIdentity(
                 documentType = IdentityDocumentTypes.RUC,
@@ -142,10 +183,72 @@ class IdentityValidationService(
                 lastName = "",
                 legalName = razonSocial,
                 source = IdentitySources.SUNAT,
-                statusLabel = "$condicion / $estado"
+                statusLabel = "$condicion / $estado",
+                locationLabel = listOf(distrito, provincia, departamento)
+                    .filter { it.isNotEmpty() }
+                    .joinToString(", ")
+                    .ifEmpty { "Perú" },
+                // SUNAT no devuelve cumpleaños ni género: son datos de persona, y una
+                // razón social no los tiene.
+                department = departamento,
+                province = provincia,
+                district = distrito,
+                address = data.optString(
+                    "direccion_completa",
+                    data.optString("address", data.optString("direccion", ""))
+                ).trim()
             )
         )
     }
+
+    // ==================== NORMALIZACIÓN ====================
+
+    /**
+     * Deja la fecha del padrón en el único formato que usa la app: `dd/MM/aaaa`.
+     *
+     * RENIEC devuelve `30/11/2000`, pero no se fía uno de un servicio externo: si
+     * llegara en ISO (`2000-11-30`) o con guiones, se reordena igual. Un valor
+     * que no se puede entender se devuelve vacío, nunca una fecha inventada.
+     */
+    private fun normalizarFecha(valor: String): String {
+        val limpio = valor.trim()
+        if (limpio.isEmpty()) return ""
+
+        val partes = limpio.split('/', '-', '.').map { it.trim() }
+        return when {
+            // dd/MM/aaaa
+            partes.size == 3 && partes[0].length <= 2 -> {
+                val dia = partes[0].toIntOrNull()
+                val mes = partes[1].toIntOrNull()
+                val anio = partes[2].toIntOrNull()
+                if (dia == null || mes == null || anio == null) ""
+                else String.format(Locale.US, "%02d/%02d/%04d", dia, mes, anio)
+            }
+            // aaaa-MM-dd
+            partes.size == 3 && partes[0].length == 4 -> {
+                val anio = partes[0].toIntOrNull()
+                val mes = partes[1].toIntOrNull()
+                val dia = partes[2].toIntOrNull()
+                if (dia == null || mes == null || anio == null) ""
+                else String.format(Locale.US, "%02d/%02d/%04d", dia, mes, anio)
+            }
+            else -> ""
+        }
+    }
+
+    /**
+     * Traduce el sexo del padrón a los valores de `profile.gender`.
+     *
+     * RENIEC devuelve `VARON` / `MUJER`. Cualquier otra cosa (o vacío) se devuelve
+     * como cadena vacía: es un campo opcional y prefiero que quede pendiente a que
+     * el usuario elija, antes que adivinar.
+     */
+    private fun normalizarSexo(valor: String): String =
+        when (valor.trim().uppercase(Locale.US)) {
+            "VARON", "MASCULINO", "M" -> Genders.MASCULINO
+            "MUJER", "FEMENINO", "F" -> Genders.FEMENINO
+            else -> ""
+        }
 
     // ==================== HTTP ====================
 

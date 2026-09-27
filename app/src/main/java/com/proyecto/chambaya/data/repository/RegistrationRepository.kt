@@ -9,9 +9,12 @@ import com.google.firebase.firestore.SetOptions
 import com.proyecto.chambaya.data.model.AccountStatuses
 import com.proyecto.chambaya.data.model.AuthMethods
 import com.proyecto.chambaya.data.model.AuthProviders
+import com.proyecto.chambaya.data.model.BirthDates
 import com.proyecto.chambaya.data.model.EmailVerificationMethods
+import com.proyecto.chambaya.data.model.Genders
 import com.proyecto.chambaya.data.model.IdentityNameParser
 import com.proyecto.chambaya.data.model.PendingRegistration
+import com.proyecto.chambaya.data.model.PeruLocations
 import com.proyecto.chambaya.data.model.ProfilePhotoSources
 import com.proyecto.chambaya.data.model.RegistrationStatuses
 import kotlinx.coroutines.Dispatchers
@@ -219,7 +222,21 @@ class RegistrationRepository(
                 } else {
                     ProfilePhotoSources.DEFAULT
                 },
-                "country" to COUNTRY
+                "country" to COUNTRY,
+                // Datos que la API de padron ya traia y se descartaban: RENIEC
+                // devuelve el cumpleanos y el sexo, SUNAT la direccion descompuesta.
+                // Se guardan desde el alta para que "Editar perfil" (FASE 2) abra
+                // con ellos puestos en vez de en blanco. Si el padron no los
+                // entrega quedan vacios y el campo sigue pendiente, que es
+                // justamente lo que mide el porcentaje de completitud.
+                "birthDate" to BirthDates.soloSiValida(identity.birthDate),
+                "gender" to identity.gender.takeIf { it in Genders.ALL }.orEmpty(),
+                "department" to PeruLocations.nombreCanonico(identity.department),
+                "province" to PeruLocations.provinciaCanonica(
+                    identity.department,
+                    identity.province
+                ),
+                "district" to identity.district.trim()
             ),
 
             // --- Auditoría ---

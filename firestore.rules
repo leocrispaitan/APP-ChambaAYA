@@ -174,18 +174,19 @@ service cloud.firestore {
         && before.get('profilePhotoPublicId', '') == after.get('profilePhotoPublicId', '');
     }
 
-    // `affectedData().changedKeys()` devuelve rutas con punto, así que detecta
-    // tanto un `update({'profile.foto': ...})` como un `set()` del bloque
-    // `profile` entero.
+    // Detecta si esta escritura toca el bloque `profile`.
+    //
+    // OJO: no se usa `affectedData()`. En Rules `request.resource.data` SIEMPRE es
+    // el documento completo después de la escritura, también cuando el cliente hizo
+    // `update({'profile.photo': ...})`, así que `diff().affectedKeys()` ya devuelve
+    // las claves de PRIMER nivel ('profile', 'worker', ...), no rutas con punto.
+    // Por tanto `affectedKeys()` basta, y además es lo único fiable: el compilador
+    // marca `affectedData()` como "Invalid function name", y una función que no
+    // existe hace que la regla LANCE al evaluarse, lo que se traduce en un
+    // `PERMISSION_DENIED` invisible en cualquier escritura de perfil.
     function photoBelongsToOwner(uid) {
-      let affected = request.resource.data.diff(resource.data)
-        .affectedData()
-        .changedKeys();
-      let tocaFoto = affected.hasAny([
-        'profile',
-        'profile.profilePhotoUrl',
-        'profile.profilePhotoPublicId'
-      ]);
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let tocaFoto = affected.hasAny(['profile']);
       return !tocaFoto || photoUnchanged() || isOwnCloudinaryPhoto(uid);
     }
 

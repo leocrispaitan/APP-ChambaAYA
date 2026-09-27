@@ -58,6 +58,54 @@ object ProfileLimits {
 }
 
 /**
+ * `profile.birthDate` es texto en `dd/MM/aaaa`, no un `Timestamp`.
+ *
+ * Se guardó así desde la FASE 2 (el `DatePicker` devuelve día, mes y año sueltos y
+ * un `Timestamp` obligaría a elegir zona horaria para una fecha que no la tiene) y
+ * se mantiene: migrar el documento entero sería un cambio de modelo que no aporta
+ * nada ahora. Lo que sí hace falta es un único sitio donde decidir si un texto es
+ * una fecha válida, porque la escribe el usuario, el `DatePicker` y ahora también
+ * la API de RENIEC.
+ */
+object BirthDates {
+
+    private val PATRON = Regex("^(\\d{2})/(\\d{2})/(\\d{4})$")
+
+    /** `true` si [value] es una fecha real en `dd/MM/aaaa` y está dentro de lo posible. */
+    fun esValida(value: String?): Boolean {
+        val partes = PATRON.matchEntire(value?.trim().orEmpty()) ?: return false
+        val dia = partes.groupValues[1].toInt()
+        val mes = partes.groupValues[2].toInt()
+        val anio = partes.groupValues[3].toInt()
+        return mes in 1..12 && dia in 1..diasDelMes(mes, anio) &&
+            anio in ANIO_MIN..ANIO_MAX
+    }
+
+    /**
+     * Devuelve [value] si es una fecha válida, o cadena vacía si no lo es.
+     *
+     * Es el filtro que se aplica a lo que llega de fuera (API de RENIEC): un dato
+     * que no se entiende se descarta y el campo queda pendiente para el usuario, en
+     * vez de guardar basura que luego no se puede editar.
+     */
+    fun soloSiValida(value: String?): String =
+        if (esValida(value)) value!!.trim() else ""
+
+    private fun diasDelMes(mes: Int, anio: Int): Int = when (mes) {
+        1, 3, 5, 7, 8, 10, 12 -> 31
+        4, 6, 9, 11 -> 30
+        2 -> if ((anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0) 29 else 28
+        else -> 0
+    }
+
+    /** Nadie que use la app nació antes de 1900 ni dentro de un mes. */
+    private const val ANIO_MIN = 1900
+
+    /** Nadie que use la app nació antes de 1900; el techo deja margen de sobra. */
+    private const val ANIO_MAX = 2100
+}
+
+/**
  * `profile` de `users/{uid}`.
  *
  * Los campos de FASE 1 (`firstName`, `lastName`, `fullName`, `country`,

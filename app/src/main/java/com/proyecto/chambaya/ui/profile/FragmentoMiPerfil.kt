@@ -20,7 +20,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import coil.ImageLoader
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.MainActivity
@@ -30,6 +29,7 @@ import com.proyecto.chambaya.data.model.StatisticsBlock
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.WorkerBlock
 import com.proyecto.chambaya.data.repository.ProfileRepository
+import com.proyecto.chambaya.data.repository.motivoFirestore
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -625,14 +625,7 @@ class FragmentoMiPerfil : Fragment() {
      * dice nada. Con el código (`PERMISSION_DENIED`, `UNAVAILABLE`, ...) sí se
      * puede saber si es un problema de Rules o de red.
      */
-    private fun motivoCorto(error: Throwable): String {
-        val raiz = generateSequence(error) { it.cause }.last()
-        return if (raiz is FirebaseFirestoreException) {
-            raiz.code.name
-        } else {
-            raiz.message?.lineSequence()?.firstOrNull()?.take(120).orEmpty()
-        }
-    }
+    private fun motivoCorto(error: Throwable): String = motivoFirestore(error)
 
     private fun animateTap(view: View) {
         view.animate()

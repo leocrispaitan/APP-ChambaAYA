@@ -125,6 +125,15 @@ class PendingRegistrationStore(context: Context) {
         put("statusLabel", identity.statusLabel ?: JSONObject.NULL)
         put("locationLabel", identity.locationLabel ?: JSONObject.NULL)
         put("verifiedAtMillis", identity.verifiedAtMillis)
+        // Datos del padron que el registro tambien guarda en `users/{uid}`. Sin
+        // ellos, un registro reanudado (la app se cerro a mitad de camino) perderia
+        // el cumpleanos, el genero y la ubicacion oficial.
+        put("birthDate", identity.birthDate)
+        put("gender", identity.gender)
+        put("department", identity.department)
+        put("province", identity.province)
+        put("district", identity.district)
+        put("address", identity.address)
     }
 
     private fun identityFromJson(json: JSONObject): ValidatedIdentity = ValidatedIdentity(
@@ -137,7 +146,15 @@ class PendingRegistrationStore(context: Context) {
         source = json.optString("source"),
         statusLabel = json.optStringOrNull("statusLabel"),
         locationLabel = json.optStringOrNull("locationLabel"),
-        verifiedAtMillis = json.optLong("verifiedAtMillis", System.currentTimeMillis())
+        verifiedAtMillis = json.optLong("verifiedAtMillis", System.currentTimeMillis()),
+        // `optString` devuelve "" cuando la clave no existe: un borrador guardado
+        // por una version anterior de la app se sigue leyendo sin estos campos.
+        birthDate = json.optString("birthDate"),
+        gender = json.optString("gender"),
+        department = json.optString("department"),
+        province = json.optString("province"),
+        district = json.optString("district"),
+        address = json.optString("address")
     )
 
     private fun JSONObject.optStringOrNull(key: String): String? =

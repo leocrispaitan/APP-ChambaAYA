@@ -12,6 +12,7 @@ import android.provider.MediaStore
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
@@ -43,7 +44,9 @@ import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.auth.FirebaseAuth
+import com.proyecto.chambaya.data.model.BirthDates
 import com.proyecto.chambaya.data.model.Genders
+import com.proyecto.chambaya.data.model.IdentitySources
 import com.proyecto.chambaya.data.model.OficioCatalog
 import com.proyecto.chambaya.data.model.PeruLocations
 import com.proyecto.chambaya.data.model.ProfileCompletion
@@ -54,10 +57,13 @@ import com.proyecto.chambaya.data.model.esUsernameValido
 import com.proyecto.chambaya.data.model.normalizarUsername
 import com.proyecto.chambaya.data.remote.CloudinaryUploader
 import com.proyecto.chambaya.data.remote.PhotoUploadResult
+import com.proyecto.chambaya.data.repository.PadronRepository
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.UsernameYaTomado
+import com.proyecto.chambaya.data.repository.motivoFirestore
 import com.proyecto.chambaya.ui.profile.EspecialidadSelectorAdapter
 import com.proyecto.chambaya.ui.profile.OficioIcons
+import com.proyecto.chambaya.ui.profile.ProfileCache
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -95,6 +101,7 @@ class EditarPerfilActivity : AppCompatActivity() {
     // ═══════════════════════════════════════════════════════════════
 
     private val repository = ProfileRepository()
+    private val padronRepository = PadronRepository()
     private val uploader = CloudinaryUploader()
 
     private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
@@ -204,6 +211,23 @@ class EditarPerfilActivity : AppCompatActivity() {
     /** Evita que un watcher dispare actualizaciones durante la carga inicial. */
     private var llenandoFormulario = false
 
+    /**
+     * `true` si el usuario ya tocó el campo del `@usuario`.
+     *
+     * Importa porque el formulario se llena antes de que la siembra de los bloques
+     * termine: cuando esa siembra reserva un `@usuario` libre, solo se sustituye el
+     * del campo si el usuario no ha escrito nada, para no pisarle lo tecleado.
+     */
+    private var usernameTocado = false
+
+    /**
+     * `true` si se entró por "Completar perfil" en vez de por "Editar perfil".
+     *
+     * Solo en el primer caso se salta al primer paso con datos pendientes; desde
+     * "Editar perfil" siempre se recorre el asistente entero desde el principio.
+     */
+    private var entradaCompletar = false
+
     private lateinit var adapterOficios: EspecialidadSelectorAdapter
 
     // Launcher para selección de imagen
@@ -236,9 +260,12 @@ class EditarPerfilActivity : AppCompatActivity() {
         setupBackPress()
         setupSelectorOficios()
 
-        // "Completar perfil" entra por el paso 3 (donde están las especialidades);
+        // "Completar perfil" aterriza en el primer paso con datos pendientes (eso se
+        // decide en [primerPasoIncompleto], en cuanto se ha leído el perfil);
         // "Editar perfil" recorre los cuatro desde el principio.
-        val inicio = intent.getIntExtra(EXTRA_START_STEP, 1).coerceIn(1, PASOS_TOTAL)
+        val inicio = intent.getIntExtra(EXTRA_START_STEP, PASO_INICIO_EDITAR)
+            .coerceIn(1, PASOS_TOTAL)
+        entradaCompletar = inicio == PASO_INICIO_COMPLETAR
         updateStep(inicio)
 
         cargarPerfil()
@@ -506,6 +533,7 @@ class EditarPerfilActivity : AppCompatActivity() {
         // retardo para no lanzar una lectura por cada tecla.
         etUsername.addTextChangedListener(alCambiarTexto {
             if (llenandoFormulario) return@alCambiarTexto
+            usernameTocado = true
             programarComprobacionUsername()
         })
 
@@ -537,10 +565,18 @@ class EditarPerfilActivity : AppCompatActivity() {
     /**
      * Lee `users/{uid}` y rellena el formulario.
      *
-     * Se usa `ensureProfileInitialized` y no `loadProfile` porque las cuentas de
-     * la FASE 1 todavía no tienen `worker`, `privacy` ni `statistics`: la primera
-     * vez que se entra aquí es la que los crea, con valores neutros y un
-     * `@usuario` derivado del nombre. Es idempotente.
+     * Son tres pasos separados a propósito, para que ninguno pueda vaciar la
+     * pantalla:
+     *
+     *  1. `loadProfile` es una **lectura pura** y las Rules la autorizan siempre al
+     *     dueño (`allow get: if isOwner(uid)`). Si esto falla no hay perfil que
+     *     mostrar, así que sí se avisa.
+     *  2. `ensureProfileInitialized` **escribe** los bloques de la FASE 2 que las
+     *     cuentas de la FASE 1 no tienen. Es un extra: si las Rules no lo admiten
+     *     (`PERMISSION_DENIED`) el formulario ya está lleno y aquí solo se anota el
+     *     motivo en el log. Antes esta escritura era también la lectura, y por eso
+     *     un problema de reglas dejaba la pantalla en blanco con un error.
+     *  3. [prellenarDesdePadron] trae cumpleaños, género y ubicación oficial.
      */
     private fun cargarPerfil() {
         val actual = auth.currentUser?.uid
@@ -553,17 +589,153 @@ class EditarPerfilActivity : AppCompatActivity() {
         uid = actual
 
         lifecycleScope.launch {
-            repository.ensureProfileInitialized(actual)
-                .onSuccess { datos ->
-                    perfilCargado = datos
-                    llenarFormulario(datos)
-                }
-                .onFailure { error ->
-                    showToast(
-                        getString(R.string.profile_error_cargar, error.message.orEmpty())
-                    )
-                }
+            // 1) Lectura: el formulario se llena sí o sí.
+            val inicial = repository.loadProfile(actual).getOrElse { error ->
+                showToast(getString(R.string.profile_error_cargar, motivoFirestore(error)))
+                return@launch
+            }
+            perfilCargado = inicial
+            llenarFormulario(inicial)
+            if (entradaCompletar) updateStep(primerPasoIncompleto(inicial))
+
+            // 2) Siembra de los bloques de la FASE 2 (escritura opcional).
+            if (!inicial.tieneBloquesFase2) {
+                repository.ensureProfileInitialized(actual)
+                    .onSuccess { datos ->
+                        perfilCargado = datos
+                        adoptarUsernameReservado(datos)
+                    }
+                    .onFailure { error ->
+                        Log.w(TAG, "No se pudieron crear los bloques del perfil: ${motivoFirestore(error)}")
+                        if (isFinishing || isDestroyed) return@onFailure
+                        showToast(getString(R.string.profile_error_sembrar, motivoFirestore(error)))
+                    }
+            }
+
+            // 3) Lo que RENIEC/SUNAT ya sabía y el registro no guardó.
+            prellenarDesdePadron(inicial)
         }
+    }
+
+    /**
+     * Rellena cumpleaños, género y ubicación con lo que devuelve el padrón oficial.
+     *
+     * Solo se toca lo que está **vacío**: si el usuario ya escribió algo en esos
+     * campos (o ya estaban guardados), se respeta. Nunca pisa lo que hay, así que
+     * da igual que la respuesta llegue tarde y el usuario haya empezado a escribir.
+     *
+     * No escribe nada: los datos se quedan en el formulario y se guardan con el
+     * resto cuando el usuario pulse "Finalizar". Si el padrón no responde, el
+     * formulario se queda como estaba y esos campos siguen siendo pendientes.
+     */
+    private fun prellenarDesdePadron(perfil: UserProfile) {
+        lifecycleScope.launch {
+            val datos = padronRepository.datosQueFaltan(perfil).getOrNull()
+                ?.takeIf { it.tieneAlgo }
+                ?: return@launch
+            if (isFinishing || isDestroyed) return@launch
+
+            llenandoFormulario = true
+            var cambios = 0
+
+            if (selectedDate.isBlank() && datos.birthDate.isNotEmpty()) {
+                selectedDate = datos.birthDate
+                pintarFecha()
+                cambios++
+            }
+
+            if (selectedGenero.isBlank() && datos.gender.isNotEmpty()) {
+                selectedGenero = datos.gender
+                when (selectedGenero) {
+                    Genders.MASCULINO -> rbMasculino.isChecked = true
+                    Genders.FEMENINO -> rbFemenino.isChecked = true
+                    Genders.OTRO -> rbOtro.isChecked = true
+                }
+                cambios++
+            }
+
+            if (selectedDepartamento.isBlank() && datos.department.isNotEmpty()) {
+                selectedDepartamento = datos.department
+                cambios++
+            }
+            if (selectedProvincia.isBlank() && datos.province.isNotEmpty()) {
+                selectedProvincia = datos.province
+                cambios++
+            }
+            if (selectedDistrito.isBlank() && datos.district.isNotEmpty()) {
+                selectedDistrito = datos.district
+                cambios++
+            }
+
+            if (cambios == 0) {
+                llenandoFormulario = false
+                return@launch
+            }
+
+            // `pintarUbicacion` ya refresca el resumen del paso 4 con todo lo nuevo.
+            pintarUbicacion()
+            if (datos.birthDate.isNotEmpty() || datos.gender.isNotEmpty()) {
+                // La nota de arriba decía "Verificado con RENIEC" fijo; con un RUC
+                // eso es falso, así que se nombra el padrón que realmente se usó.
+                tvDniNota.text = getString(
+                    R.string.edit_perfil_padron_nota,
+                    if (perfil.identity.verifiedWith == IdentitySources.SUNAT) {
+                        IdentitySources.SUNAT
+                    } else {
+                        IdentitySources.RENIEC
+                    }
+                )
+            }
+            Log.i(TAG, "Datos del padron completados: $cambios campo(s)")
+
+            llenandoFormulario = false
+        }
+    }
+
+    /**
+     * Primer paso que todavía tiene algo pendiente.
+     *
+     * Es lo que hace útil el botón "Completar perfil" del banner: en vez de abrir
+     * siempre un paso fijo, aterriza donde el usuario puede subir el porcentaje de
+     * verdad. Si no falta nada, se abre el resumen (paso 4).
+     *
+     * Los nombres comparados son las etiquetas de [ProfileCompletion.CHECKS], que
+     * son las que el resumen del paso 4 enseña al usuario: si se renombraran allí,
+     * dejarían de casar y habría que actualizar las dos listas.
+     */
+    private fun primerPasoIncompleto(perfil: UserProfile): Int {
+        val faltan = perfil.completion().missing
+        return when {
+            faltan.any { it in CAMPOS_PASO_1 } -> 1
+            faltan.any { it in CAMPOS_PASO_2 } -> 2
+            faltan.any { it in CAMPOS_PASO_3 } -> 3
+            else -> PASOS_TOTAL
+        }
+    }
+
+    /**
+     * Cuando la siembra reserva un `@usuario` libre, se muestra ese en el campo.
+     *
+     * El formulario se llena antes de que la siembra termine, y en ese momento el
+     * campo solo tiene la *sugerencia* de [ProfileRepository.sugerirUsername], que
+     * no comprobó disponibilidad. La siembra sí la comprobó, así que su valor gana
+     * —salvo que el usuario ya haya escrito algo, que es lo que marca
+     * [usernameTocado].
+     */
+    private fun adoptarUsernameReservado(datos: UserProfile) {
+        if (isFinishing || isDestroyed) return
+        val reservado = datos.profile.username
+        if (reservado.isBlank() || usernameTocado) return
+        if (etUsername.text.toString().trim() == reservado) return
+
+        llenandoFormulario = true
+        etUsername.setText(reservado)
+        llenandoFormulario = false
+
+        pintarEstadoUsername(
+            getString(R.string.edit_perfil_username_disponible, normalizarUsername(reservado)),
+            COLOR_OK
+        )
     }
 
     /**
@@ -578,11 +750,20 @@ class EditarPerfilActivity : AppCompatActivity() {
         // --- Paso 1: lo que viene del registro es de solo lectura ---
         val identidad = perfil.identity
         if (identidad.identityVerified) {
-            tvDni.text = identidad.documentNumberMasked.ifBlank {
-                identidad.documentNumber
-            }
+            // Número completo, no el enmascarado: este es el formulario del propio
+            // dueño y las Rules ya permiten leer `identity` (`allow get: if
+            // isOwner`). La versión enmascarada es para vistas públicas, y aquí solo
+            // haría que el usuario tuviera que adivinar su propio documento.
+            tvDni.text = identidad.documentNumber.ifBlank { identidad.documentNumberMasked }
             iconDniVerificado.isVisible = true
             tvDniNota.isVisible = true
+            tvDniNota.text = getString(
+                if (identidad.verifiedWith == IdentitySources.SUNAT) {
+                    R.string.edit_perfil_ruc_nota
+                } else {
+                    R.string.edit_perfil_dni_nota
+                }
+            )
         } else {
             // Sin identidad validada no se inventa un documento: se dice.
             tvDni.text = getString(R.string.edit_perfil_dni_no_verificado)
@@ -606,8 +787,22 @@ class EditarPerfilActivity : AppCompatActivity() {
 
         // --- Campos editables ---
         etNombre.setText(perfil.profile.fullName)
-        etUsername.setText(perfil.profile.username)
         etTelefono.setText(perfil.profile.phone)
+
+        // Una cuenta de la FASE 1 nace sin `@usuario`, y las Rules exigen uno válido
+        // para cualquier escritura de la FASE 2: sin esto el paso 1 bloquearía el
+        // guardado con "El @usuario debe tener entre 3 y 30 caracteres" sin que
+        // hubiera ningún motivo visible. Se propone uno derivado del nombre, sin
+        // reservar nada todavía: la comprobación de disponibilidad real sale al
+        // escribir y también al guardar.
+        etUsername.setText(
+            if (perfil.profile.username.isNotBlank()) {
+                perfil.profile.username
+            } else {
+                repository.sugerirUsername(perfil)
+            }
+        )
+        usernameTocado = false
 
         // Las Rules admiten 500 caracteres de descripción: se corta aquí para que
         // el usuario no pueda escribir de más y que el guardado no sea rechazado.
@@ -781,8 +976,12 @@ class EditarPerfilActivity : AppCompatActivity() {
         tvResumenCompletitud.text = if (completion.missing.isEmpty()) {
             getString(R.string.edit_perfil_resumen_todo)
         } else {
+            // OJO: la cadena tiene DOS marcadores (`%1$d` y `%2$s`). Pasar solo uno
+            // lanzaba `IllegalFormatException` al abrir el paso 4 con algo
+            // pendiente, que es justo el caso normal de un perfil a medias.
             getString(
                 R.string.edit_perfil_resumen_falta,
+                completion.percent,
                 completion.missing.joinToString(", ")
             )
         }
@@ -1016,10 +1215,15 @@ class EditarPerfilActivity : AppCompatActivity() {
             repository.saveProfile(actual, borrador, fotoUrl, fotoPublicId)
                 .onSuccess { guardado ->
                     perfilCargado = guardado
+                    // El perfil de "Mi Perfil" se repinta al volver, así que esta
+                    // caché se actualiza aquí: si el usuario entra a Ajustes antes
+                    // de que se relea Firestore, ve lo mismo que acaba de guardar.
+                    ProfileCache.perfil = guardado
                     showSuccessDialog(guardado.completion().percent)
                 }
                 .onFailure { error ->
                     bloquearBotones(false)
+                    Log.w(TAG, "No se pudo guardar el perfil: ${motivoFirestore(error)}", error)
                     when (error) {
                         is UsernameYaTomado -> {
                             pintarEstadoUsername(
@@ -1029,16 +1233,24 @@ class EditarPerfilActivity : AppCompatActivity() {
                             etUsername.requestFocus()
                             updateStep(1)
                         }
-                        else -> showToast(
-                            getString(R.string.edit_perfil_error_guardar, error.message.orEmpty())
-                        )
+                        // `PERMISSION_DENIED` casi siempre es una cosa de despliegue,
+                        // no del usuario: las Rules de la FASE 2 sin publicar. El
+                        // `Toast` genérico no lo dice y deja sin respuesta a quien
+                        // solo quiere rellenar su perfil.
+                        else -> {
+                            val motivo = motivoFirestore(error)
+                            showToast(
+                                if (motivo == "PERMISSION_DENIED") {
+                                    getString(R.string.edit_perfil_error_guardar_permisos)
+                                } else {
+                                    getString(R.string.edit_perfil_error_guardar, motivo)
+                                }
+                            )
+                        }
                     }
                 }
         }
     }
-
-    /** Foto que se está mostrando mientras se sube; el resumen la cuenta como puesta. */
-    private val URL_FOTO_PENDIENTE get() = "pendiente://${uid.orEmpty()}"
 
     /**
      * Lo que el usuario escribió, sin los campos de solo lectura.
@@ -1134,6 +1346,10 @@ class EditarPerfilActivity : AppCompatActivity() {
         val mes = (partes.getOrNull(1)?.toIntOrNull() ?: (calendar.get(Calendar.MONTH) + 1)) - 1
         val dia = partes.getOrNull(0)?.toIntOrNull() ?: calendar.get(Calendar.DAY_OF_MONTH)
 
+        // El día se acota a lo que tiene el mes elegido, no a 28: con 28 quien nació
+        // un día 30 veía el selector en una fecha que nunca podría confirmar.
+        val diaValido = dia.coerceIn(1, diasDelMes(mes.coerceIn(0, 11), anio))
+
         val datePickerDialog = DatePickerDialog(
             this,
             R.style.CustomDatePickerTheme,
@@ -1143,9 +1359,9 @@ class EditarPerfilActivity : AppCompatActivity() {
                 tvFecha.setTextColor(COLOR_ENTRADA)
                 refrescarResumen()
             },
-            anio.coerceAtLeast(1926),
+            anio.coerceAtLeast(ANIO_MINIMO),
             mes.coerceIn(0, 11),
-            dia.coerceIn(1, 28)
+            diaValido
         )
 
         // Fecha máxima: hace 18 años (mayoría de edad)
@@ -1160,6 +1376,21 @@ class EditarPerfilActivity : AppCompatActivity() {
 
         datePickerDialog.show()
     }
+
+    /**
+     * Días del mes para el `DatePicker`, respetando años bisiestos.
+     *
+     * El `DatePicker` no revisa el día contra el mes: si se le pasa el 31 con un mes
+     * de 30, salta al mes siguiente. Por eso el día se acota antes de dárselo.
+     */
+    private fun diasDelMes(mes: Int, anio: Int): Int = when (mes) {
+        Calendar.FEBRUARY -> if (esBisiesto(anio)) 29 else 28
+        Calendar.APRIL, Calendar.JUNE, Calendar.SEPTEMBER, Calendar.NOVEMBER -> 30
+        else -> 31
+    }
+
+    private fun esBisiesto(anio: Int): Boolean =
+        (anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0
 
     // ═══════════════════════════════════════════════════════════════
     //  UBICACIÓN EN CASCADA
@@ -1322,11 +1553,18 @@ class EditarPerfilActivity : AppCompatActivity() {
     }
 
     private fun pintarFecha() {
-        if (selectedDate.isBlank()) {
+        // Un `birthDate` con formato raro en el documento (una versión anterior de la
+        // app, o un dato escrito a mano) se descarta en vez de intentar pintarlo:
+        // el `DatePicker` lo trocearía con `split("/")` y abriría en el día de hoy,
+        // lo que perdería la fecha real sin avisar.
+        val valida = BirthDates.soloSiValida(selectedDate)
+        if (valida.isEmpty()) {
+            selectedDate = ""
             tvFecha.setText(R.string.edit_perfil_fecha_vacia)
             tvFecha.setTextColor(COLOR_NEUTRO)
         } else {
-            tvFecha.text = selectedDate
+            selectedDate = valida
+            tvFecha.text = valida
             tvFecha.setTextColor(COLOR_ENTRADA)
         }
     }
@@ -1393,6 +1631,8 @@ class EditarPerfilActivity : AppCompatActivity() {
     }
 
     companion object {
+        private const val TAG = "EditarPerfil"
+
         /** Paso desde el que se empieza el asistente. */
         const val EXTRA_START_STEP = "com.proyecto.chambaya.extra_start_step"
 
@@ -1401,11 +1641,32 @@ class EditarPerfilActivity : AppCompatActivity() {
         /** "Editar perfil": se recorre el asistente entero desde el principio. */
         const val PASO_INICIO_EDITAR = 1
 
-        /** "Completar perfil" entra por las especialidades, que es lo que más pesa. */
+        /**
+         * "Completar perfil": no se entra por un paso fijo, sino por el primero con
+         * datos pendientes (ver [primerPasoIncompleto]). El valor solo sirve para
+         * distinguir esta entrada de la de "Editar perfil".
+         */
         const val PASO_INICIO_COMPLETAR = 3
 
         /** Espera antes de preguntar a Firestore si el @usuario está libre. */
         private const val ESPERA_USERNAME_MS = 450L
+
+        /** Suelo del `DatePicker` de nacimiento: nadie que use la app nació antes. */
+        private const val ANIO_MINIMO = 1926
+
+        // Qué campos de cada paso se revisan para decidir por dónde empezar. Son
+        // las etiquetas de `ProfileCompletion.CHECKS`; ver la nota de
+        // `primerPasoIncompleto`.
+        private val CAMPOS_PASO_1 = setOf(
+            "Foto de perfil", "Nombre completo", "Nombre de usuario", "Teléfono"
+        )
+        private val CAMPOS_PASO_2 = setOf(
+            "Descripción", "Distrito", "Provincia", "Departamento",
+            "Fecha de nacimiento", "Género"
+        )
+        private val CAMPOS_PASO_3 = setOf(
+            "Años de experiencia", "Especialidades", "Habilidades"
+        )
 
         private val COLOR_ENTRADA = Color.parseColor("#111827")
         private val COLOR_NEUTRO = Color.parseColor("#9CA3AF")

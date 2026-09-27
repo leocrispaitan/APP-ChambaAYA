@@ -385,6 +385,34 @@ class ProfileRepository(
     /** Calcula la completitud sin escribir nada (para el resumen del paso 4). */
     fun computeCompletion(perfil: UserProfile): ProfileCompletion = perfil.completion()
 
+    /**
+     * Propone un `@usuario` para un perfil que todavía no tiene uno.
+     *
+     * Las cuentas de la FASE 1 nacen sin `username` y las Rules exigen uno válido
+     * para cualquier escritura de la FASE 2. El asistente de edición lo necesita
+     * ya en memoria (para pintar el campo y no bloquear el guardado con un error
+     * de validación), pero sin tocar Firestore: esta función no consulta
+     * `usernames/` ni reserva nada, solo normaliza lo que hay.
+     *
+     * [ensureProfileInitialized] sigue siendo quien decide el `@usuario` definitivo
+     * comprobando la disponibilidad real; esta es la versión optimista para la
+     * pantalla, y si más tarde el otro dice que no, el usuario escribe otro.
+     */
+    fun sugerirUsername(perfil: UserProfile): String {
+        val guardado = normalizarUsername(perfil.profile.username)
+        if (guardado.length >= ProfileLimits.USERNAME_MIN) return guardado
+
+        val nombre = perfil.profile.fullName.ifBlank { perfil.auth.email.substringBefore("@") }
+        val base = normalizarUsername(nombre).take(ProfileLimits.USERNAME_MAX - 5)
+        val candidatos = listOf(
+            base.ifBlank { "chambaya" },
+            "${base.ifBlank { "chambaya" }}_${perfil.uid.take(4).lowercase()}",
+            "usuario_${perfil.uid.take(6).lowercase()}"
+        )
+        return candidatos.firstOrNull { esUsernameValido(it) }
+            ?: "usuario_${perfil.uid.take(8).lowercase()}"
+    }
+
     // ═══════════════════════════════════════════════════════════════
     //  VALIDACIÓN (la misma que aplican las Firestore Security Rules)
     // ═══════════════════════════════════════════════════════════════
