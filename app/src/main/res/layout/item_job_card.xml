@@ -314,23 +314,54 @@
 
             </LinearLayout>
 
+            <!-- ═══════════════════════════════════════════════════
+                 BOTÓN CORAZÓN SUPERPUESTO (Esquina superior derecha)
+                 Diseño profesional estilo Instagram
+                 ═══════════════════════════════════════════════════ -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp">
+
+                <!-- Círculo blanco con sombra como fondo del corazón -->
+                <View
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_favorite_circle" />
+
+                <!-- Botón de favorito superpuesto -->
+                <ImageButton
+                    android:id="@+id/btnFavoriteOverlay"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_heart_outline"
+                    android:contentDescription="Me gusta"
+                    android:scaleType="center"
+                    android:padding="10dp"
+                    android:tint="#e60012" />
+
+            </FrameLayout>
+
         </FrameLayout>
 
         <!-- ══════════════════════════════════════════
-             BARRA DE INTERACCIONES (estilo Instagram)
-             Corazón + Counter · Comentario + Counter · Compartir + Counter | Guardar
+             BARRA DE INTERACCIONES (simplificada)
+             Solo: Comentarios + Guardar
              ══════════════════════════════════════════ -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="6dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
             android:paddingBottom="4dp">
 
-            <!-- Grupo izquierdo: Me gusta + Comentarios + Compartir (con contadores a la derecha) -->
+            <!-- Botón + Contador de Comentarios (izquierda) -->
             <LinearLayout
-                android:id="@+id/llActionsLeft"
+                android:id="@+id/llComments"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
@@ -339,93 +370,28 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 
-                <!-- 1. Botón + Contador Corazón (Me gusta / favorito) -->
-                <LinearLayout
+                <ImageButton
+                    android:id="@+id/btnComment"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_comment"
+                    android:contentDescription="Comentarios"
+                    android:scaleType="center"
+                    android:padding="4dp" />
+
+                <TextView
+                    android:id="@+id/tvCommentsCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:layout_marginEnd="12dp">
-
-                    <ImageButton
-                        android:id="@+id/btnFavorite"
-                        android:layout_width="32dp"
-                        android:layout_height="36dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_heart_outline"
-                        android:contentDescription="Me gusta"
-                        android:scaleType="center" />
-
-                    <TextView
-                        android:id="@+id/tvLikesCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="2dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#1A1A1A"
-                        android:textSize="12.5sp"
-                        tools:text="3.4k" />
-                </LinearLayout>
-
-                <!-- 2. Botón + Contador Comentario -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:layout_marginEnd="12dp">
-
-                    <ImageButton
-                        android:id="@+id/btnComment"
-                        android:layout_width="32dp"
-                        android:layout_height="36dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_comment"
-                        android:contentDescription="Comentarios"
-                        android:scaleType="center" />
-
-                    <TextView
-                        android:id="@+id/tvCommentsCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="2dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#1A1A1A"
-                        android:textSize="12.5sp"
-                        tools:text="133" />
-                </LinearLayout>
-
-                <!-- 3. Botón + Contador Compartir -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:layout_marginEnd="8dp">
-
-                    <ImageButton
-                        android:id="@+id/btnShare"
-                        android:layout_width="32dp"
-                        android:layout_height="36dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:src="@drawable/ic_share"
-                        android:contentDescription="Compartir"
-                        android:scaleType="center" />
-
-                    <TextView
-                        android:id="@+id/tvSharesCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="2dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="#1A1A1A"
-                        android:textSize="12.5sp"
-                        tools:text="4.1k" />
-                </LinearLayout>
-
+                    android:layout_marginStart="4dp"
+                    android:fontFamily="sans-serif"
+                    android:textColor="#262626"
+                    android:textSize="14sp"
+                    tools:text="134" />
             </LinearLayout>
 
-            <!-- Botón guardar (bookmark) a la derecha -->
+            <!-- Botón Guardar (bookmark) a la derecha -->
             <ImageButton
                 android:id="@+id/btnBookmark"
                 android:layout_width="36dp"
@@ -434,6 +400,7 @@
                 android:src="@drawable/ic_bookmark_outline"
                 android:contentDescription="Guardar"
                 android:scaleType="center"
+                android:padding="6dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />

@@ -64,14 +64,13 @@ class JobCardAdapter(
         private val tvJobCategory: TextView = itemView.findViewById(R.id.tvJobCategory)
         private val tvJobPrice: TextView = itemView.findViewById(R.id.tvJobPrice)
 
-        // Barra de interacciones
-        private val btnFavorite: ImageButton = itemView.findViewById(R.id.btnFavorite)
+        // Botón de favorito superpuesto (nuevo diseño)
+        private val btnFavoriteOverlay: ImageButton = itemView.findViewById(R.id.btnFavoriteOverlay)
+        
+        // Barra de interacciones (simplificada)
         private val btnComment: ImageButton = itemView.findViewById(R.id.btnComment)
-        private val btnShare: ImageButton = itemView.findViewById(R.id.btnShare)
         private val btnBookmark: ImageButton = itemView.findViewById(R.id.btnBookmark)
-        private val tvLikesCount: TextView = itemView.findViewById(R.id.tvLikesCount)
         private val tvCommentsCount: TextView = itemView.findViewById(R.id.tvCommentsCount)
-        private val tvSharesCount: TextView = itemView.findViewById(R.id.tvSharesCount)
 
         // Pie de tarjeta
         private val tvJobRating: TextView = itemView.findViewById(R.id.tvJobRating)
@@ -135,22 +134,20 @@ class JobCardAdapter(
             tvJobCategory.text = jobCard.categoria
             tvJobPrice.text = jobCard.precio
 
-            // ── Interacciones (Contadores al lado derecho) ──
+            // ── Interacciones (Solo comentarios) ──
+            // Actualizar botón de favorito superpuesto
             val iconoFavorito = if (jobCard.isFavorito) {
                 R.drawable.ic_heart_filled
             } else {
                 R.drawable.ic_heart_outline
             }
-            btnFavorite.setImageResource(iconoFavorito)
+            btnFavoriteOverlay.setImageResource(iconoFavorito)
 
-            // Contadores de Me gusta, Comentarios y Compartidos
+            // Contadores de Comentarios
             var likesSimulados = (jobCard.rating * 720).toInt() + if (jobCard.isFavorito) 1 else 0
             val comentariosSimulados = (jobCard.rating * 28).toInt()
-            val compartidosSimulados = (jobCard.rating * 15).toInt()
 
-            tvLikesCount.text = formatLikes(likesSimulados)
             tvCommentsCount.text = formatLikes(comentariosSimulados)
-            tvSharesCount.text = formatLikes(compartidosSimulados)
 
             // Rating + tiempo (Sin "Ver más", dejando la estrella intacta)
             tvJobRating.text = String.format(
@@ -167,14 +164,11 @@ class JobCardAdapter(
                 showOptionsBottomSheet(itemView.context, jobCard)
             }
 
-            btnFavorite.setOnClickListener {
+            btnFavoriteOverlay.setOnClickListener {
                 jobCard.isFavorito = !jobCard.isFavorito
                 val nuevoIcono = if (jobCard.isFavorito) R.drawable.ic_heart_filled
                                  else R.drawable.ic_heart_outline
-                btnFavorite.setImageResource(nuevoIcono)
-                
-                if (jobCard.isFavorito) likesSimulados++ else likesSimulados--
-                tvLikesCount.text = formatLikes(likesSimulados)
+                btnFavoriteOverlay.setImageResource(nuevoIcono)
                 
                 onFavoriteClick(jobCard)
             }
@@ -187,27 +181,63 @@ class JobCardAdapter(
             val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_job_options, null)
             bottomSheetDialog.setContentView(dialogView)
 
+            // 1. Compartir publicación (NUEVA)
+            dialogView.findViewById<View>(R.id.optionShare)?.setOnClickListener {
+                shareJobCard(context, jobCard)
+                bottomSheetDialog.dismiss()
+            }
+
+            // 2. Por qué ves esto
             dialogView.findViewById<View>(R.id.optionWhy)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Por qué ves esta publicación de ${jobCard.empleador}", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
+            // 3. Calificar publicación
             dialogView.findViewById<View>(R.id.optionRate)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Calificando publicación: ${jobCard.titulo}", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
+            // 4. No me interesa
             dialogView.findViewById<View>(R.id.optionNotInterested)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Marcar 'No me interesa'", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
+            // 5. Denunciar publicación
             dialogView.findViewById<View>(R.id.optionReport)?.setOnClickListener {
                 android.widget.Toast.makeText(context, "Denunciar publicación", android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
             bottomSheetDialog.show()
+        }
+
+        /**
+         * Función para compartir la publicación usando Android Share Sheet
+         */
+        private fun shareJobCard(context: android.content.Context, jobCard: JobCard) {
+            val shareText = buildString {
+                append("📢 ${jobCard.titulo}\n\n")
+                append("💼 ${jobCard.categoria}\n")
+                append("💰 ${jobCard.precio}\n")
+                append("📍 ${jobCard.distrito}\n\n")
+                if (jobCard.descripcion.isNotEmpty()) {
+                    append("${jobCard.descripcion}\n\n")
+                }
+                append("🔗 Compartido desde ChambAYA")
+            }
+
+            val shareIntent = android.content.Intent().apply {
+                action = android.content.Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_SUBJECT, "Trabajo: ${jobCard.titulo}")
+                putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+            }
+
+            val chooserIntent = android.content.Intent.createChooser(shareIntent, "Compartir publicación")
+            context.startActivity(chooserIntent)
         }
 
         private fun formatLikes(count: Int): String {

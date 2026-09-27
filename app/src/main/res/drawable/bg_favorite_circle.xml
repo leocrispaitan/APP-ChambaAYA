@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    bg_favorite_circle.xml
+    Círculo blanco con sombra para el botón de favorito superpuesto
+    Diseño profesional estilo Instagram/Pinterest
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    
+    <!-- Fondo blanco semi-transparente -->
+    <solid android:color="#FCFCFC" />
+    
+    <!-- Sombra suave para destacar sobre la imagen -->
+    <stroke 
+        android:width="0.5dp"
+        android:color="#10000000" />
+    
+    <!-- Tamaño del círculo -->
+    <size 
+        android:width="48dp"
+        android:height="48dp" />
+    
+</shape>
