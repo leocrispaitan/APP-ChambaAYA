@@ -2,6 +2,7 @@ package com.proyecto.chambaya.ui.profile
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -556,7 +557,11 @@ class FragmentoMiPerfil : Fragment() {
                 requireContext(),
                 if (activo) R.color.brand_color else R.color.profile_text_stat_label
             )
-            val iconTint = ContextCompat.getColorStateList(requireContext(), color)
+            // `color` ya es el VALOR resuelto (p. ej. 0xFF2E6FF3), no un id de
+            // recurso. Pasarlo a `getColorStateList` —que espera un `@ColorRes`—
+            // lanzaba `Resources.NotFoundException` y cerraba la app al tocar
+            // cualquier tab. Con `valueOf` se arma el ColorStateList del color.
+            val iconTint = ColorStateList.valueOf(color)
 
             when (indice) {
                 0 -> {
