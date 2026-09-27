@@ -9,10 +9,21 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.Editable
+import android.text.InputFilter
+import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import android.widget.*
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -22,33 +33,86 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.core.widget.NestedScrollView
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.firebase.auth.FirebaseAuth
+import com.proyecto.chambaya.data.model.Genders
+import com.proyecto.chambaya.data.model.OficioCatalog
+import com.proyecto.chambaya.data.model.PeruLocations
+import com.proyecto.chambaya.data.model.ProfileCompletion
+import com.proyecto.chambaya.data.model.ProfileDraft
+import com.proyecto.chambaya.data.model.ProfileLimits
+import com.proyecto.chambaya.data.model.UserProfile
+import com.proyecto.chambaya.data.model.esUsernameValido
+import com.proyecto.chambaya.data.model.normalizarUsername
+import com.proyecto.chambaya.data.remote.CloudinaryUploader
+import com.proyecto.chambaya.data.remote.PhotoUploadResult
+import com.proyecto.chambaya.data.repository.ProfileRepository
+import com.proyecto.chambaya.data.repository.UsernameYaTomado
+import com.proyecto.chambaya.ui.profile.EspecialidadSelectorAdapter
+import com.proyecto.chambaya.ui.profile.OficioIcons
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.LinkedHashSet
 
 /**
- * Activity profesional para completar perfil en múltiples fases progresivas
- * Implementa navegación simulada sin Firebase (solo frontend funcional)
- * 
- * FASES:
- * 1. Información Básica (DNI, nombre, username, email, teléfono, foto)
- * 2. Información Personal (fecha nacimiento, género, ubicación, bio)
- * 3. Experiencia Profesional (años, especialidades, habilidades)
- * 4. Privacidad y Confirmación (switches de privacidad, resumen)
+ * FASE 2 — Asistente de edición del perfil, en cuatro pasos.
+ *
+ * Antes de esta fase esta pantalla era una maqueta: el nombre, el DNI, el
+ * `@usuario`, el correo y el teléfono estaban escritos en el código, las
+ * especialidades eran seis `CheckBox` fijos y el botón "Finalizar" solo
+ * enseñaba un `Toast`. Ahora todo eso sale de `users/{uid}` y termina en
+ * Firestore.
+ *
+ * PASOS
+ *  1. Información básica  — foto, DNI (solo lectura), nombre, @usuario, correo
+ *                          (solo lectura) y teléfono.
+ *  2. Información personal — fecha de nacimiento, género y ubicación en cascada
+ *                          (departamento → provincia → distrito).
+ *  3. Experiencia         — años, especialidades del catálogo de oficios y
+ *                          habilidades.
+ *  4. Privacidad          — qué contacto se muestra y resumen de completitud.
+ *
+ * Qué NO se puede tocar desde aquí (y por eso son de solo lectura): `uid`,
+ * `identity` (DNI/RUC verificado con RENIEC), `auth` (correo verificado) y el
+ * estado de registro. Todo eso es de la FASE 1 y lo escribe
+ * `RegistrationRepository`; el `username` además se reserva en `usernames/`
+ * para que sea único.
  */
 class EditarPerfilActivity : AppCompatActivity() {
 
+    // ═══════════════════════════════════════════════════════════════
+    //  DATOS
+    // ═══════════════════════════════════════════════════════════════
+
+    private val repository = ProfileRepository()
+    private val uploader = CloudinaryUploader()
+
+    private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
+
+    /** `uid` de la sesión; `null` si el usuario ya no está autenticado. */
+    private var uid: String? = null
+
+    /** Lo que hay ahora mismo en Firestore. Base de la vista previa y del guardado. */
+    private var perfilCargado: UserProfile? = null
+
     // ==================== CONTROL DE PASOS ====================
     private var currentStep = 1
-    private val totalSteps = 4
 
     // ==================== HEADER & STEPPER ====================
     private lateinit var btnCerrar: FrameLayout
     private lateinit var tvTitulo: TextView
     private lateinit var tvStepIndicator: TextView
-    
+
     // Stepper visual
     private lateinit var step1Circle: View
     private lateinit var step2Circle: View
@@ -76,8 +140,11 @@ class EditarPerfilActivity : AppCompatActivity() {
     private lateinit var ivAvatar: ShapeableImageView
     private lateinit var btnCambiarFoto: FrameLayout
     private lateinit var tvDni: TextView
+    private lateinit var tvDniNota: TextView
+    private lateinit var iconDniVerificado: ImageView
     private lateinit var etNombre: EditText
     private lateinit var etUsername: EditText
+    private lateinit var tvUsernameEstado: TextView
     private lateinit var etEmail: EditText
     private lateinit var iconEmailVerificado: ImageView
     private lateinit var etTelefono: EditText
@@ -95,18 +162,16 @@ class EditarPerfilActivity : AppCompatActivity() {
 
     // ==================== PASO 3: EXPERIENCIA PROFESIONAL ====================
     private lateinit var etExperiencia: EditText
-    private lateinit var cbAlbanileria: CheckBox
-    private lateinit var cbPintura: CheckBox
-    private lateinit var cbCarpinteria: CheckBox
-    private lateinit var cbElectricidad: CheckBox
-    private lateinit var cbGasfiteria: CheckBox
-    private lateinit var cbJardineria: CheckBox
+    private lateinit var etBuscarOficio: EditText
+    private lateinit var rvEspecialidades: RecyclerView
+    private lateinit var tvSinResultadosOficio: TextView
     private lateinit var etHabilidades: EditText
 
     // ==================== PASO 4: PRIVACIDAD ====================
     private lateinit var switchMostrarTelefono: SwitchCompat
     private lateinit var switchMostrarEmail: SwitchCompat
     private lateinit var switchMostrarUbicacion: SwitchCompat
+    private lateinit var tvResumenTitulo: TextView
     private lateinit var tvResumenCompletitud: TextView
     private lateinit var progressBarPerfil: ProgressBar
     private lateinit var tvPorcentajePerfil: TextView
@@ -115,16 +180,31 @@ class EditarPerfilActivity : AppCompatActivity() {
     private lateinit var btnAtras: MaterialButton
     private lateinit var btnSiguiente: MaterialButton
 
-    // ==================== DATOS ====================
+    // ==================== ESTADO DEL FORMULARIO ====================
+
+    /** Foto elegida en esta sesión y todavía NO subida a Cloudinary. */
     private var selectedImageUri: Uri? = null
+
+    /** `true` si hay una foto nueva pendiente de subir. */
+    private var fotoPendiente = false
+
     private var selectedDate: String = ""
-    private var selectedLocation: String = ""
     private var selectedGenero: String = ""
-    
-    private val departamentos = arrayOf(
-        "Ayacucho", "Lima", "Arequipa", "Cusco", "Piura", 
-        "La Libertad", "Lambayeque", "Junín", "Ica", "Otro"
-    )
+
+    private var selectedDepartamento: String = ""
+    private var selectedProvincia: String = ""
+    private var selectedDistrito: String = ""
+
+    /** Oficios marcados en el paso 3, en el orden en que se eligieron. */
+    private val especialidadesElegidas = LinkedHashSet<String>()
+
+    /** Comprobación de disponibilidad del `@usuario`, con retardo para no spamear. */
+    private var jobUsername: Job? = null
+
+    /** Evita que un watcher dispare actualizaciones durante la carga inicial. */
+    private var llenandoFormulario = false
+
+    private lateinit var adapterOficios: EspecialidadSelectorAdapter
 
     // Launcher para selección de imagen
     private val imagePickerLauncher = registerForActivityResult(
@@ -133,28 +213,35 @@ class EditarPerfilActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
                 selectedImageUri = uri
-                loadImageIntoAvatar(uri)
-                showToast("✓ Foto actualizada")
+                fotoPendiente = true
+                // Vista previa inmediata: la subida real ocurre al guardar, para
+                // no dejar imágenes huérfanas en Cloudinary si el usuario cancela.
+                ivAvatar.load(uri) { crossfade(true) }
+                showToast(getString(R.string.edit_perfil_foto_elegida))
             }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Configurar barra de estado
         BarraEstadoUtils.aplicarColor(this, Color.parseColor("#FFFFFF"))
-        
+
         setContentView(R.layout.dialog_editar_perfil)
 
         initViews()
         setupListeners()
         setupTeclado()
         setupBackPress()
-        loadSimulatedUserData()
-        
-        // Comenzar en el paso 1
-        updateStep(1)
+        setupSelectorOficios()
+
+        // "Completar perfil" entra por el paso 3 (donde están las especialidades);
+        // "Editar perfil" recorre los cuatro desde el principio.
+        val inicio = intent.getIntExtra(EXTRA_START_STEP, 1).coerceIn(1, PASOS_TOTAL)
+        updateStep(inicio)
+
+        cargarPerfil()
     }
 
     /**
@@ -246,8 +333,7 @@ class EditarPerfilActivity : AppCompatActivity() {
      * Cierra el teclado y quita el foco del campo activo.
      *
      * Se llama cuando el usuario ya no esta escribiendo: al cambiar de fase con
-     * Atrás/Siguiente y al marcar una categoría (género o especialidad). Sin esto
-     * el teclado se queda abierto sobre el paso siguiente.
+     * Atrás/Siguiente y al marcar una especialidad.
      */
     private fun ocultarTeclado() {
         val campo = currentFocus
@@ -324,8 +410,11 @@ class EditarPerfilActivity : AppCompatActivity() {
         ivAvatar = findViewById(R.id.ivEditarPerfilAvatar)
         btnCambiarFoto = findViewById(R.id.btnCambiarFotoPerfil)
         tvDni = findViewById(R.id.tvEditarPerfilDni)
+        tvDniNota = findViewById(R.id.tvDniNota)
+        iconDniVerificado = findViewById(R.id.iconDniVerificado)
         etNombre = findViewById(R.id.etEditarPerfilNombre)
         etUsername = findViewById(R.id.etEditarPerfilUsername)
+        tvUsernameEstado = findViewById(R.id.tvUsernameEstado)
         etEmail = findViewById(R.id.etEditarPerfilEmail)
         iconEmailVerificado = findViewById(R.id.iconEmailVerificado)
         etTelefono = findViewById(R.id.etEditarPerfilTelefono)
@@ -343,18 +432,16 @@ class EditarPerfilActivity : AppCompatActivity() {
 
         // Paso 3
         etExperiencia = findViewById(R.id.etEditarPerfilExperiencia)
-        cbAlbanileria = findViewById(R.id.cbAlbanileria)
-        cbPintura = findViewById(R.id.cbPintura)
-        cbCarpinteria = findViewById(R.id.cbCarpinteria)
-        cbElectricidad = findViewById(R.id.cbElectricidad)
-        cbGasfiteria = findViewById(R.id.cbGasfiteria)
-        cbJardineria = findViewById(R.id.cbJardineria)
+        etBuscarOficio = findViewById(R.id.etBuscarOficio)
+        rvEspecialidades = findViewById(R.id.rvEspecialidadesSelector)
+        tvSinResultadosOficio = findViewById(R.id.tvSinResultadosOficio)
         etHabilidades = findViewById(R.id.etEditarPerfilHabilidades)
 
         // Paso 4
         switchMostrarTelefono = findViewById(R.id.switchMostrarTelefono)
         switchMostrarEmail = findViewById(R.id.switchMostrarEmail)
         switchMostrarUbicacion = findViewById(R.id.switchMostrarUbicacion)
+        tvResumenTitulo = findViewById(R.id.tvResumenTitulo)
         tvResumenCompletitud = findViewById(R.id.tvResumenCompletitud)
         progressBarPerfil = findViewById(R.id.progressBarPerfil)
         tvPorcentajePerfil = findViewById(R.id.tvPorcentajePerfil)
@@ -371,6 +458,9 @@ class EditarPerfilActivity : AppCompatActivity() {
             applyExitTransition()
         }
 
+        // Tocar el avatar también abre la galería, no solo el botón de cámara.
+        ivAvatar.setOnClickListener { openImagePicker() }
+
         // Cambiar foto
         btnCambiarFoto.setOnClickListener {
             openImagePicker()
@@ -382,7 +472,7 @@ class EditarPerfilActivity : AppCompatActivity() {
             showDatePicker()
         }
 
-        // Ubicación
+        // Ubicación: cascada departamento -> provincia -> distrito
         inputUbicacion.setOnClickListener {
             ocultarTeclado()
             showLocationPicker()
@@ -404,57 +494,323 @@ class EditarPerfilActivity : AppCompatActivity() {
         // Radio buttons de género
         rgGenero.setOnCheckedChangeListener { _, checkedId ->
             selectedGenero = when (checkedId) {
-                R.id.rbMasculino -> "Masculino"
-                R.id.rbFemenino -> "Femenino"
-                R.id.rbOtro -> "Prefiero no decirlo"
+                R.id.rbMasculino -> Genders.MASCULINO
+                R.id.rbFemenino -> Genders.FEMENINO
+                R.id.rbOtro -> Genders.OTRO
                 else -> ""
             }
-            ocultarTeclado()
+            if (!llenandoFormulario) refrescarResumen()
         }
 
-        // Casillas de especialidad: al marcar una el teclado ya no hace falta.
-        // Se usa setOnClickListener y no setOnCheckedChangeListener para no tocar
-        // el estado de la casilla, que el framework gestiona por su cuenta.
-        listOf(cbAlbanileria, cbPintura, cbCarpinteria, cbElectricidad, cbGasfiteria, cbJardineria)
-            .forEach { casilla -> casilla.setOnClickListener { ocultarTeclado() } }
+        // El @usuario se comprueba contra `usernames/` mientras se escribe, con
+        // retardo para no lanzar una lectura por cada tecla.
+        etUsername.addTextChangedListener(alCambiarTexto {
+            if (llenandoFormulario) return@alCambiarTexto
+            programarComprobacionUsername()
+        })
+
+        // Cualquier cambio del formulario altera el resumen del paso 4.
+        listOf(etNombre, etTelefono, etBio, etExperiencia, etHabilidades).forEach { campo ->
+            campo.addTextChangedListener(alCambiarTexto { if (!llenandoFormulario) refrescarResumen() })
+        }
+
+        // Búsqueda de oficios: filtra la lista del paso 3.
+        etBuscarOficio.addTextChangedListener(alCambiarTexto {
+            if (!llenandoFormulario) filtrarOficios(it?.toString().orEmpty())
+        })
     }
 
-    private fun loadSimulatedUserData() {
-        // Datos simulados del registro (FASE 1 completada)
-        tvDni.text = "72345678"
-        etNombre.setText("Maria Elena Sanchez Gomez")
-        etUsername.setText("maria_chambaya_ayacucho")
-        etEmail.setText("maria.sanchez@gmail.com")
-        iconEmailVerificado.visibility = View.VISIBLE
-        etTelefono.setText("999 123 456")
-        
-        // Datos opcionales (a completar)
-        tvFecha.text = "Selecciona tu fecha"
-        tvFecha.setTextColor(Color.parseColor("#9CA3AF"))
-        tvUbicacion.text = "Selecciona tu ubicación"
-        tvUbicacion.setTextColor(Color.parseColor("#9CA3AF"))
+    /**
+     * Envoltorio de [TextWatcher] para no repetir el boilerplate de los tres
+     * métodos en cada campo.
+     */
+    private fun alCambiarTexto(accion: (Editable?) -> Unit) = object : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+        override fun afterTextChanged(s: Editable?) = accion(s)
     }
 
-    // ==================== NAVEGACIÓN POR PASOS ====================
-    
+    // ═══════════════════════════════════════════════════════════════
+    //  CARGA DEL PERFIL
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Lee `users/{uid}` y rellena el formulario.
+     *
+     * Se usa `ensureProfileInitialized` y no `loadProfile` porque las cuentas de
+     * la FASE 1 todavía no tienen `worker`, `privacy` ni `statistics`: la primera
+     * vez que se entra aquí es la que los crea, con valores neutros y un
+     * `@usuario` derivado del nombre. Es idempotente.
+     */
+    private fun cargarPerfil() {
+        val actual = auth.currentUser?.uid
+        if (actual == null) {
+            showToast(getString(R.string.profile_error_sesion))
+            finish()
+            applyExitTransition()
+            return
+        }
+        uid = actual
+
+        lifecycleScope.launch {
+            repository.ensureProfileInitialized(actual)
+                .onSuccess { datos ->
+                    perfilCargado = datos
+                    llenarFormulario(datos)
+                }
+                .onFailure { error ->
+                    showToast(
+                        getString(R.string.profile_error_cargar, error.message.orEmpty())
+                    )
+                }
+        }
+    }
+
+    /**
+     * Vuelca el perfil de Firestore en los campos.
+     *
+     * `llenandoFormulario` apaga los watchers: sin él, poner el texto dispararía
+     * una comprobación de `@usuario` por cada campo y un resumen antes de tiempo.
+     */
+    private fun llenarFormulario(perfil: UserProfile) {
+        llenandoFormulario = true
+
+        // --- Paso 1: lo que viene del registro es de solo lectura ---
+        val identidad = perfil.identity
+        if (identidad.identityVerified) {
+            tvDni.text = identidad.documentNumberMasked.ifBlank {
+                identidad.documentNumber
+            }
+            iconDniVerificado.isVisible = true
+            tvDniNota.isVisible = true
+        } else {
+            // Sin identidad validada no se inventa un documento: se dice.
+            tvDni.text = getString(R.string.edit_perfil_dni_no_verificado)
+            iconDniVerificado.isVisible = false
+            tvDniNota.isVisible = false
+        }
+
+        val email = perfil.auth.email.ifBlank { auth.currentUser?.email.orEmpty() }
+        etEmail.setText(email)
+        iconEmailVerificado.isVisible = perfil.auth.emailVerified && email.isNotBlank()
+
+        // Foto guardada en Cloudinary por el usuario; si no hay, sus iniciales.
+        OficioIcons.cargarAvatar(
+            ivAvatar,
+            perfil.profile.profilePhotoUrl,
+            perfil.profile.fullName,
+            perfil.profile.username.ifBlank { perfil.uid }
+        )
+        selectedImageUri = null
+        fotoPendiente = false
+
+        // --- Campos editables ---
+        etNombre.setText(perfil.profile.fullName)
+        etUsername.setText(perfil.profile.username)
+        etTelefono.setText(perfil.profile.phone)
+
+        // Las Rules admiten 500 caracteres de descripción: se corta aquí para que
+        // el usuario no pueda escribir de más y que el guardado no sea rechazado.
+        etBio.filters = arrayOf(InputFilter.LengthFilter(ProfileLimits.BIO_MAX))
+        etBio.setText(perfil.profile.bio)
+
+        selectedDate = perfil.profile.birthDate
+        pintarFecha()
+        selectedGenero = perfil.profile.gender
+        when (selectedGenero) {
+            Genders.MASCULINO -> rbMasculino.isChecked = true
+            Genders.FEMENINO -> rbFemenino.isChecked = true
+            Genders.OTRO -> rbOtro.isChecked = true
+        }
+
+        selectedDepartamento = perfil.profile.department
+        selectedProvincia = perfil.profile.province
+        selectedDistrito = perfil.profile.district
+        pintarUbicacion()
+
+        etExperiencia.setText(
+            if (perfil.worker.experienceYears > 0) perfil.worker.experienceYears.toString() else ""
+        )
+
+        // Solo se ofrecen las especialidades que siguen en el catálogo: si el
+        // JSON cambia, no se obligatorio elegir un oficio que ya no existe.
+        val validas = OficioCatalog.load(this)
+        especialidadesElegidas.clear()
+        perfil.worker.specialties.forEach { elegida ->
+            val oficial = validas.firstOrNull {
+                OficioCatalog.normalizar(it.categoria) == OficioCatalog.normalizar(elegida)
+            }
+            if (oficial != null) especialidadesElegidas += oficial.categoria
+        }
+        adapterOficios.setSeleccionados(especialidadesElegidas)
+        filtrarOficios(etBuscarOficio.text.toString())
+
+        etHabilidades.setText(perfil.worker.skills.joinToString(", "))
+
+        switchMostrarTelefono.isChecked = perfil.privacy.showPhone
+        switchMostrarEmail.isChecked = perfil.privacy.showEmail
+        switchMostrarUbicacion.isChecked = perfil.privacy.showExactAddress
+
+        llenandoFormulario = false
+
+        // El resumen se calcula con lo que hay, no con lo que se está escribiendo.
+        refrescarResumen()
+        pintarEstadoUsername(
+            getString(R.string.edit_perfil_username_neutro),
+            COLOR_NEUTRO
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  @USUARIO ÚNICO
+    // ═══════════════════════════════════════════════════════════════
+
+    private fun programarComprobacionUsername() {
+        jobUsername?.cancel()
+        jobUsername = lifecycleScope.launch {
+            delay(ESPERA_USERNAME_MS)
+            comprobarUsername()
+        }
+    }
+
+    /**
+     * Comprueba contra `usernames/{normalizado}` si el `@usuario` escrito está
+     * libre. El repositorio trata como disponible el que ya le pertenece a este
+     * usuario, así que no hay que comparar con el valor anterior aquí.
+     */
+    private suspend fun comprobarUsername() {
+        val actual = auth.currentUser?.uid ?: return
+        val escrito = etUsername.text.toString().trim()
+        val normalizado = normalizarUsername(escrito)
+
+        if (escrito.isEmpty()) {
+            pintarEstadoUsername(
+                getString(R.string.edit_perfil_username_neutro),
+                COLOR_NEUTRO
+            )
+            return
+        }
+
+        if (!esUsernameValido(escrito)) {
+            pintarEstadoUsername(
+                getString(R.string.edit_perfil_username_invalido),
+                COLOR_ERROR
+            )
+            return
+        }
+
+        // Si mientras se comprobaba el usuario seguiría escribiendo, el resultado
+        // ya no corresponde a lo que hay en el campo: se descarta.
+        if (etUsername.text.toString().trim() != escrito) return
+
+        if (repository.isUsernameAvailable(normalizado, actual)) {
+            pintarEstadoUsername(
+                getString(R.string.edit_perfil_username_disponible, normalizado),
+                COLOR_OK
+            )
+        } else {
+            pintarEstadoUsername(
+                getString(R.string.edit_perfil_username_tomado),
+                COLOR_ERROR
+            )
+        }
+    }
+
+    private fun pintarEstadoUsername(mensaje: String, color: Int) {
+        tvUsernameEstado.text = mensaje
+        tvUsernameEstado.setTextColor(color)
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  PASOS 3 Y 4: RESUMEN EN VIVO
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Perfil tal como quedaría con lo que hay escrito ahora mismo.
+     *
+     * Se construye aplicando el formulario sobre el documento de Firestore, que
+     * es exactamente lo mismo que hará [ProfileRepository.saveProfile]. Así el
+     * porcentaje del resumen y el que se guarda salen del mismo cálculo.
+     */
+    private fun perfilPrevisualizado(): UserProfile {
+        val base = perfilCargado ?: UserProfile(uid = uid.orEmpty())
+        return base.copy(
+            profile = base.profile.copy(
+                fullName = etNombre.text.toString().trim(),
+                username = normalizarUsername(etUsername.text.toString()),
+                phone = etTelefono.text.toString().trim(),
+                bio = etBio.text.toString().trim(),
+                birthDate = selectedDate,
+                gender = selectedGenero,
+                district = selectedDistrito,
+                province = selectedProvincia,
+                department = selectedDepartamento,
+                profilePhotoUrl = if (fotoPendiente) urlFotoPendiente()
+                else base.profile.profilePhotoUrl
+            ),
+            worker = base.worker.copy(
+                experienceYears = experienciaActual(),
+                specialties = especialidadesElegidas.toList(),
+                skills = repository.parseSkills(etHabilidades.text.toString())
+            )
+        )
+    }
+
+    /**
+     * Marcador de foto para el resumen mientras la imagen aún no está subida.
+     *
+     * Solo se usa en memoria, dentro de [perfilPrevisualizado]: nunca se escribe
+     * en Firestore. Sirve para que el porcentaje suba en cuanto el usuario elige
+     * una foto, sin esperar a que Cloudinary responda.
+     */
+    private fun urlFotoPendiente(): String = "pendiente://${uid.orEmpty()}"
+
+    /** Pinta el porcentaje y la lista de lo que falta, sin escribir nada. */
+    private fun refrescarResumen() {
+        val completion: ProfileCompletion = repository.computeCompletion(perfilPrevisualizado())
+
+        progressBarPerfil.progress = completion.percent
+        tvPorcentajePerfil.text = getString(R.string.profile_porcentaje, completion.percent)
+
+        tvResumenTitulo.text = when {
+            completion.isComplete -> getString(R.string.edit_perfil_resumen_completo)
+            completion.percent >= 50 -> getString(R.string.edit_perfil_resumen_casi)
+            else -> getString(R.string.edit_perfil_resumen_inicial)
+        }
+
+        tvResumenCompletitud.text = if (completion.missing.isEmpty()) {
+            getString(R.string.edit_perfil_resumen_todo)
+        } else {
+            getString(
+                R.string.edit_perfil_resumen_falta,
+                completion.missing.joinToString(", ")
+            )
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  NAVEGACIÓN POR PASOS
+    // ═══════════════════════════════════════════════════════════════
+
     private fun updateStep(step: Int) {
         currentStep = step
-        
+
         // Actualizar título e indicador
-        tvTitulo.text = when (step) {
-            1 -> "Completa tu Perfil"
-            2 -> "Información Personal"
-            3 -> "Experiencia Profesional"
-            4 -> "Privacidad y Confirmación"
-            else -> "Completa tu Perfil"
-        }
-        tvStepIndicator.text = "Paso $step de $totalSteps"
+        tvTitulo.setText(
+            when (step) {
+                1 -> R.string.edit_perfil_titulo_paso1
+                2 -> R.string.edit_perfil_titulo_paso2
+                3 -> R.string.edit_perfil_titulo_paso3
+                else -> R.string.edit_perfil_titulo_paso4
+            }
+        )
+        tvStepIndicator.text = getString(R.string.edit_perfil_paso_de, step, PASOS_TOTAL)
 
         // Mostrar/ocultar contenedores
-        layoutStep1.visibility = if (step == 1) View.VISIBLE else View.GONE
-        layoutStep2.visibility = if (step == 2) View.VISIBLE else View.GONE
-        layoutStep3.visibility = if (step == 3) View.VISIBLE else View.GONE
-        layoutStep4.visibility = if (step == 4) View.VISIBLE else View.GONE
+        layoutStep1.isVisible = step == 1
+        layoutStep2.isVisible = step == 2
+        layoutStep3.isVisible = step == 3
+        layoutStep4.isVisible = step == 4
 
         // Actualizar stepper visual
         updateStepperVisuals()
@@ -462,31 +818,32 @@ class EditarPerfilActivity : AppCompatActivity() {
         // Actualizar botones de navegación
         updateNavigationButtons()
 
+        // El resumen se pinta al llegar al paso 4 con lo último escrito.
+        if (step == 4) refrescarResumen()
+
         // Scroll al inicio
-        findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollEditarPerfil)
-            .smoothScrollTo(0, 0)
+        findViewById<NestedScrollView>(R.id.scrollEditarPerfil).smoothScrollTo(0, 0)
     }
 
     private fun updateStepperVisuals() {
-        val brandColor = Color.parseColor("#5B67F7")
         val darkColor = Color.parseColor("#111827")
         val inactiveColor = Color.parseColor("#E2E8F0")
         val mutedText = Color.parseColor("#64748B")
 
         // Paso 1
-        updateSingleStep(1, step1Circle, step1Number, step1Check, brandColor, darkColor, mutedText)
+        updateSingleStep(1, step1Circle, step1Number, step1Check, darkColor, inactiveColor, mutedText)
         line1.setBackgroundColor(if (currentStep > 1) darkColor else inactiveColor)
 
         // Paso 2
-        updateSingleStep(2, step2Circle, step2Number, step2Check, brandColor, darkColor, mutedText)
+        updateSingleStep(2, step2Circle, step2Number, step2Check, darkColor, inactiveColor, mutedText)
         line2.setBackgroundColor(if (currentStep > 2) darkColor else inactiveColor)
 
         // Paso 3
-        updateSingleStep(3, step3Circle, step3Number, step3Check, brandColor, darkColor, mutedText)
+        updateSingleStep(3, step3Circle, step3Number, step3Check, darkColor, inactiveColor, mutedText)
         line3.setBackgroundColor(if (currentStep > 3) darkColor else inactiveColor)
 
         // Paso 4
-        updateSingleStep(4, step4Circle, step4Number, step4Check, brandColor, darkColor, mutedText)
+        updateSingleStep(4, step4Circle, step4Number, step4Check, darkColor, inactiveColor, mutedText)
     }
 
     private fun updateSingleStep(
@@ -494,8 +851,8 @@ class EditarPerfilActivity : AppCompatActivity() {
         circle: View,
         numberTv: TextView,
         checkIv: ImageView,
-        brandColor: Int,
         darkColor: Int,
+        inactiveColor: Int,
         mutedText: Int
     ) {
         when {
@@ -523,173 +880,232 @@ class EditarPerfilActivity : AppCompatActivity() {
     }
 
     private fun updateNavigationButtons() {
-        // Botón Atrás solo visible después del paso 1
-        btnAtras.visibility = if (currentStep > 1) View.VISIBLE else View.VISIBLE
+        // Botón Atrás solo activo después del paso 1
         btnAtras.isEnabled = currentStep > 1
         btnAtras.alpha = if (currentStep > 1) 1f else 0.5f
 
         // Botón Siguiente cambia en el último paso
-        if (currentStep == totalSteps) {
-            btnSiguiente.text = "Finalizar"
+        if (currentStep == PASOS_TOTAL) {
+            btnSiguiente.setText(R.string.edit_perfil_btn_finalizar)
             btnSiguiente.icon = null
         } else {
-            btnSiguiente.text = "Siguiente"
+            btnSiguiente.setText(R.string.edit_perfil_btn_siguiente)
             btnSiguiente.setIconResource(R.drawable.ic_arrow_forward)
         }
     }
 
     private fun handleNextStep() {
-        // Validar paso actual antes de avanzar
-        if (!validateCurrentStep()) {
-            return
-        }
+        // El paso 1 es el único con datos que las Rules exigen: sin nombre,
+        // sin @usuario válido o sin teléfono, Firestore rechazaría el guardado.
+        if (currentStep == 1 && !validateStep1()) return
 
-        if (currentStep < totalSteps) {
-            // Avanzar al siguiente paso
+        if (currentStep < PASOS_TOTAL) {
             updateStep(currentStep + 1)
         } else {
-            // Finalizar y guardar (simulado)
             finalizarActualizacionPerfil()
         }
     }
 
-    private fun validateCurrentStep(): Boolean {
-        return when (currentStep) {
-            1 -> validateStep1()
-            2 -> validateStep2()
-            3 -> validateStep3()
-            4 -> true // Paso 4 no requiere validación obligatoria
-            else -> true
-        }
-    }
-
+    /**
+     * Solo bloquea lo que las Firestore Security Rules rechazan.
+     *
+     * El nombre y el `@usuario` sí son obligatorios (la regla exige 3-30
+     * caracteres). El teléfono NO: el registro de la FASE 1 no lo pide, así que
+     * si se bloqueara aquí nadie podría guardar hasta ponerse uno. Se avisa y se
+     * deja pasar; el paso 4 recuerda que falta y el porcentaje lo refleja.
+     *
+     * Los pasos 2 y 3 tampoco bloquean por la misma razón: sus campos son
+     * opcionales y el resumen del paso 4 ya enseña lo que falta.
+     */
     private fun validateStep1(): Boolean {
         val nombre = etNombre.text.toString().trim()
-        val username = etUsername.text.toString().trim()
+        val escrito = etUsername.text.toString().trim()
         val telefono = etTelefono.text.toString().trim()
 
-        if (nombre.isEmpty() || nombre.length < 3) {
-            etNombre.error = "Ingresa tu nombre completo (mín. 3 caracteres)"
+        if (nombre.length < 3) {
+            etNombre.error = getString(R.string.edit_perfil_error_nombre)
             etNombre.requestFocus()
-            showToast("⚠️ Completa tu nombre")
+            showToast(getString(R.string.edit_perfil_error_nombre))
             return false
         }
 
-        if (username.isEmpty() || username.length < 3) {
-            etUsername.error = "Ingresa un nombre de usuario válido"
+        if (!esUsernameValido(escrito)) {
+            etUsername.error = getString(R.string.edit_perfil_username_invalido)
             etUsername.requestFocus()
-            showToast("⚠️ Completa tu nombre de usuario")
+            showToast(getString(R.string.edit_perfil_username_invalido))
             return false
         }
 
-        if (telefono.isEmpty() || telefono.length < 9) {
-            etTelefono.error = "Ingresa un teléfono válido (mín. 9 dígitos)"
-            etTelefono.requestFocus()
-            showToast("⚠️ Completa tu teléfono")
-            return false
-        }
-
-        return true
-    }
-
-    private fun validateStep2(): Boolean {
-        if (selectedDate.isEmpty()) {
-            showToast("⚠️ Selecciona tu fecha de nacimiento")
-            return false
-        }
-
-        if (selectedGenero.isEmpty()) {
-            showToast("⚠️ Selecciona tu género")
-            return false
-        }
-
-        if (selectedLocation.isEmpty()) {
-            showToast("⚠️ Selecciona tu ubicación")
-            return false
+        // Aviso, no bloqueo: un teléfono mal escrito se avisa, uno vacío no.
+        val digitos = telefono.filter { it.isDigit() }
+        if (digitos.isNotEmpty() && digitos.length !in ProfileLimits.PHONE_MIN..ProfileLimits.PHONE_MAX) {
+            etTelefono.error = getString(R.string.edit_perfil_error_telefono)
+            showToast(getString(R.string.edit_perfil_error_telefono))
+        } else {
+            etTelefono.error = null
         }
 
         return true
     }
 
-    private fun validateStep3(): Boolean {
-        val experiencia = etExperiencia.text.toString().trim()
-        
-        if (experiencia.isEmpty()) {
-            etExperiencia.error = "Ingresa tus años de experiencia"
-            etExperiencia.requestFocus()
-            showToast("⚠️ Ingresa tus años de experiencia")
-            return false
-        }
+    // ═══════════════════════════════════════════════════════════════
+    //  GUARDADO
+    // ═══════════════════════════════════════════════════════════════
 
-        // Validar que al menos una especialidad esté seleccionada
-        val tieneEspecialidad = cbAlbanileria.isChecked || cbPintura.isChecked ||
-                cbCarpinteria.isChecked || cbElectricidad.isChecked ||
-                cbGasfiteria.isChecked || cbJardineria.isChecked
-
-        if (!tieneEspecialidad) {
-            showToast("⚠️ Selecciona al menos una especialidad")
-            return false
-        }
-
-        return true
-    }
-
+    /**
+     * Sube la foto (si hay una nueva) y guarda el borrador.
+     *
+     * El orden importa: primero se sube la imagen a Cloudinary y se reciben su
+     * `url` y su `publicId`, y solo después se escribe el documento. Las Rules
+     * exigen que la foto venga de `chambaya/perfiles/{uid}/`, así que guardarla
+     * antes de tener esos dos datos no sería posible.
+     */
     private fun finalizarActualizacionPerfil() {
-        // Calcular completitud del perfil
-        val completitud = calculateProfileCompleteness()
-        
-        // Mostrar loading
-        btnSiguiente.isEnabled = false
-        btnSiguiente.text = "Guardando..."
+        val actual = uid
+        if (actual == null) {
+            showToast(getString(R.string.profile_error_sesion))
+            return
+        }
 
-        // Simular guardado (1.5 segundos)
-        btnSiguiente.postDelayed({
-            // Mostrar éxito
-            showSuccessDialog(completitud)
-        }, 1500)
+        val borrador = construirBorrador()
+        val errores = repository.validate(borrador)
+        if (errores.isNotEmpty()) {
+            showErrores(errores)
+            return
+        }
+
+        bloquearBotones(true)
+
+        lifecycleScope.launch {
+            // 1) Foto, si el usuario eligió una nueva en esta sesión.
+            var fotoUrl: String? = null
+            var fotoPublicId: String? = null
+
+            if (fotoPendiente) {
+                val uri = selectedImageUri
+                if (uri == null) {
+                    bloquearBotones(false)
+                    showToast(getString(R.string.edit_perfil_error_foto))
+                    return@launch
+                }
+                if (!uploader.estaConfigurado) {
+                    bloquearBotones(false)
+                    showToast(getString(R.string.edit_perfil_foto_sin_configurar))
+                    return@launch
+                }
+
+                when (val resultado = uploader.uploadProfilePhoto(this@EditarPerfilActivity, actual, uri)) {
+                    is PhotoUploadResult.Success -> {
+                        fotoUrl = resultado.image.url
+                        fotoPublicId = resultado.image.publicId
+                    }
+                    is PhotoUploadResult.Rejected -> {
+                        bloquearBotones(false)
+                        showToast(getString(R.string.edit_perfil_foto_error, resultado.message))
+                        return@launch
+                    }
+                    is PhotoUploadResult.NetworkError -> {
+                        bloquearBotones(false)
+                        showToast(getString(R.string.edit_perfil_foto_sin_conexion))
+                        return@launch
+                    }
+                }
+            }
+
+            // 2) Perfil. El repositorio reserva el @usuario y deriva el porcentaje.
+            repository.saveProfile(actual, borrador, fotoUrl, fotoPublicId)
+                .onSuccess { guardado ->
+                    perfilCargado = guardado
+                    showSuccessDialog(guardado.completion().percent)
+                }
+                .onFailure { error ->
+                    bloquearBotones(false)
+                    when (error) {
+                        is UsernameYaTomado -> {
+                            pintarEstadoUsername(
+                                getString(R.string.edit_perfil_username_tomado),
+                                COLOR_ERROR
+                            )
+                            etUsername.requestFocus()
+                            updateStep(1)
+                        }
+                        else -> showToast(
+                            getString(R.string.edit_perfil_error_guardar, error.message.orEmpty())
+                        )
+                    }
+                }
+        }
     }
 
-    private fun calculateProfileCompleteness(): Int {
-        var completedFields = 0
-        val totalFields = 15
+    /** Foto que se está mostrando mientras se sube; el resumen la cuenta como puesta. */
+    private val URL_FOTO_PENDIENTE get() = "pendiente://${uid.orEmpty()}"
 
-        // Paso 1
-        if (selectedImageUri != null) completedFields++
-        if (etNombre.text.isNotEmpty()) completedFields++
-        if (etUsername.text.isNotEmpty()) completedFields++
-        if (etEmail.text.isNotEmpty()) completedFields++
-        if (etTelefono.text.isNotEmpty()) completedFields++
+    /**
+     * Lo que el usuario escribió, sin los campos de solo lectura.
+     *
+     * Lo consume [ProfileRepository.saveProfile], que se encarga de reservar el
+     * `@usuario`, filtrar las especialidades contra el catálogo y derivar el
+     * porcentaje de completitud.
+     */
+    private fun construirBorrador(): ProfileDraft {
+        val base = perfilCargado
+        val habilidades = repository.parseSkills(etHabilidades.text.toString())
 
-        // Paso 2
-        if (selectedDate.isNotEmpty()) completedFields++
-        if (selectedGenero.isNotEmpty()) completedFields++
-        if (selectedLocation.isNotEmpty()) completedFields++
-        if (etBio.text.isNotEmpty()) completedFields++
+        return ProfileDraft(
+            fullName = etNombre.text.toString().trim(),
+            username = etUsername.text.toString().trim(),
+            phone = etTelefono.text.toString().trim(),
+            bio = etBio.text.toString().trim(),
+            birthDate = selectedDate,
+            gender = selectedGenero,
+            department = selectedDepartamento,
+            province = selectedProvincia,
+            district = selectedDistrito,
+            experienceYears = experienciaActual(),
+            // Se vuelve a pasar por el catálogo: el paso 3 solo ofrece oficios que
+            // existen, pero así el documento nunca guarda un oficio inventado.
+            specialties = repository.filtrarEspecialidades(this, especialidadesElegidas.toList()),
+            skills = habilidades,
+            showPhone = switchMostrarTelefono.isChecked,
+            showEmail = switchMostrarEmail.isChecked,
+            showExactAddress = switchMostrarUbicacion.isChecked,
+            workerEnabled = base?.worker?.enabled ?: true
+        )
+    }
 
-        // Paso 3
-        if (etExperiencia.text.isNotEmpty()) completedFields++
-        if (cbAlbanileria.isChecked || cbPintura.isChecked || cbCarpinteria.isChecked ||
-            cbElectricidad.isChecked || cbGasfiteria.isChecked || cbJardineria.isChecked
-        ) completedFields++
-        if (etHabilidades.text.isNotEmpty()) completedFields++
+    /** Años escritos, acotados al rango que aceptan las Rules (0..70). */
+    private fun experienciaActual(): Int =
+        etExperiencia.text.toString().trim().toIntOrNull()?.coerceIn(0, ProfileLimits.EXPERIENCE_MAX)
+            ?: 0
 
-        // Paso 4 (configuraciones de privacidad siempre cuentan)
-        completedFields += 3
+    private fun bloquearBotones(bloquear: Boolean) {
+        if (bloquear) {
+            btnSiguiente.isEnabled = false
+            btnAtras.isEnabled = false
+            btnSiguiente.setText(R.string.edit_perfil_btn_guardando)
+        } else {
+            // `updateNavigationButtons` devuelve el botón al texto que le toca.
+            updateNavigationButtons()
+        }
+    }
 
-        return (completedFields * 100) / totalFields
+    private fun showErrores(errores: List<String>) {
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            .setTitle(R.string.edit_perfil_error_titulo)
+            .setMessage(errores.joinToString("\n\n") { "• $it" })
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun showSuccessDialog(completitud: Int) {
         val builder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        builder.setTitle("🎉 ¡Perfil Actualizado!")
+        builder.setTitle(R.string.edit_perfil_exito_titulo)
         builder.setMessage(
-            "Tu perfil ha sido actualizado correctamente.\n\n" +
-            "✓ Completitud: $completitud%\n" +
-            "✓ DNI verificado con RENIEC\n" +
-            "✓ Email verificado\n\n" +
-            "Tu perfil ahora destaca más en ChambAYA."
+            getString(R.string.edit_perfil_exito_mensaje, completitud) +
+                "\n\n" +
+                getString(R.string.edit_perfil_exito_verificaciones)
         )
-        builder.setPositiveButton("Continuar") { dialog, _ ->
+        builder.setPositiveButton(R.string.edit_perfil_exito_continuar) { dialog, _ ->
             dialog.dismiss()
             setResult(Activity.RESULT_OK)
             finish()
@@ -699,7 +1115,9 @@ class EditarPerfilActivity : AppCompatActivity() {
         builder.show()
     }
 
-    // ==================== UTILIDADES ====================
+    // ═══════════════════════════════════════════════════════════════
+    //  FOTO
+    // ═══════════════════════════════════════════════════════════════
 
     private fun openImagePicker() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
@@ -707,28 +1125,27 @@ class EditarPerfilActivity : AppCompatActivity() {
         imagePickerLauncher.launch(intent)
     }
 
-    private fun loadImageIntoAvatar(uri: Uri) {
-        try {
-            ivAvatar.setImageURI(uri)
-        } catch (e: Exception) {
-            showToast("Error al cargar imagen")
-        }
-    }
-
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
-        
+
+        // Si ya hay una fecha guardada se abre en ella, no en hoy.
+        val partes = selectedDate.split("/")
+        val anio = partes.getOrNull(2)?.toIntOrNull() ?: (calendar.get(Calendar.YEAR) - 25)
+        val mes = (partes.getOrNull(1)?.toIntOrNull() ?: (calendar.get(Calendar.MONTH) + 1)) - 1
+        val dia = partes.getOrNull(0)?.toIntOrNull() ?: calendar.get(Calendar.DAY_OF_MONTH)
+
         val datePickerDialog = DatePickerDialog(
             this,
             R.style.CustomDatePickerTheme,
             { _, year, month, dayOfMonth ->
                 selectedDate = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
                 tvFecha.text = selectedDate
-                tvFecha.setTextColor(Color.parseColor("#111827"))
+                tvFecha.setTextColor(COLOR_ENTRADA)
+                refrescarResumen()
             },
-            calendar.get(Calendar.YEAR) - 25,
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
+            anio.coerceAtLeast(1926),
+            mes.coerceIn(0, 11),
+            dia.coerceIn(1, 28)
         )
 
         // Fecha máxima: hace 18 años (mayoría de edad)
@@ -744,25 +1161,255 @@ class EditarPerfilActivity : AppCompatActivity() {
         datePickerDialog.show()
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    //  UBICACIÓN EN CASCADA
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * El texto del layout ya decía "Distrito, provincia y departamento", así que
+     * el selector es una cascada: primero el departamento, luego su provincia y
+     * por último el distrito. Al cambiar un nivel se borra lo que tenía debajo,
+     * porque ya no puede ser válido.
+     *
+     * Cada lista termina en "Otro", que abre un campo para escribir el lugar
+     * real: nadie se queda bloqueado por una lista curada.
+     */
     private fun showLocationPicker() {
-        val builder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        builder.setTitle("Seleccionar Departamento")
-        
-        builder.setItems(departamentos) { dialog, which ->
-            selectedLocation = departamentos[which]
-            tvUbicacion.text = selectedLocation
-            tvUbicacion.setTextColor(Color.parseColor("#111827"))
-            dialog.dismiss()
+        when {
+            selectedDepartamento.isBlank() -> elegirDepartamento()
+            selectedProvincia.isBlank() -> elegirProvincia()
+            else -> elegirDistrito()
         }
-        
-        builder.setNegativeButton("Cancelar") { dialog, _ ->
-            dialog.dismiss()
+    }
+
+    private fun elegirDepartamento() {
+        val opciones = PeruLocations.departamentos + PeruLocations.OTRO
+        val titulo = getString(R.string.edit_perfil_ubic_departamento)
+
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            .setTitle(titulo)
+            .setItems(opciones.toTypedArray()) { dialog, which ->
+                val elegido = opciones[which]
+                dialog.dismiss()
+                if (PeruLocations.esOtro(elegido)) {
+                    pedirTextoLibre(titulo) { escrito ->
+                        if (escrito.isNotBlank()) {
+                            selectedDepartamento = escrito
+                            limpiarNivelesInferiores()
+                            pintarUbicacion()
+                        }
+                    }
+                } else {
+                    selectedDepartamento = elegido
+                    limpiarNivelesInferiores()
+                    pintarUbicacion()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun elegirProvincia() {
+        val opciones = PeruLocations.provincias(selectedDepartamento)
+        val titulo = getString(R.string.edit_perfil_ubic_provincia)
+
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            .setTitle(titulo)
+            .setItems(opciones.toTypedArray()) { dialog, which ->
+                val elegido = opciones[which]
+                dialog.dismiss()
+                if (PeruLocations.esOtro(elegido)) {
+                    pedirTextoLibre(titulo) { escrito ->
+                        if (escrito.isNotBlank()) {
+                            selectedProvincia = escrito
+                            selectedDistrito = ""
+                            pintarUbicacion()
+                        }
+                    }
+                } else {
+                    selectedProvincia = elegido
+                    selectedDistrito = ""
+                    pintarUbicacion()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun elegirDistrito() {
+        val opciones = PeruLocations.distritos(selectedDepartamento, selectedProvincia)
+        val titulo = getString(R.string.edit_perfil_ubic_distrito)
+
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            .setTitle(titulo)
+            .setItems(opciones.toTypedArray()) { dialog, which ->
+                val elegido = opciones[which]
+                dialog.dismiss()
+                if (PeruLocations.esOtro(elegido)) {
+                    pedirTextoLibre(titulo) { escrito ->
+                        if (escrito.isNotBlank()) {
+                            selectedDistrito = escrito
+                            pintarUbicacion()
+                        }
+                    }
+                } else {
+                    selectedDistrito = elegido
+                    pintarUbicacion()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * Diálogo con un único campo de texto, para las opciones "Otro".
+     *
+     * Se construye la vista a mano en vez de usar `setView` con un `EditText`
+     * pelado porque el proyecto no tiene un `TextInputLayout` con el mismo estilo
+     * del resto del formulario.
+     */
+    private fun pedirTextoLibre(titulo: String, alAceptar: (String) -> Unit) {
+        val campo = EditText(this).apply {
+            hint = getString(R.string.edit_perfil_ubic_otro_hint)
+            setTextColor(COLOR_ENTRADA)
+            setHintTextColor(COLOR_NEUTRO)
+            setSingleLine()
         }
-        
-        builder.show()
+
+        val contenedor = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val margen = (24 * resources.displayMetrics.density).toInt()
+            setPadding(margen, margen / 2, margen, 0)
+            addView(
+                campo,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            .setTitle(titulo)
+            .setView(contenedor)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                alAceptar(campo.text.toString().trim())
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    /** Al cambiar el departamento se invalidan provincia y distrito. */
+    private fun limpiarNivelesInferiores() {
+        selectedProvincia = ""
+        selectedDistrito = ""
+    }
+
+    /**
+     * Muestra lo elegido. Mientras falte un nivel se dice cuál, para que quede
+     * claro que la cascada sigue abierta.
+     */
+    private fun pintarUbicacion() {
+        val etiqueta = PeruLocations.etiqueta(selectedDistrito, selectedProvincia, selectedDepartamento)
+        if (etiqueta.isNotBlank()) {
+            tvUbicacion.text = etiqueta
+            tvUbicacion.setTextColor(COLOR_ENTRADA)
+        } else {
+            tvUbicacion.setText(R.string.edit_perfil_ubic_vacia)
+            tvUbicacion.setTextColor(COLOR_ENTRADA)
+        }
+        refrescarResumen()
+    }
+
+    private fun pintarFecha() {
+        if (selectedDate.isBlank()) {
+            tvFecha.setText(R.string.edit_perfil_fecha_vacia)
+            tvFecha.setTextColor(COLOR_NEUTRO)
+        } else {
+            tvFecha.text = selectedDate
+            tvFecha.setTextColor(COLOR_ENTRADA)
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ESPECIALIDADES (api_oficios.json)
+    // ═══════════════════════════════════════════════════════════════
+
+    private fun setupSelectorOficios() {
+        adapterOficios = EspecialidadSelectorAdapter { categoria -> alternarEspecialidad(categoria) }
+        rvEspecialidades.layoutManager = LinearLayoutManager(this)
+        rvEspecialidades.adapter = adapterOficios
+        rvEspecialidades.itemAnimator = null
+        filtrarOficios("")
+    }
+
+    /**
+     * Filtra el catálogo por lo que se escribe.
+     *
+     * Busca en la categoría y en el puesto ("albañil" encuentra Construcción aunque
+     * la categoría se llame así). Sin texto se muestra la lista entera: son las
+     * pocas categorías que tiene el catálogo, no hace falta paginar.
+     */
+    private fun filtrarOficios(texto: String) {
+        val todos = OficioCatalog.load(this)
+        val consulta = OficioCatalog.normalizar(texto)
+
+        val filtrados = if (consulta.isEmpty()) {
+            todos
+        } else {
+            todos.filter {
+                OficioCatalog.normalizar(it.categoria).contains(consulta) ||
+                    OficioCatalog.normalizar(it.puesto).contains(consulta)
+            }
+        }
+
+        adapterOficios.submit(filtrados)
+        tvSinResultadosOficio.isVisible = filtrados.isEmpty()
+        rvEspecialidades.isVisible = filtrados.isNotEmpty()
+    }
+
+    /**
+     * Marca o desmarca un oficio, respetando el tope de
+     * [ProfileLimits.SPECIALTY_MAX]: al llegar al tope se avisa en vez de ignorar
+     * el toque sin explicación.
+     */
+    private fun alternarEspecialidad(categoria: String) {
+        ocultarTeclado()
+        if (!especialidadesElegidas.remove(categoria)) {
+            if (especialidadesElegidas.size >= ProfileLimits.SPECIALTY_MAX) {
+                showToast(
+                    getString(R.string.edit_perfil_error_especialidades, ProfileLimits.SPECIALTY_MAX)
+                )
+                return
+            }
+            especialidadesElegidas += categoria
+        }
+        adapterOficios.setSeleccionados(especialidadesElegidas)
+        refrescarResumen()
     }
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    companion object {
+        /** Paso desde el que se empieza el asistente. */
+        const val EXTRA_START_STEP = "com.proyecto.chambaya.extra_start_step"
+
+        const val PASOS_TOTAL = 4
+
+        /** "Editar perfil": se recorre el asistente entero desde el principio. */
+        const val PASO_INICIO_EDITAR = 1
+
+        /** "Completar perfil" entra por las especialidades, que es lo que más pesa. */
+        const val PASO_INICIO_COMPLETAR = 3
+
+        /** Espera antes de preguntar a Firestore si el @usuario está libre. */
+        private const val ESPERA_USERNAME_MS = 450L
+
+        private val COLOR_ENTRADA = Color.parseColor("#111827")
+        private val COLOR_NEUTRO = Color.parseColor("#9CA3AF")
+        private val COLOR_OK = Color.parseColor("#00A859")
+        private val COLOR_ERROR = Color.parseColor("#DC2626")
     }
 }

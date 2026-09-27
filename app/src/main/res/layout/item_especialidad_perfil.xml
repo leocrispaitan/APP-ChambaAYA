@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FASE 2 — Tile de especialidad en "Mi Perfil".
+    El peso lo asigna el código al añadirlo a layoutEspecialidades, para poder
+    mostrar hasta 4 tiles repartiendo el ancho sin deformar el diseño original.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="0dp"
+    android:layout_height="86dp"
+    android:layout_weight="1"
+    android:background="@drawable/bg_profile_skill_tile"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="6dp">
+
+    <ImageView
+        android:id="@+id/ivIcono"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:contentDescription="@null"
+        tools:src="@drawable/ic_skill_masonry" />
+
+    <TextView
+        android:id="@+id/tvNombre"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:maxLines="2"
+        android:textColor="#1F2937"
+        android:textSize="11sp"
+        tools:text="Albañilería" />
+
+</LinearLayout>

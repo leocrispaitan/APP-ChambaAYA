@@ -15,6 +15,15 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        // ── FASE 2 · Cloudinary (subida de foto de perfil) ──────────────────
+        // Credenciales PÚBLICAS: cloud name + preset sin firmar.
+        // El "API Secret" (W3mN_1hUVkUbkaU-s1Dhaezx25Q) se queda fuera de la
+        // app a propósito; vive solo en el dashboard de Cloudinary.
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"vtmk2tgh\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"chambaya_unsigned\"")
+        // Carpeta raíz de fotos de perfil dentro de Cloudinary.
+        buildConfigField("String", "CLOUDINARY_PROFILE_FOLDER", "\"chambaya/perfiles\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -33,6 +42,10 @@ android {
     }
     buildFeatures {
         compose = true
+        // FASE 2: `BuildConfig` para las credenciales públicas de Cloudinary.
+        // Solo van el Cloud Name y el nombre del preset unsigned: el API Secret
+        // NUNCA debe entrar en la app (permitiría subir/borrar desde el móvil).
+        buildConfig = true
     }
 }
 

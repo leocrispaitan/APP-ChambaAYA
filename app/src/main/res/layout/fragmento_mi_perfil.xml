@@ -324,6 +324,7 @@
                         android:background="@drawable/bg_profile_progress_circle">
 
                         <TextView
+                            android:id="@+id/tvProgressRing"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
@@ -734,138 +735,36 @@
 
                     </LinearLayout>
 
-                    <!-- 4 Specialties Horizontal Tiles -->
+                    <!-- Especialidades: se rellena desde Firestore (api_oficios.json) -->
                     <LinearLayout
+                        android:id="@+id/layoutEspecialidades"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal" />
 
-                        <!-- Specialty 1: Albañilería -->
-                        <LinearLayout
-                            android:id="@+id/skillFigma"
-                            android:layout_width="0dp"
-                            android:layout_height="86dp"
-                            android:layout_marginEnd="4dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_profile_skill_tile"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="6dp">
+                    <!-- Aviso cuando el usuario todavía no eligió especialidades -->
+                    <TextView
+                        android:id="@+id/tvSinEspecialidades"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="sans-serif"
+                        android:text="@string/profile_especialidades_vacias"
+                        android:textColor="#9CA3AF"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
 
-                            <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:contentDescription="@string/profile_skill_figma"
-                                android:src="@drawable/ic_skill_masonry" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:fontFamily="sans-serif-medium"
-                                android:gravity="center"
-                                android:text="@string/profile_skill_figma"
-                                android:textColor="#1F2937"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-
-                        <!-- Specialty 2: Pintura -->
-                        <LinearLayout
-                            android:id="@+id/skillAdobeXd"
-                            android:layout_width="0dp"
-                            android:layout_height="86dp"
-                            android:layout_marginHorizontal="2dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_profile_skill_tile"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="6dp">
-
-                            <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:contentDescription="@string/profile_skill_adobexd"
-                                android:src="@drawable/ic_skill_paint_roller" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:fontFamily="sans-serif-medium"
-                                android:gravity="center"
-                                android:text="@string/profile_skill_adobexd"
-                                android:textColor="#1F2937"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-
-                        <!-- Specialty 3: Jardinería -->
-                        <LinearLayout
-                            android:id="@+id/skillSketch"
-                            android:layout_width="0dp"
-                            android:layout_height="86dp"
-                            android:layout_marginHorizontal="2dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_profile_skill_tile"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="6dp">
-
-                            <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:contentDescription="@string/profile_skill_sketch"
-                                android:src="@drawable/ic_skill_gardening" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:fontFamily="sans-serif-medium"
-                                android:gravity="center"
-                                android:text="@string/profile_skill_sketch"
-                                android:textColor="#1F2937"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-
-                        <!-- Specialty 4: Ayudante general -->
-                        <LinearLayout
-                            android:id="@+id/skillInVision"
-                            android:layout_width="0dp"
-                            android:layout_height="86dp"
-                            android:layout_marginStart="4dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_profile_skill_tile"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="4dp">
-
-                            <ImageView
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:contentDescription="@string/profile_skill_invision"
-                                android:src="@drawable/ic_skill_helper" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:fontFamily="sans-serif-medium"
-                                android:gravity="center"
-                                android:text="@string/profile_skill_invision"
-                                android:textColor="#1F2937"
-                                android:textSize="10sp" />
-                        </LinearLayout>
-
-                    </LinearLayout>
+                    <!-- "+N más" cuando el usuario tiene más de 4 especialidades -->
+                    <TextView
+                        android:id="@+id/tvMasEspecialidades"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#5B67F7"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 

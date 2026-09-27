@@ -9,17 +9,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.imageview.ShapeableImageView
+import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.EditarPerfilActivity
+import com.proyecto.chambaya.LoginActivity
 import com.proyecto.chambaya.MainActivity
 import com.proyecto.chambaya.R
+import com.proyecto.chambaya.data.model.UserProfile
+import com.proyecto.chambaya.data.repository.ProfileRepository
+import kotlinx.coroutines.launch
 
 /**
  * Pantalla de Ajustes de Perfil.
@@ -28,18 +37,30 @@ import com.proyecto.chambaya.R
  *  1. Usuario toca btnSettings en FragmentoMiPerfil
  *  2. Esta pantalla se muestra reemplazando el fragmento de perfil (sin bottom nav)
  *  3. Botón atrás regresa al perfil
- *  4. Fila "Cerrar sesión" muestra el dialog de confirmación
+ *  4. Fila "Cerrar sesión" cierra la sesión de verdad y vuelve al login
+ *
+ * FASE 2: la tarjeta de usuario de arriba y el diálogo de "Información de la
+ * cuenta" ya no son textos fijos: salen de `users/{uid}`. El resto de filas
+ * siguen avisando con un `Toast` porque pertenecen a fases posteriores.
  */
 class FragmentoAjustesPerfil : Fragment() {
+
+    private val repository = ProfileRepository()
+
+    private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
+
+    /** Último perfil leído, para pintar sin volver a ir a Firestore. */
+    private var perfil: UserProfile? = null
 
     // Launcher para recibir resultado de EditarPerfilActivity
     private val editProfileLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // El perfil fue actualizado exitosamente
-            Toast.makeText(requireContext(), "✓ Perfil actualizado", Toast.LENGTH_SHORT).show()
-            // Aquí podrías recargar datos del perfil si es necesario
+            // El perfil fue actualizado: se relee para que la tarjeta de arriba
+            // y el diálogo de cuenta muestren el nombre y la foto nuevos.
+            Toast.makeText(requireContext(), R.string.profile_guardado, Toast.LENGTH_SHORT).show()
+            cargarPerfil()
         }
     }
 
@@ -56,6 +77,10 @@ class FragmentoAjustesPerfil : Fragment() {
         setupWindowInsets(view)
         setupTopBar(view)
         setupSettingsRows(view)
+
+        // Con datos ya cargados (vuelta desde atrás) se repinta sin ir a Firestore.
+        val cacheado = perfil
+        if (cacheado != null) pintarUsuario(view, cacheado) else cargarPerfil()
     }
 
     override fun onResume() {
@@ -114,7 +139,7 @@ class FragmentoAjustesPerfil : Fragment() {
         // Section: Cuenta
         root.findViewById<View>(R.id.rowAccountInfo)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Información de la cuenta", Toast.LENGTH_SHORT).show()
+            showAccountInfoDialog()
         }
 
         root.findViewById<View>(R.id.rowMyOrders)?.setOnClickListener {
@@ -179,6 +204,115 @@ class FragmentoAjustesPerfil : Fragment() {
     }
 
     // ─────────────────────────────────────────────────────────────
+    //  DATOS REALES DEL USUARIO
+    // ─────────────────────────────────────────────────────────────
+
+    private fun cargarPerfil() {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            Toast.makeText(requireContext(), R.string.profile_error_sesion, Toast.LENGTH_LONG)
+                .show()
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            repository.loadProfile(uid)
+                .onSuccess { datos ->
+                    perfil = datos
+                    view?.let { pintarUsuario(it, datos) }
+                }
+                .onFailure { error ->
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.profile_error_cargar, error.message.orEmpty()),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+        }
+    }
+
+    /** Rellena la tarjeta de usuario de la cabecera con datos de Firestore. */
+    private fun pintarUsuario(root: View, datos: UserProfile) {
+        root.findViewById<TextView>(R.id.tvSettingsUserName)?.text =
+            datos.profile.fullName.ifBlank { getString(R.string.profile_sin_nombre) }
+
+        // El correo es de la FASE 1 y además lo tiene Firebase Auth.
+        val email = datos.auth.email.ifBlank { auth.currentUser?.email.orEmpty() }
+        root.findViewById<TextView>(R.id.tvSettingsUserEmail)?.text =
+            email.ifBlank { getString(R.string.settings_sin_correo) }
+
+        // Sin foto se dibujan las iniciales: las cuentas de correo y contraseña
+        // nunca traen imagen de Google.
+        OficioIcons.cargarAvatar(
+            root.findViewById<ShapeableImageView>(R.id.ivSettingsAvatar),
+            datos.profile.profilePhotoUrl,
+            datos.profile.fullName,
+            datos.profile.username.ifBlank { datos.uid }
+        )
+    }
+
+    /**
+     * Diálogo de "Información de la cuenta".
+     *
+     * Muestra el `@usuario`, el teléfono, la ubicación y el documento de
+     * identidad. Todo es de solo lectura: lo único editable es el perfil, y
+     * para eso está el botón de arriba.
+     */
+    private fun showAccountInfoDialog() {
+        val datos = perfil
+        if (datos == null) {
+            Toast.makeText(requireContext(), R.string.profile_error_cargar, Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
+
+        val lineas = buildList {
+            add(
+                getString(
+                    R.string.settings_campo_usuario,
+                    if (datos.profile.username.isBlank()) {
+                        getString(R.string.settings_sin_dato)
+                    } else {
+                        "@${datos.profile.username}"
+                    }
+                )
+            )
+            add(
+                getString(
+                    R.string.settings_campo_telefono,
+                    datos.profile.phone.ifBlank { getString(R.string.settings_sin_dato) }
+                )
+            )
+            add(
+                getString(
+                    R.string.settings_campo_ubicacion,
+                    datos.profile.locationLabel.ifBlank { getString(R.string.settings_sin_dato) }
+                )
+            )
+            add(
+                getString(
+                    R.string.settings_campo_documento,
+                    datos.identity.verifiedLabel.ifBlank {
+                        getString(R.string.profile_identidad_pendiente)
+                    }
+                )
+            )
+            add(
+                getString(
+                    R.string.settings_campo_registro,
+                    datos.profile.fullName.ifBlank { getString(R.string.settings_sin_dato) }
+                )
+            )
+        }
+
+        AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
+            .setTitle(R.string.settings_section_account)
+            .setMessage(lineas.joinToString("\n\n"))
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    // ─────────────────────────────────────────────────────────────
     //  LOGOUT DIALOG (BOTTOM SHEET)
     // ─────────────────────────────────────────────────────────────
 
@@ -208,9 +342,26 @@ class FragmentoAjustesPerfil : Fragment() {
         bottomSheet.show()
     }
 
+    /**
+     * Cierra la sesión de verdad.
+     *
+     * `signOut()` es la pieza que faltaba: mientras no se llame, la sesión sigue
+     * viva y "volver a entrar" entra directo. Se vacía la pila de Activities
+     * (`CLEAR_TASK | NEW_TASK`) para que el botón atrás no devuelva a la pantalla
+     * de ajustes ya cerrada.
+     */
     private fun performLogout() {
-        // TODO: limpiar sesión Firebase / SharedPrefs y navegar a Login
-        Toast.makeText(requireContext(), "Sesión cerrada", Toast.LENGTH_SHORT).show()
+        auth.signOut()
+
+        Toast.makeText(requireContext(), R.string.settings_sesion_cerrada, Toast.LENGTH_SHORT)
+            .show()
+
+        startActivity(
+            Intent(requireContext(), LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        )
+        requireActivity().finish()
     }
 
     // ─────────────────────────────────────────────────────────────

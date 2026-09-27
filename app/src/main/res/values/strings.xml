@@ -301,4 +301,94 @@
     <string name="edit_profile_btn_update">Actualizar Perfil</string>
     <string name="edit_profile_photo_desc">Foto de perfil</string>
     <string name="edit_profile_change_photo">Cambiar foto</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FASE 2 — Mi Perfil (datos reales desde users/{uid})
+    ════════════════════════════════════════════════════════════ -->
+    <string name="profile_guardado">✓ Perfil actualizado</string>
+    <string name="profile_completado">Perfil %1$d%% completo</string>
+    <string name="profile_porcentaje">%1$d%%</string>
+    <string name="profile_anios_experiencia">%1$d años</string>
+    <string name="profile_sin_puntuar">—</string>
+    <string name="profile_bio_vacia">Aún no has escrito una descripción. Cuéntanos sobre ti para que más personas confíen en tu trabajo.</string>
+    <string name="profile_especialidades_vacias">Elige tus especialidades en Editar perfil para que te veamos en las chambas de tu oficio.</string>
+    <string name="profile_mas_especialidades">+%1$d más</string>
+    <string name="profile_especialidad_info">%1$s • Edita tu perfil para cambiar tus especialidades</string>
+    <string name="profile_sin_nombre">Completa tu nombre</string>
+    <string name="profile_sin_username">Sin nombre de usuario</string>
+    <string name="profile_sin_distrito">Sin distrito</string>
+    <string name="profile_identidad_pendiente">Identidad sin verificar</string>
+    <string name="profile_error_cargar">No se pudo cargar tu perfil: %1$s</string>
+    <string name="profile_error_sembrar">Se ven tus datos, pero aún no se pueden guardar los datos de perfil (%1$s). Revisa las reglas de Firestore.</string>
+    <string name="profile_error_sesion">Tu sesión expiró. Vuelve a iniciar sesión.</string>
+    <string name="profile_compartir">Compartir perfil</string>
+    <string name="profile_compartir_texto">Sígueme en ChambAYA: %1$s (@%2$s)</string>
+    <string name="profile_compartir_asunto">Mi perfil en ChambAYA (@%1$s)</string>
+    <string name="profile_compartir_sin_apps">No hay apps para compartir</string>
+    <string name="profile_fotos_proximamente">Las fotos de trabajos llegan muy pronto</string>
+
+    <!-- FASE 2 — Wizard de edición de perfil (4 pasos) -->
+    <string name="edit_perfil_no_oficios">No hay oficios que coincidan con tu búsqueda</string>
+    <string name="edit_perfil_titulo_paso1">Completa tu Perfil</string>
+    <string name="edit_perfil_titulo_paso2">Información Personal</string>
+    <string name="edit_perfil_titulo_paso3">Experiencia Profesional</string>
+    <string name="edit_perfil_titulo_paso4">Privacidad y Confirmación</string>
+    <string name="edit_perfil_paso_de">Paso %1$d de %2$d</string>
+    <string name="edit_perfil_btn_siguiente">Siguiente</string>
+    <string name="edit_perfil_btn_finalizar">Finalizar</string>
+    <string name="edit_perfil_btn_guardando">Guardando…</string>
+
+    <!-- Wizard: unicidad del @usuario -->
+    <string name="edit_perfil_username_neutro">Tu nombre de usuario debe ser único</string>
+    <string name="edit_perfil_username_invalido">Solo letras, números, punto y guion bajo (mín. 3 caracteres)</string>
+    <string name="edit_perfil_username_disponible">✓ @%1$s está disponible</string>
+    <string name="edit_perfil_username_tomado">✕ Ese nombre de usuario ya está en uso</string>
+
+    <!-- Wizard: datos de solo lectura -->
+    <string name="edit_perfil_dni_no_verificado">Sin verificar</string>
+
+    <!-- Wizard: fecha y ubicación -->
+    <string name="edit_perfil_fecha_vacia">Selecciona tu fecha</string>
+    <string name="edit_perfil_ubic_vacia">Selecciona tu ubicación</string>
+    <string name="edit_perfil_ubic_departamento">Selecciona tu departamento</string>
+    <string name="edit_perfil_ubic_provincia">Selecciona tu provincia</string>
+    <string name="edit_perfil_ubic_distrito">Selecciona tu distrito</string>
+    <string name="edit_perfil_ubic_otro_hint">Escribe el nombre</string>
+
+    <!-- Wizard: foto -->
+    <string name="edit_perfil_foto_elegida">✓ Foto lista. Se sube al finalizar.</string>
+    <string name="edit_perfil_error_foto">Vuelve a elegir la foto</string>
+    <string name="edit_perfil_foto_sin_configurar">La subida de fotos no está configurada en esta compilación</string>
+    <string name="edit_perfil_foto_error">No se pudo subir la foto: %1$s</string>
+    <string name="edit_perfil_foto_sin_conexion">No se pudo subir la foto: revisa tu conexión</string>
+
+    <!-- Wizard: validación y errores -->
+    <string name="edit_perfil_error_nombre">Ingresa tu nombre completo (mín. 3 caracteres)</string>
+    <string name="edit_perfil_error_telefono">Ingresa un teléfono válido (9 a 20 dígitos)</string>
+    <string name="edit_perfil_error_especialidades">Puedes elegir hasta %1$d especialidades</string>
+    <string name="edit_perfil_error_titulo">Revisa tus datos</string>
+    <string name="edit_perfil_error_guardar">No se pudo guardar el perfil: %1$s</string>
+
+    <!-- Wizard: resumen de completitud (paso 4) -->
+    <string name="edit_perfil_resumen_completo">✨ ¡Tu perfil está completo!</string>
+    <string name="edit_perfil_resumen_casi">✨ ¡Perfil casi completo!</string>
+    <string name="edit_perfil_resumen_inicial">✨ ¡Empecemos a completar tu perfil!</string>
+    <string name="edit_perfil_resumen_todo">Ya no falta nada. Así se verá tu perfil en ChambAYA.</string>
+    <string name="edit_perfil_resumen_falta">Tu perfil está al %1$d%%. Todavía falta: %2$s</string>
+
+    <!-- Wizard: diálogo de éxito -->
+    <string name="edit_perfil_exito_titulo">🎉 ¡Perfil Actualizado!</string>
+    <string name="edit_perfil_exito_mensaje">Tu perfil se guardó correctamente.\n\n✓ Completitud: %1$d%%</string>
+    <string name="edit_perfil_exito_verificaciones">✓ DNI verificado con RENIEC\n✓ Email verificado\n\nTu perfil ahora destaca más en ChambAYA.</string>
+    <string name="edit_perfil_exito_continuar">Continuar</string>
+
+    <!-- FASE 2 — Ajustes: datos reales de la cuenta -->
+    <string name="settings_sin_correo">Sin correo registrado</string>
+    <string name="settings_sin_dato">No registrado</string>
+    <string name="settings_campo_usuario">Usuario: %1$s</string>
+    <string name="settings_campo_telefono">Teléfono: %1$s</string>
+    <string name="settings_campo_ubicacion">Ubicación: %1$s</string>
+    <string name="settings_campo_documento">Documento: %1$s</string>
+    <string name="settings_campo_registro">Registrado a nombre de %1$s</string>
+    <string name="settings_sesion_cerrada">Sesión cerrada</string>
 </resources>

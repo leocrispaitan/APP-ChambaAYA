@@ -100,6 +100,214 @@ service cloud.firestore {
     }
 
     // =============================================================
+    //  Helpers FASE 2 — Mi Perfil
+    // =============================================================
+    //
+    // El usuario puede escribir SOLO en:
+    //   profile   -> datos que completan su perfil público
+    //   worker    -> su parte editable (experiencia, especialidades, habilidades)
+    //   privacy   -> qué muestra de su contacto
+    //   updatedAt -> auditoría
+    //
+    // No puede tocar NUNCA: uid, auth, identity, roles, activeRole,
+    // registrationStatus, accountStatus, emailVerified, otpVerified,
+    // ni la reputación de worker (workCount / ratingAverage / ratingCount)
+    // ni los contadores de statistics.
+
+    // @usuario: 3-30 caracteres en minúsculas, sin espacios.
+    function isValidUsername(value) {
+      return value is string
+        && value.size() >= 3
+        && value.size() <= 30
+        && value.matches('^[a-z0-9._]+$');
+    }
+
+    // Teléfono: opcional, pero si se escribe tiene que ser un teléfono.
+    //
+    // No puede exigirse siempre: el registro de la FASE 1 no pide teléfono, así
+    // que toda cuenta nace sin él. Si la regla rechazara el vacío, el usuario no
+    // podría escribir NADA de la FASE 2 hasta ponerse un teléfono, y
+    // `ensureProfileInitialized` (que escribe `phone: ""`) fallaría siempre.
+    // El teléfono sube el porcentaje de completitud, pero no es obligatorio.
+    function isValidPhone(value) {
+      return value is string
+        && (value.size() == 0
+            || (value.size() >= 9
+                && value.size() <= 20
+                && value.matches('^[0-9+ ()-]+$')));
+    }
+
+    function isValidGender(value) {
+      return value is string
+        && (value == '' || value in ['MASCULINO', 'FEMENINO', 'OTRO']);
+    }
+
+    // Lista de textos cortos: tamaño acotado y longitud total acotada.
+    // `join` exige elementos de texto, así que un mapa o un número metido en
+    // la lista hace fallar la función y se deniega la escritura.
+    function isValidStringList(value, maxItems, maxChars) {
+      return value is list
+        && value.size() <= maxItems
+        && value.join(' ').size() <= maxChars;
+    }
+
+    // --- Foto de perfil -
+    // Una foto nueva solo puede venir de la carpeta de Cloudinary del propio
+    // usuario: .../image/upload/chambaya/perfiles/{uid}/archivo
+    // Si la foto no cambió se acepta la que haya (p. ej. la de Google que
+    // dejó la FASE 1).
+    function isOwnCloudinaryPhoto(uid) {
+      let profile = request.resource.data.get('profile', '');
+      return profile is map
+        && profile.get('profilePhotoUrl', '') is string
+        && profile.get('profilePhotoUrl', '').size() > 0
+        && profile.get('profilePhotoUrl', '').matches(
+             '^https://res\\.cloudinary\\.com/[^/]+/image/upload/chambaya/perfiles/' + uid + '/[^/]+$');
+    }
+
+    function photoUnchanged() {
+      let before = resource.data.get('profile', '');
+      let after = request.resource.data.get('profile', '');
+      return before is map
+        && after is map
+        && before.get('profilePhotoUrl', '') == after.get('profilePhotoUrl', '')
+        && before.get('profilePhotoPublicId', '') == after.get('profilePhotoPublicId', '');
+    }
+
+    // `affectedData().changedKeys()` devuelve rutas con punto, así que detecta
+    // tanto un `update({'profile.foto': ...})` como un `set()` del bloque
+    // `profile` entero.
+    function photoBelongsToOwner(uid) {
+      let affected = request.resource.data.diff(resource.data)
+        .affectedData()
+        .changedKeys();
+      let tocaFoto = affected.hasAny([
+        'profile',
+        'profile.profilePhotoUrl',
+        'profile.profilePhotoPublicId'
+      ]);
+      return !tocaFoto || photoUnchanged() || isOwnCloudinaryPhoto(uid);
+    }
+
+    // --- Validación de lo que el usuario escribe -
+    //
+    // `worker`, `privacy` y `statistics` solo se validan si existen en el
+    // documento resultante. Antes se exigían siempre, y eso rompía un caso
+    // real: una cuenta que nunca pasó por "Mi Perfil" no tiene `statistics`, así
+    // que guardar desde "Editar perfil" (que no lo escribe) se denegaba sin
+    // motivo. `profile` sí o sí existe: lo crea el registro de la FASE 1.
+    //
+    // `profile.usernameNormalized` debe coincidir con `profile.username`:
+    // es la misma clave que se reserva en `usernames/`.
+    function isValidProfileUpdate() {
+      let profile = request.resource.data.get('profile', '');
+      return profile is map
+        && isValidUsername(profile.get('username', ''))
+        && profile.get('usernameNormalized', '') == profile.get('username', '')
+        && isValidPhone(profile.get('phone', ''))
+        && profile.get('bio', '') is string
+        && profile.get('bio', '').size() <= 500
+        && isValidGender(profile.get('gender', ''));
+    }
+
+    // El `&&` va antes de los `get()` a propósito: si `worker` no fuera un mapa,
+    // Rules lanzaría un error de evaluación y la escritura se denegaría.
+    function isValidWorkerUpdate() {
+      let worker = request.resource.data.get('worker', '');
+      return !(worker is map)
+        || (worker.get('enabled', true) is bool
+          && worker.get('experienceYears', 0) is number
+          && worker.get('experienceYears', 0) >= 0
+          && worker.get('experienceYears', 0) <= 70
+          && isValidStringList(worker.get('specialties', []), 3, 180)
+          && isValidStringList(worker.get('skills', []), 10, 600)
+          && worker.get('profileCompleted', 0) is number
+          && worker.get('profileCompleted', 0) >= 0
+          && worker.get('profileCompleted', 0) <= 100);
+    }
+
+    function isValidPrivacyUpdate() {
+      let privacy = request.resource.data.get('privacy', '');
+      return !(privacy is map)
+        || (privacy.get('showPhone', false) is bool
+          && privacy.get('showEmail', false) is bool
+          && privacy.get('showExactAddress', false) is bool);
+    }
+
+    // --- Reputación: intocable para el usuario -
+    // `workCount`, `ratingAverage` y `ratingCount` los calcula la plataforma.
+    // La primera vez que se crea el bloque tienen que valer cero; después
+    // deben quedar exactamente como estaban.
+    //
+    // Si el bloque no existe en el documento resultante, la escritura no lo
+    // tocó y no hay nada que proteger.
+    function reputationIsZero(after) {
+      return after is map
+        && after.get('workCount', 0) == 0
+        && after.get('ratingAverage', 0.0) == 0.0
+        && after.get('ratingCount', 0) == 0;
+    }
+
+    function sameReputation(before, after) {
+      return after is map
+        && after.get('workCount', 0) == before.get('workCount', 0)
+        && after.get('ratingAverage', 0.0) == before.get('ratingAverage', 0.0)
+        && after.get('ratingCount', 0) == before.get('ratingCount', 0);
+    }
+
+    function keepsWorkerReputation() {
+      let before = resource.data.get('worker', '');
+      let after = request.resource.data.get('worker', '');
+      return !(after is map)
+        || (before is map && sameReputation(before, after))
+        || (!(before is map) && reputationIsZero(after));
+    }
+
+    // Los contadores de `statistics` también los incrementa la plataforma:
+    // en la FASE 2 únicamente se crean en cero.
+    function statisticsAreZero(after) {
+      return after is map
+        && after.get('applicationsCount', 0) == 0
+        && after.get('publicationsCount', 0) == 0
+        && after.get('completedJobsCount', 0) == 0
+        && after.get('savedPublicationsCount', 0) == 0
+        && after.get('receivedRatingsCount', 0) == 0;
+    }
+
+    function sameStatistics(before, after) {
+      return after is map
+        && after.get('applicationsCount', 0) == before.get('applicationsCount', 0)
+        && after.get('publicationsCount', 0) == before.get('publicationsCount', 0)
+        && after.get('completedJobsCount', 0) == before.get('completedJobsCount', 0)
+        && after.get('savedPublicationsCount', 0) == before.get('savedPublicationsCount', 0)
+        && after.get('receivedRatingsCount', 0) == before.get('receivedRatingsCount', 0);
+    }
+
+    function createsZeroStatistics() {
+      let before = resource.data.get('statistics', '');
+      let after = request.resource.data.get('statistics', '');
+      return !(after is map)
+        || (before is map && sameStatistics(before, after))
+        || (!(before is map) && statisticsAreZero(after));
+    }
+
+    // Rama FASE 2 de la actualización de `users/{uid}`.
+    // `affectedKeys()` devuelve las claves de primer nivel, así que
+    // `hasOnly(...)` ya impide tocar `identity`, `auth`, `roles`,
+    // `registrationStatus`, `accountStatus`, `emailVerified` u `otpVerified`.
+    function isAllowedProfileUpdate(uid) {
+      return request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['profile', 'worker', 'privacy', 'statistics', 'updatedAt'])
+        && isValidProfileUpdate()
+        && isValidWorkerUpdate()
+        && isValidPrivacyUpdate()
+        && photoBelongsToOwner(uid)
+        && keepsWorkerReputation()
+        && createsZeroStatistics();
+    }
+
+    // =============================================================
     //  Verificación de correo OTP
     //  (compatible con plan Spark: la app escribe el hash directamente)
     // =============================================================
@@ -133,7 +341,7 @@ service cloud.firestore {
     }
 
     // =============================================================
-    //  users/{uid} — FASE 1
+    //  users/{uid} — FASE 1 + FASE 2
     // =============================================================
     match /users/{uid} {
       // Sin listados: el DNI/RUC nunca debe exponerse en consultas masivas.
@@ -150,15 +358,48 @@ service cloud.firestore {
       // Actualización:
       //  1) Solo campos de auditoría (último ingreso), o
       //  2) completar el registro cuando aún no estaba VERIFIED, o
-      //  3) migración única de cuentas creadas antes de la FASE 1.
+      //  3) migración única de cuentas creadas antes de la FASE 1, o
+      //  4) FASE 2: completar/editar el perfil (Mi Perfil).
       allow update: if isOwner(uid)
         && (onlyAuditFieldsChanged()
           || (!(resource.data.identity is map) && isCompleteRegistration())
           || (resource.data.registrationStatus != 'VERIFIED'
             && isCompleteRegistration()
-            && keepsDocumentNumber()));
+            && keepsDocumentNumber())
+          || isAllowedProfileUpdate(uid));
 
       allow delete: if false;
+    }
+
+    // =============================================================
+    //  usernames/{username} — unicidad del @usuario (FASE 2)
+    // =============================================================
+    //
+    // Un documento por @usuario normalizado. La transacción de
+    // ProfileRepository es la que garantiza que dos personas no puedan tomar
+    // el mismo nombre a la vez.
+    match /usernames/{username} {
+      // Consulta puntual de disponibilidad: cualquier usuario autenticado.
+      allow get: if request.auth != null;
+
+      // Sin listados: permitiría enumerar todos los @usuario de la plataforma.
+      allow list: if false;
+
+      // Solo se puede tomar un @usuario a nombre propio, y el documento no
+      // puede llevar campos extra.
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'updatedAt']);
+
+      // No se puede robar ni reasignar el @usuario de otro.
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'username', 'updatedAt']);
+
+      // Al cambiar o borrar el perfil, el @usuario viejo queda libre.
+      allow delete: if request.auth != null
+        && resource.data.uid == request.auth.uid;
     }
   }
 }

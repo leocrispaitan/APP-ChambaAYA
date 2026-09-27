@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootEditarPerfil"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -429,6 +430,7 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
+                    android:id="@+id/tvDniNota"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="✓ Verificado con RENIEC - No se puede modificar"
@@ -543,6 +545,7 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
+                    android:id="@+id/tvUsernameEstado"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Tu nombre de usuario debe ser único"
@@ -550,9 +553,11 @@
                     android:textSize="12sp"
                     android:fontFamily="sans-serif"
                     android:layout_marginTop="-12dp"
-                    android:layout_marginBottom="20dp" />
+                    android:layout_marginBottom="20dp"
+                    android:drawablePadding="6dp"
+                    tools:text="Tu nombre de usuario debe ser único" />
 
-                <!-- CORREO ELECTRÓNICO (VERIFICADO) -->
+                <!-- CORREO ELECTRÓNICO (VERIFICADO — SOLO LECTURA) -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -567,7 +572,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="20dp"
-                    android:background="@drawable/bg_edit_profile_input"
+                    android:background="@drawable/bg_edit_profile_input_disabled"
+                    android:alpha="0.7"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="14dp">
 
@@ -577,7 +583,7 @@
                         android:layout_height="22dp"
                         android:src="@drawable/ic_mail"
                         android:contentDescription="Email"
-                        app:tint="#5B67F7"
+                        app:tint="#64748B"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent" />
@@ -591,12 +597,16 @@
                         android:background="@android:color/transparent"
                         android:hint="correo@ejemplo.com"
                         android:textColorHint="#9CA3AF"
-                        android:textColor="#111827"
+                        android:textColor="#64748B"
                         android:textSize="15sp"
                         android:fontFamily="sans-serif"
                         android:inputType="textEmailAddress"
                         android:maxLines="1"
                         android:importantForAutofill="no"
+                        android:focusable="false"
+                        android:clickable="false"
+                        android:cursorVisible="false"
+                        android:longClickable="false"
                         app:layout_constraintStart_toEndOf="@id/iconEmail"
                         app:layout_constraintEnd_toStartOf="@id/iconEmailVerificado"
                         app:layout_constraintTop_toTopOf="parent"
@@ -1066,81 +1076,71 @@
                     android:fontFamily="sans-serif"
                     android:layout_marginBottom="16dp" />
 
-                <!-- Checkboxes para especialidades -->
-                <LinearLayout
-                    android:id="@+id/containerEspecialidades"
+                <!-- Buscador de oficios -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/inputBuscarOficio"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginBottom="24dp">
+                    android:layout_marginBottom="12dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <CheckBox
-                        android:id="@+id/cbAlbanileria"
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:id="@+id/iconBuscarOficio"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_home_search"
+                        android:contentDescription="Buscar"
+                        app:tint="#9CA3AF"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <EditText
+                        android:id="@+id/etBuscarOficio"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Albañilería"
+                        android:layout_marginStart="10dp"
+                        android:background="@android:color/transparent"
+                        android:hint="Buscar oficio..."
+                        android:textColorHint="#9CA3AF"
                         android:textColor="#111827"
                         android:textSize="15sp"
                         android:fontFamily="sans-serif"
-                        android:paddingVertical="12dp"
-                        android:buttonTint="#5B67F7" />
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:imeOptions="actionSearch"
+                        android:importantForAutofill="no"
+                        app:layout_constraintStart_toEndOf="@id/iconBuscarOficio"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
 
-                    <CheckBox
-                        android:id="@+id/cbPintura"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Pintura"
-                        android:textColor="#111827"
-                        android:textSize="15sp"
-                        android:fontFamily="sans-serif"
-                        android:paddingVertical="12dp"
-                        android:buttonTint="#5B67F7" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
-                    <CheckBox
-                        android:id="@+id/cbCarpinteria"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Carpintería"
-                        android:textColor="#111827"
-                        android:textSize="15sp"
-                        android:fontFamily="sans-serif"
-                        android:paddingVertical="12dp"
-                        android:buttonTint="#5B67F7" />
+                <!-- Especialidades: multiselección desde api_oficios.json (máx. 3) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvEspecialidadesSelector"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:nestedScrollingEnabled="false"
+                    tools:itemCount="6"
+                    tools:listitem="@layout/item_oficio_selector" />
 
-                    <CheckBox
-                        android:id="@+id/cbElectricidad"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Electricidad"
-                        android:textColor="#111827"
-                        android:textSize="15sp"
-                        android:fontFamily="sans-serif"
-                        android:paddingVertical="12dp"
-                        android:buttonTint="#5B67F7" />
-
-                    <CheckBox
-                        android:id="@+id/cbGasfiteria"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Gasfitería"
-                        android:textColor="#111827"
-                        android:textSize="15sp"
-                        android:fontFamily="sans-serif"
-                        android:paddingVertical="12dp"
-                        android:buttonTint="#5B67F7" />
-
-                    <CheckBox
-                        android:id="@+id/cbJardineria"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Jardinería"
-                        android:textColor="#111827"
-                        android:textSize="15sp"
-                        android:fontFamily="sans-serif"
-                        android:paddingVertical="12dp"
-                        android:buttonTint="#5B67F7" />
-
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/tvSinResultadosOficio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="16dp"
+                    android:text="@string/edit_perfil_no_oficios"
+                    android:textColor="#9CA3AF"
+                    android:textSize="13sp"
+                    android:gravity="center"
+                    android:visibility="gone" />
 
                 <!-- HABILIDADES ADICIONALES -->
                 <TextView
@@ -1395,6 +1395,7 @@
                         android:padding="20dp">
 
                         <TextView
+                            android:id="@+id/tvResumenTitulo"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="✨ ¡Perfil casi completo!"
