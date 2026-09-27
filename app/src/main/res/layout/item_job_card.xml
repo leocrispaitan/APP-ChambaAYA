@@ -54,16 +54,24 @@
                     android:layout_height="match_parent"
                     android:background="@drawable/bg_profile_circle" />
 
-                <!-- Foto de perfil (círculo interior) -->
-                <ImageView
-                    android:id="@+id/ivProfilePhoto"
+                <!-- Separador blanco entre anillo y foto -->
+                <View
                     android:layout_width="38dp"
                     android:layout_height="38dp"
                     android:layout_gravity="center"
-                    android:background="@drawable/bg_profile_circle"
+                    android:background="@drawable/bg_circle_white_shadow" />
+
+                <!-- Foto de perfil (círculo interior) -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivProfilePhoto"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center"
                     android:scaleType="centerCrop"
                     android:contentDescription="Foto de perfil"
-                    tools:src="@drawable/ic_nav_profile" />
+                    android:src="@drawable/ic_user_circle"
+                    app:shapeAppearanceOverlay="@style/CircularImageStyle"
+                    tools:src="@drawable/avatar_michael" />
             </FrameLayout>
 
             <!-- Nombre + Verificado + Ubicación + Tiempo -->

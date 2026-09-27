@@ -44,6 +44,7 @@ class JobCardAdapter(
 
         // Vistas de cabecera (header)
         private val cardJob: MaterialCardView = itemView.findViewById(R.id.cardJob)
+        private val ivProfilePhoto: com.google.android.material.imageview.ShapeableImageView = itemView.findViewById(R.id.ivProfilePhoto)
         private val tvProfileName: TextView = itemView.findViewById(R.id.tvProfileName)
         private val tvLocation: TextView = itemView.findViewById(R.id.tvLocation)
         private val tvTimeAgo: TextView = itemView.findViewById(R.id.tvTimeAgo)
@@ -77,6 +78,14 @@ class JobCardAdapter(
 
         fun bind(jobCard: JobCard) {
             // ── Cabecera ──────────────────────────────────
+            // Foto de perfil del empleador
+            val avatarResource = if (jobCard.avatarEmpleador != 0) {
+                jobCard.avatarEmpleador
+            } else {
+                R.drawable.ic_user_circle  // Placeholder por defecto
+            }
+            ivProfilePhoto.setImageResource(avatarResource)
+            
             tvProfileName.text = jobCard.empleador.ifEmpty { "Empleador ChambAYA" }
             tvLocation.text = jobCard.distrito.ifEmpty { "Ayacucho" }
             tvTimeAgo.text = jobCard.tiempoPublicado.ifEmpty { "Hace 2h" }

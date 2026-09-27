@@ -21,5 +21,6 @@ data class JobCard(
     val distrito: String = "",
     val tiempoPublicado: String = "",
     val descripcion: String = "",
-    val imagenUrl: String = ""
+    val imagenUrl: String = "",
+    @DrawableRes val avatarEmpleador: Int = 0  // Avatar del empleador/publicador
 )

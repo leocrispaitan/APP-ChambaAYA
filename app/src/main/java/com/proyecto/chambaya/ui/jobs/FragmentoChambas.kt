@@ -176,7 +176,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "Carlos Quispe",
                 distrito = "Ayacucho Centro",
                 tiempoPublicado = "Hace 2h",
-                descripcion = "Se necesita maestro albañil con experiencia en construcción de viviendas. Obra en el centro de Ayacucho, trabajo inmediato."
+                descripcion = "Se necesita maestro albañil con experiencia en construcción de viviendas. Obra en el centro de Ayacucho, trabajo inmediato.",
+                avatarEmpleador = R.drawable.avatar_michael
             ),
             JobCard(
                 id = "2",
@@ -189,7 +190,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "María Flores",
                 distrito = "Carmen Alto",
                 tiempoPublicado = "Hace 5h",
-                descripcion = "Necesito persona responsable para limpieza profunda de departamento. Se paga al finalizar el día. Llevar implementos propios."
+                descripcion = "Necesito persona responsable para limpieza profunda de departamento. Se paga al finalizar el día. Llevar implementos propios.",
+                avatarEmpleador = R.drawable.avatar_katty
             ),
             JobCard(
                 id = "3",
@@ -202,7 +204,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "Restaurante El Inca",
                 distrito = "Jesús Nazareno",
                 tiempoPublicado = "Hace 1h",
-                descripcion = "Buscamos repartidores con moto propia para delivery de comida. Horario flexible de lunes a domingo. Pago diario."
+                descripcion = "Buscamos repartidores con moto propia para delivery de comida. Horario flexible de lunes a domingo. Pago diario.",
+                avatarEmpleador = R.drawable.avatar_jordan
             ),
             JobCard(
                 id = "4",
@@ -215,7 +218,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "Juan Mendoza",
                 distrito = "San Juan Bautista",
                 tiempoPublicado = "Hace 3h",
-                descripcion = "Instalación eléctrica residencial. Trabajo de 2 días. Requiere certificación y herramientas propias. Pago adelantado el 50%."
+                descripcion = "Instalación eléctrica residencial. Trabajo de 2 días. Requiere certificación y herramientas propias. Pago adelantado el 50%.",
+                avatarEmpleador = R.drawable.avatar_alex
             ),
             JobCard(
                 id = "5",
@@ -228,7 +232,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "Constructora Andina",
                 distrito = "Ayacucho Centro",
                 tiempoPublicado = "Hace 8h",
-                descripcion = "Se requiere pintor con experiencia en pintura de interiores y exteriores. Proyecto de 1 semana con posibilidad de renovación."
+                descripcion = "Se requiere pintor con experiencia en pintura de interiores y exteriores. Proyecto de 1 semana con posibilidad de renovación.",
+                avatarEmpleador = R.drawable.avatar_samantha
             ),
             JobCard(
                 id = "6",
@@ -241,7 +246,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "Club Ayacucho",
                 distrito = "Magdalena",
                 tiempoPublicado = "Hace 6h",
-                descripcion = "Mantenimiento de jardines y áreas verdes. Trabajo fijo los fines de semana. Incluye almuerzo y materiales."
+                descripcion = "Mantenimiento de jardines y áreas verdes. Trabajo fijo los fines de semana. Incluye almuerzo y materiales.",
+                avatarEmpleador = R.drawable.avatar_michael
             ),
             JobCard(
                 id = "7",
@@ -254,7 +260,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "Farmacias Unidas",
                 distrito = "Ayacucho Centro",
                 tiempoPublicado = "Hace 30min",
-                descripcion = "Mensajero para entrega de medicamentos a domicilio. Zona urbana solamente. Bicicleta o moto. Turno mañana o tarde."
+                descripcion = "Mensajero para entrega de medicamentos a domicilio. Zona urbana solamente. Bicicleta o moto. Turno mañana o tarde.",
+                avatarEmpleador = R.drawable.avatar_jordan
             ),
             JobCard(
                 id = "8",
@@ -267,7 +274,8 @@ class FragmentoChambas : Fragment() {
                 empleador = "Roberto Huamán",
                 distrito = "Andrés Avelino Cáceres",
                 tiempoPublicado = "Hace 4h",
-                descripcion = "Instalación y reparación de tuberías en edificio nuevo. 3 días de trabajo. Herramientas a cargo del contratante. Pago diario."
+                descripcion = "Instalación y reparación de tuberías en edificio nuevo. 3 días de trabajo. Herramientas a cargo del contratante. Pago diario.",
+                avatarEmpleador = R.drawable.avatar_alex
             )
         )
         
