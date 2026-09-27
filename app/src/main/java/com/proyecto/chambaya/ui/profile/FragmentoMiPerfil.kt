@@ -1,21 +1,35 @@
 package com.proyecto.chambaya.ui.profile
 
+import android.app.Activity
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.proyecto.chambaya.BarraEstadoUtils
+import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.MainActivity
 import com.proyecto.chambaya.R
 
 class FragmentoMiPerfil : Fragment() {
 
     private var isFollowing = false
+
+    // Recoge el resultado de EditarPerfilActivity (layout dialog_editar_perfil)
+    private val editProfileLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            Toast.makeText(requireContext(), "✓ Perfil actualizado", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -90,7 +104,29 @@ class FragmentoMiPerfil : Fragment() {
         }
 
         btnComplete?.setOnClickListener {
-            showCardFeedback(it, "Completando información restante del perfil...")
+            openEditProfileScreen()
+        }
+    }
+
+    /**
+     * Abre la pantalla de edición de perfil, que usa `dialog_editar_perfil.xml`.
+     * Se lanza como Activity (igual que desde FragmentoAjustesPerfil) porque ese
+     * layout es a pantalla completa.
+     */
+    private fun openEditProfileScreen() {
+        val intent = Intent(requireContext(), EditarPerfilActivity::class.java)
+        editProfileLauncher.launch(intent)
+
+        // Transición compatible con todas las versiones de Android
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            requireActivity().overrideActivityTransition(
+                Activity.OVERRIDE_TRANSITION_OPEN,
+                R.anim.dialog_slide_up,
+                android.R.anim.fade_out
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            requireActivity().overridePendingTransition(R.anim.dialog_slide_up, android.R.anim.fade_out)
         }
     }
 
