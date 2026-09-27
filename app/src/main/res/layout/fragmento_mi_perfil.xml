@@ -365,7 +365,7 @@
 
                     <!-- Action Button "Completar perfil" -->
                     <androidx.appcompat.widget.AppCompatButton
-                        android:id="@+id/btnEmail"
+                        android:id="@+id/btnCompletarPerfil"
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:background="@drawable/bg_profile_btn_purple_pill"

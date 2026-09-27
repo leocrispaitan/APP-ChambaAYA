@@ -2,6 +2,7 @@ package com.proyecto.chambaya
 
 import android.app.Activity
 import android.app.DatePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
@@ -9,6 +10,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
+import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +19,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnPreDraw
+import androidx.core.view.updatePadding
+import androidx.core.widget.NestedScrollView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
 import java.util.Calendar
@@ -141,11 +149,118 @@ class EditarPerfilActivity : AppCompatActivity() {
 
         initViews()
         setupListeners()
+        setupTeclado()
         setupBackPress()
         loadSimulatedUserData()
         
         // Comenzar en el paso 1
         updateStep(1)
+    }
+
+    /**
+     * Evita que el teclado tape el campo que se esta escribiendo.
+     *
+     * Con `targetSdk 36` el modo edge-to-edge es obligatorio desde Android 15 y
+     * `adjustResize` deja de redimensionar la ventana, por lo que el teclado se
+     * superpone al formulario. Aqui se hace a mano lo que hacia `adjustResize`:
+     * se reserva el alto del teclado como padding de la RAIZ, de modo que la
+     * ventana util se encoge de verdad y el `NestedScrollView` (que mide entre el
+     * header y el footer) recibe un alto menor en lugar de recortarse.
+     *
+     * El padding va en la raiz y no en el scroll a proposito: en el scroll solo
+     * recortaria el final del formulario y dejaria una franja vacia.
+     *
+     * En versiones antiguas, donde la ventana si se redimensiona sola, el inset
+     * del teclado llega en 0 porque ya no queda nada que reservar, asi que el
+     * padding no se duplica.
+     */
+    private fun setupTeclado() {
+        val root = findViewById<View>(R.id.rootEditarPerfil)
+        val scroll = findViewById<NestedScrollView>(R.id.scrollEditarPerfil)
+        var paddingTeclado = 0
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val nuevo = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            if (nuevo != paddingTeclado) {
+                paddingTeclado = nuevo
+                v.updatePadding(bottom = nuevo)
+                // Tras el dibujado, no antes: asi el alto del scroll ya es el nuevo
+                // y el desplazamiento si tiene efecto.
+                v.doOnPreDraw { desplazarAlCampoEnFoco(scroll) }
+            }
+            insets
+        }
+
+        // Al pasar de un campo a otro con el teclado ya abierto los insets no se
+        // vuelven a emitir, asi que tambien hay que escuchar el cambio de foco.
+        scroll.camposEditables().forEach { campo ->
+            campo.setOnFocusChangeListener { _, tieneFoco ->
+                if (!tieneFoco) return@setOnFocusChangeListener
+                // Al cambiar de campo el alto del scroll NO cambia, asi que el
+                // recolocado se puede hacer ya mismo. Se repite tras el siguiente
+                // layout porque el framework aplica su propio desplazamiento al
+                // cambiar el foco y a veces deja el campo otra vez bajo el teclado.
+                desplazarAlCampoEnFoco(scroll)
+                scroll.doOnPreDraw { desplazarAlCampoEnFoco(scroll) }
+            }
+        }
+    }
+
+    /**
+     * Desplaza el scroll con calculo propio para dejar el campo enfocado dentro de
+     * la zona visible.
+     *
+     * No se usa `requestChildRectangleOnScreen` porque con un `Rect` vacio el
+     * resultado no es fiable y el formulario se quedaba sin subir.
+     */
+    private fun desplazarAlCampoEnFoco(scroll: NestedScrollView) {
+        val campo = scroll.findFocus() as? EditText ?: return
+        if (campo.height == 0) return
+
+        val altoVisible = scroll.height - scroll.paddingTop - scroll.paddingBottom
+        if (altoVisible <= 0) return
+
+        val posCampo = IntArray(2)
+        val posScroll = IntArray(2)
+        campo.getLocationInWindow(posCampo)
+        scroll.getLocationInWindow(posScroll)
+
+        // `getLocationInWindow` ya descuenta el scroll actual, asi que `arriba` es
+        // la distancia del campo al borde superior de la zona visible.
+        val margen = (24 * resources.displayMetrics.density).toInt()
+        val arriba = posCampo[1] - posScroll[1]
+        val abajo = arriba + campo.height
+
+        val destino = when {
+            arriba < margen -> scroll.scrollY + arriba - margen
+            abajo > altoVisible - margen -> scroll.scrollY + abajo - altoVisible + margen
+            else -> return
+        }
+
+        val contenido = scroll.getChildAt(0) ?: return
+        val maximo = (contenido.height - altoVisible).coerceAtLeast(0)
+        scroll.scrollTo(scroll.scrollX, destino.coerceIn(0, maximo))
+    }
+
+    /**
+     * Cierra el teclado y quita el foco del campo activo.
+     *
+     * Se llama cuando el usuario ya no esta escribiendo: al cambiar de fase con
+     * Atrás/Siguiente y al marcar una categoría (género o especialidad). Sin esto
+     * el teclado se queda abierto sobre el paso siguiente.
+     */
+    private fun ocultarTeclado() {
+        val campo = currentFocus
+        if (campo is EditText) campo.clearFocus()
+        val teclado = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        teclado?.hideSoftInputFromWindow(window.decorView.windowToken, 0)
+    }
+
+    /** Recorre el arbol del formulario y devuelve todos los EditText. */
+    private fun View.camposEditables(): List<EditText> {
+        if (this is EditText) return listOf(this)
+        if (this !is ViewGroup) return emptyList()
+        return (0 until childCount).flatMap { getChildAt(it).camposEditables() }
     }
 
     private fun setupBackPress() {
@@ -263,22 +378,26 @@ class EditarPerfilActivity : AppCompatActivity() {
 
         // Fecha de nacimiento
         inputFechaNacimiento.setOnClickListener {
+            ocultarTeclado()
             showDatePicker()
         }
 
         // Ubicación
         inputUbicacion.setOnClickListener {
+            ocultarTeclado()
             showLocationPicker()
         }
 
         // Navegación
         btnAtras.setOnClickListener {
             if (currentStep > 1) {
+                ocultarTeclado()
                 updateStep(currentStep - 1)
             }
         }
 
         btnSiguiente.setOnClickListener {
+            ocultarTeclado()
             handleNextStep()
         }
 
@@ -290,7 +409,14 @@ class EditarPerfilActivity : AppCompatActivity() {
                 R.id.rbOtro -> "Prefiero no decirlo"
                 else -> ""
             }
+            ocultarTeclado()
         }
+
+        // Casillas de especialidad: al marcar una el teclado ya no hace falta.
+        // Se usa setOnClickListener y no setOnCheckedChangeListener para no tocar
+        // el estado de la casilla, que el framework gestiona por su cuenta.
+        listOf(cbAlbanileria, cbPintura, cbCarpinteria, cbElectricidad, cbGasfiteria, cbJardineria)
+            .forEach { casilla -> casilla.setOnClickListener { ocultarTeclado() } }
     }
 
     private fun loadSimulatedUserData() {

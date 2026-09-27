@@ -93,7 +93,7 @@ class FragmentoMiPerfil : Fragment() {
     private fun setupActionButtons(root: View) {
         val btnEditarPerfil = root.findViewById<View>(R.id.btnEditarPerfil)
         val btnCompartirPerfil = root.findViewById<View>(R.id.btnCompartirPerfil)
-        val btnComplete = root.findViewById<View>(R.id.btnEmail)
+        val btnCompletarPerfil = root.findViewById<View>(R.id.btnCompletarPerfil)
 
         btnEditarPerfil?.setOnClickListener {
             showCardFeedback(it, "Editar perfil de Katty Huaman")
@@ -103,7 +103,7 @@ class FragmentoMiPerfil : Fragment() {
             showCardFeedback(it, "Compartir tu perfil")
         }
 
-        btnComplete?.setOnClickListener {
+        btnCompletarPerfil?.setOnClickListener {
             openEditProfileScreen()
         }
     }
