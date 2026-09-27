@@ -3,7 +3,7 @@
 ## Objetivo
 
 Implementar ChambAYA de forma incremental, segura y profesional usando
-**Firebase Authentication, Cloud Firestore y Cloudinary (almacenamiento de imágenes)**,
+**Firebase Authentication, y Cloudinary (almacenamiento de imágenes)**,
 trabajando fase por fase.
 
 La estrategia es:

@@ -8,20 +8,17 @@
     android:background="#F8F9FB">
 
     <!-- ═══════════════════════════════════════════════
-         HEADER CON TÍTULO
+         HEADER CON TÍTULO Y PROGRESO
     ═══════════════════════════════════════════════ -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/headerEditarPerfil"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="56dp"
         android:background="@color/white"
         android:paddingHorizontal="16dp"
         android:paddingTop="40dp"
         android:paddingBottom="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <!-- Botón de regresar -->
         <FrameLayout
@@ -32,8 +29,7 @@
             android:clickable="true"
             android:focusable="true"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
                 android:layout_width="24dp"
@@ -44,20 +40,219 @@
                 app:tint="#1F2937" />
         </FrameLayout>
 
-        <!-- Título centrado -->
+        <!-- Título dinámico según fase -->
         <TextView
             android:id="@+id/tvTituloEditarPerfil"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Editar Perfil"
+            android:text="Completa tu Perfil"
             android:textColor="#0F172A"
             android:textSize="20sp"
             android:textStyle="bold"
+            android:textAlignment="center"
             android:fontFamily="sans-serif-medium"
+            app:layout_constraintStart_toEndOf="@id/btnCerrarEditarPerfil"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Indicador de paso (Step X of Y) -->
+        <TextView
+            android:id="@+id/tvStepIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Paso 1 de 4"
+            android:textColor="#64748B"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif"
+            android:layout_marginTop="4dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/tvTituloEditarPerfil" />
+
+        <!-- Barra de progreso visual profesional -->
+        <LinearLayout
+            android:id="@+id/progressStepIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/tvStepIndicator">
+
+            <!-- Step 1 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <FrameLayout
+                    android:layout_width="36dp"
+                    android:layout_height="36dp">
+
+                    <View
+                        android:id="@+id/step1Circle"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_step_circle_active" />
+
+                    <TextView
+                        android:id="@+id/step1Number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="1"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:visibility="visible" />
+
+                    <ImageView
+                        android:id="@+id/step1Check"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_check"
+                        android:visibility="gone"
+                        app:tint="@color/white" />
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/line1"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#E2E8F0"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <!-- Step 2 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <FrameLayout
+                    android:layout_width="36dp"
+                    android:layout_height="36dp">
+
+                    <View
+                        android:id="@+id/step2Circle"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_step_circle_inactive" />
+
+                    <TextView
+                        android:id="@+id/step2Number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="2"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/step2Check"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_check"
+                        android:visibility="gone"
+                        app:tint="@color/white" />
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/line2"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#E2E8F0"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <!-- Step 3 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <FrameLayout
+                    android:layout_width="36dp"
+                    android:layout_height="36dp">
+
+                    <View
+                        android:id="@+id/step3Circle"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_step_circle_inactive" />
+
+                    <TextView
+                        android:id="@+id/step3Number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="3"
+                        android:textColor="#64748B"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/step3Check"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_check"
+                        android:visibility="gone"
+                        app:tint="@color/white" />
+                </FrameLayout>
+
+                <View
+                    android:id="@+id/line3"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#E2E8F0"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <!-- Step 4 -->
+            <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="36dp">
+
+                <View
+                    android:id="@+id/step4Circle"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_step_circle_inactive" />
+
+                <TextView
+                    android:id="@+id/step4Number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="4"
+                    android:textColor="#64748B"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/step4Check"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_check"
+                    android:visibility="gone"
+                    app:tint="@color/white" />
+            </FrameLayout>
+
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -70,7 +265,7 @@
         app:layout_constraintTop_toBottomOf="@id/headerEditarPerfil" />
 
     <!-- ═══════════════════════════════════════════════
-         CONTENIDO SCROLLABLE
+         CONTENIDO SCROLLABLE CON MÚLTIPLES PASOS
     ═══════════════════════════════════════════════ -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollEditarPerfil"
@@ -80,408 +275,1233 @@
         android:overScrollMode="never"
         android:scrollbars="none"
         app:layout_constraintTop_toBottomOf="@id/dividerHeader"
+        app:layout_constraintBottom_toTopOf="@id/footerNavigationButtons"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- ═══════════════════════════════════════════════
+                 PASO 1: INFORMACIÓN BÁSICA
+            ═══════════════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layoutStep1BasicInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="24dp"
+                android:paddingTop="32dp"
+                android:paddingBottom="32dp"
+                android:visibility="visible">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Información Básica"
+                    android:textColor="#0F172A"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ingresa los datos esenciales de tu perfil"
+                    android:textColor="#64748B"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- FOTO DE PERFIL -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="32dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivEditarPerfilAvatar"
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/avatar_katty"
+                        android:contentDescription="Foto de perfil"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Circle"
+                        app:strokeWidth="3dp"
+                        app:strokeColor="#E5E7EB"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <FrameLayout
+                        android:id="@+id/btnCambiarFotoPerfil"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_edit_profile_camera_btn"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:elevation="4dp"
+                        app:layout_constraintEnd_toEndOf="@id/ivEditarPerfilAvatar"
+                        app:layout_constraintBottom_toBottomOf="@id/ivEditarPerfilAvatar">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_camera_edit"
+                            android:contentDescription="Cambiar foto"
+                            app:tint="@color/white" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Toca para cambiar foto"
+                        android:textColor="#64748B"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/ivEditarPerfilAvatar" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- DNI (SOLO LECTURA - NO EDITABLE) -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="DNI"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_edit_profile_input_disabled"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp"
+                    android:alpha="0.7">
+
+                    <ImageView
+                        android:id="@+id/iconDni"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_settings_user"
+                        android:contentDescription="DNI"
+                        app:tint="#64748B"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvEditarPerfilDni"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="8dp"
+                        android:text="72345678"
+                        android:textColor="#64748B"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        app:layout_constraintStart_toEndOf="@id/iconDni"
+                        app:layout_constraintEnd_toStartOf="@id/iconDniVerificado"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <ImageView
+                        android:id="@+id/iconDniVerificado"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_check_circle"
+                        android:contentDescription="Verificado"
+                        app:tint="#00A859"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="✓ Verificado con RENIEC - No se puede modificar"
+                    android:textColor="#64748B"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginTop="-12dp"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- NOMBRE COMPLETO -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Nombre Completo"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp">
+
+                    <ImageView
+                        android:id="@+id/iconNombre"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_settings_user"
+                        android:contentDescription="Nombre"
+                        app:tint="#5B67F7"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <EditText
+                        android:id="@+id/etEditarPerfilNombre"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:background="@android:color/transparent"
+                        android:hint="Ingresa tu nombre completo"
+                        android:textColorHint="#9CA3AF"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:inputType="textPersonName|textCapWords"
+                        android:maxLines="1"
+                        android:importantForAutofill="no"
+                        app:layout_constraintStart_toEndOf="@id/iconNombre"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- NOMBRE DE USUARIO (USERNAME) -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Nombre de Usuario"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp">
+
+                    <TextView
+                        android:id="@+id/tvAtSymbol"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@"
+                        android:textColor="#5B67F7"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <EditText
+                        android:id="@+id/etEditarPerfilUsername"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@android:color/transparent"
+                        android:hint="usuario_chambaya"
+                        android:textColorHint="#9CA3AF"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:inputType="textNoSuggestions"
+                        android:maxLines="1"
+                        android:importantForAutofill="no"
+                        app:layout_constraintStart_toEndOf="@id/tvAtSymbol"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tu nombre de usuario debe ser único"
+                    android:textColor="#64748B"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginTop="-12dp"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- CORREO ELECTRÓNICO (VERIFICADO) -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Correo Electrónico"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp">
+
+                    <ImageView
+                        android:id="@+id/iconEmail"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_mail"
+                        android:contentDescription="Email"
+                        app:tint="#5B67F7"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <EditText
+                        android:id="@+id/etEditarPerfilEmail"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@android:color/transparent"
+                        android:hint="correo@ejemplo.com"
+                        android:textColorHint="#9CA3AF"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:inputType="textEmailAddress"
+                        android:maxLines="1"
+                        android:importantForAutofill="no"
+                        app:layout_constraintStart_toEndOf="@id/iconEmail"
+                        app:layout_constraintEnd_toStartOf="@id/iconEmailVerificado"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <ImageView
+                        android:id="@+id/iconEmailVerificado"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_check_circle"
+                        android:contentDescription="Verificado"
+                        app:tint="#00A859"
+                        android:visibility="visible"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- TELÉFONO -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Teléfono"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp">
+
+                    <ImageView
+                        android:id="@+id/iconTelefono"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_phone"
+                        android:contentDescription="Teléfono"
+                        app:tint="#5B67F7"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvCodigoPais"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="🇵🇪"
+                        android:textSize="18sp"
+                        app:layout_constraintStart_toEndOf="@id/iconTelefono"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvCodigoTelefonico"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="+51"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"
+                        app:layout_constraintStart_toEndOf="@id/tvCodigoPais"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <EditText
+                        android:id="@+id/etEditarPerfilTelefono"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:background="@android:color/transparent"
+                        android:hint="999 123 456"
+                        android:textColorHint="#9CA3AF"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:inputType="phone"
+                        android:maxLines="1"
+                        android:importantForAutofill="no"
+                        app:layout_constraintStart_toEndOf="@id/tvCodigoTelefonico"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </LinearLayout>
+
+            <!-- ═══════════════════════════════════════════════
+                 PASO 2: INFORMACIÓN PERSONAL
+            ═══════════════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layoutStep2PersonalInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="24dp"
+                android:paddingTop="32dp"
+                android:paddingBottom="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Información Personal"
+                    android:textColor="#0F172A"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Datos adicionales para tu perfil"
+                    android:textColor="#64748B"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- FECHA DE NACIMIENTO -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fecha de Nacimiento"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/inputFechaNacimiento"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/iconCalendario"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_calendar"
+                        android:contentDescription="Fecha"
+                        app:tint="#5B67F7"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvEditarPerfilFecha"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Selecciona tu fecha"
+                        android:textColor="#9CA3AF"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        app:layout_constraintStart_toEndOf="@id/iconCalendario"
+                        app:layout_constraintEnd_toStartOf="@id/iconCalendarioRight"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <ImageView
+                        android:id="@+id/iconCalendarioRight"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_calendar"
+                        android:contentDescription="Seleccionar fecha"
+                        app:tint="#9CA3AF"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- GÉNERO -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Género"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="12dp" />
+
+                <RadioGroup
+                    android:id="@+id/rgGenero"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="24dp">
+
+                    <RadioButton
+                        android:id="@+id/rbMasculino"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Masculino"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                    <RadioButton
+                        android:id="@+id/rbFemenino"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Femenino"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                    <RadioButton
+                        android:id="@+id/rbOtro"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Prefiero no decirlo"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                </RadioGroup>
+
+                <!-- UBICACIÓN -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ubicación"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/inputUbicacion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/iconUbicacion"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_settings_location"
+                        android:contentDescription="Ubicación"
+                        app:tint="#5B67F7"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvEditarPerfilUbicacion"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:text="Selecciona tu ubicación"
+                        android:textColor="#9CA3AF"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        app:layout_constraintStart_toEndOf="@id/iconUbicacion"
+                        app:layout_constraintEnd_toStartOf="@id/iconDropdown"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <ImageView
+                        android:id="@+id/iconDropdown"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_chevron_right"
+                        android:contentDescription="Seleccionar"
+                        android:rotation="90"
+                        app:tint="#9CA3AF"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Distrito, provincia y departamento"
+                    android:textColor="#64748B"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginTop="-12dp"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- BIOGRAFÍA / DESCRIPCIÓN -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Descripción / Bio"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp">
+
+                    <EditText
+                        android:id="@+id/etEditarPerfilBio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/transparent"
+                        android:hint="Cuéntanos sobre ti..."
+                        android:textColorHint="#9CA3AF"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="3"
+                        android:maxLines="5"
+                        android:gravity="top|start"
+                        android:importantForAutofill="no"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </LinearLayout>
+
+            <!-- ═══════════════════════════════════════════════
+                 PASO 3: EXPERIENCIA PROFESIONAL (TRABAJADOR)
+            ═══════════════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layoutStep3WorkerInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="24dp"
+                android:paddingTop="32dp"
+                android:paddingBottom="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Experiencia Profesional"
+                    android:textColor="#0F172A"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Destaca tus habilidades y experiencia"
+                    android:textColor="#64748B"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- AÑOS DE EXPERIENCIA -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Años de Experiencia"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp">
+
+                    <ImageView
+                        android:id="@+id/iconExperiencia"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_settings_user"
+                        android:contentDescription="Experiencia"
+                        app:tint="#5B67F7"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <EditText
+                        android:id="@+id/etEditarPerfilExperiencia"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:background="@android:color/transparent"
+                        android:hint="Ej: 3"
+                        android:textColorHint="#9CA3AF"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:importantForAutofill="no"
+                        app:layout_constraintStart_toEndOf="@id/iconExperiencia"
+                        app:layout_constraintEnd_toStartOf="@id/tvAnios"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvAnios"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="años"
+                        android:textColor="#64748B"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:layout_marginEnd="8dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- ESPECIALIDADES -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Especialidades"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Selecciona hasta 3 especialidades principales"
+                    android:textColor="#64748B"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Checkboxes para especialidades -->
+                <LinearLayout
+                    android:id="@+id/containerEspecialidades"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="24dp">
+
+                    <CheckBox
+                        android:id="@+id/cbAlbanileria"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Albañilería"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                    <CheckBox
+                        android:id="@+id/cbPintura"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Pintura"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                    <CheckBox
+                        android:id="@+id/cbCarpinteria"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Carpintería"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                    <CheckBox
+                        android:id="@+id/cbElectricidad"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Electricidad"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                    <CheckBox
+                        android:id="@+id/cbGasfiteria"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Gasfitería"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                    <CheckBox
+                        android:id="@+id/cbJardineria"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Jardinería"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:paddingVertical="12dp"
+                        android:buttonTint="#5B67F7" />
+
+                </LinearLayout>
+
+                <!-- HABILIDADES ADICIONALES -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Habilidades Adicionales"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    android:background="@drawable/bg_edit_profile_input"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp">
+
+                    <EditText
+                        android:id="@+id/etEditarPerfilHabilidades"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/transparent"
+                        android:hint="Ej: Pintura interior, Acabados, Manejo de herramientas..."
+                        android:textColorHint="#9CA3AF"
+                        android:textColor="#111827"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="2"
+                        android:maxLines="4"
+                        android:gravity="top|start"
+                        android:importantForAutofill="no"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </LinearLayout>
+
+            <!-- ═══════════════════════════════════════════════
+                 PASO 4: PRIVACIDAD Y CONFIRMACIÓN
+            ═══════════════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/layoutStep4Privacy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="24dp"
+                android:paddingTop="32dp"
+                android:paddingBottom="32dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Privacidad y Confirmación"
+                    android:textColor="#0F172A"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Controla qué información quieres compartir"
+                    android:textColor="#64748B"
+                    android:textSize="14sp"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- CONFIGURACIÓN DE PRIVACIDAD -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Visibilidad de Información"
+                    android:textColor="#1F2937"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Switch: Mostrar teléfono -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/switchMostrarTelefono"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mostrar teléfono"
+                            android:textColor="#111827"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Los usuarios podrán ver tu número"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            android:fontFamily="sans-serif"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchMostrarTelefono"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false"
+                        app:thumbTint="#5B67F7"
+                        app:trackTint="#E2E8F0"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F0F1F3"
+                    android:layout_marginVertical="8dp" />
+
+                <!-- Switch: Mostrar correo -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/switchMostrarEmail"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mostrar correo"
+                            android:textColor="#111827"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Otros usuarios podrán ver tu email"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            android:fontFamily="sans-serif"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchMostrarEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false"
+                        app:thumbTint="#5B67F7"
+                        app:trackTint="#E2E8F0"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F0F1F3"
+                    android:layout_marginVertical="8dp" />
+
+                <!-- Switch: Mostrar ubicación exacta -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingVertical="12dp"
+                    android:layout_marginBottom="32dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/switchMostrarUbicacion"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Mostrar ubicación exacta"
+                            android:textColor="#111827"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Si está desactivado solo se mostrará el distrito"
+                            android:textColor="#64748B"
+                            android:textSize="13sp"
+                            android:fontFamily="sans-serif"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchMostrarUbicacion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="false"
+                        app:thumbTint="#5B67F7"
+                        app:trackTint="#E2E8F0"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- RESUMEN FINAL -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="24dp"
+                    app:cardBackgroundColor="#F0F9FF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="✨ ¡Perfil casi completo!"
+                            android:textColor="#0F172A"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:id="@+id/tvResumenCompletitud"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Tu perfil está al 85%. Complétalo para destacar más."
+                            android:textColor="#334155"
+                            android:textSize="14sp"
+                            android:fontFamily="sans-serif"
+                            android:layout_marginBottom="16dp" />
+
+                        <!-- Barra de progreso -->
+                        <ProgressBar
+                            android:id="@+id/progressBarPerfil"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="8dp"
+                            android:progress="85"
+                            android:progressTint="#5B67F7"
+                            android:progressBackgroundTint="#E0E7FF"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:id="@+id/tvPorcentajePerfil"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="85%"
+                            android:textColor="#5B67F7"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium" />
+
+                    </LinearLayout>
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ═══════════════════════════════════════════════
+         FOOTER CON BOTONES DE NAVEGACIÓN
+    ═══════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/footerNavigationButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/white"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="16dp"
+        android:elevation="8dp"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="24dp"
-            android:paddingTop="32dp"
-            android:paddingBottom="32dp">
+        <!-- Botón Atrás -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAtrasStep"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Atrás"
+            android:textColor="#64748B"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            app:backgroundTint="#F1F5F9"
+            app:cornerRadius="16dp"
+            app:strokeWidth="0dp"
+            app:elevation="0dp"
+            app:rippleColor="#E0E0E0" />
 
-            <!-- ─────────────────────────────────────
-                 FOTO DE PERFIL
-            ───────────────────────────────────── -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp">
+        <!-- Botón Siguiente / Finalizar -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSiguienteStep"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Siguiente"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.01"
+            app:backgroundTint="#5B67F7"
+            app:cornerRadius="16dp"
+            app:elevation="0dp"
+            app:icon="@drawable/ic_arrow_forward"
+            app:iconGravity="end"
+            app:iconTint="@color/white"
+            app:iconSize="20dp"
+            app:rippleColor="#80FFFFFF" />
 
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/ivEditarPerfilAvatar"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/avatar_katty"
-                    android:contentDescription="Foto de perfil"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Circle"
-                    app:strokeWidth="3dp"
-                    app:strokeColor="#E5E7EB"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <!-- Botón de cámara superpuesto -->
-                <FrameLayout
-                    android:id="@+id/btnCambiarFotoPerfil"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/bg_edit_profile_camera_btn"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:elevation="4dp"
-                    app:layout_constraintEnd_toEndOf="@id/ivEditarPerfilAvatar"
-                    app:layout_constraintBottom_toBottomOf="@id/ivEditarPerfilAvatar">
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/ic_camera_edit"
-                        android:contentDescription="Cambiar foto"
-                        app:tint="@color/white" />
-                </FrameLayout>
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- ─────────────────────────────────────
-                 CAMPO: NOMBRE COMPLETO
-            ───────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nombre Completo"
-                android:textColor="#1F2937"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/bg_edit_profile_input"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp">
-
-                <ImageView
-                    android:id="@+id/iconNombre"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_settings_user"
-                    android:contentDescription="Nombre"
-                    app:tint="#5B67F7"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <EditText
-                    android:id="@+id/etEditarPerfilNombre"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:background="@android:color/transparent"
-                    android:hint="Ingresa tu nombre completo"
-                    android:textColorHint="#9CA3AF"
-                    android:textColor="#111827"
-                    android:textSize="15sp"
-                    android:fontFamily="sans-serif"
-                    android:inputType="textPersonName"
-                    android:maxLines="1"
-                    android:importantForAutofill="no"
-                    app:layout_constraintStart_toEndOf="@id/iconNombre"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- ─────────────────────────────────────
-                 CAMPO: FECHA DE NACIMIENTO
-            ───────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Fecha de Nacimiento"
-                android:textColor="#1F2937"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/inputFechaNacimiento"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/bg_edit_profile_input"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:id="@+id/iconCalendario"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_calendar"
-                    android:contentDescription="Fecha"
-                    app:tint="#5B67F7"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <TextView
-                    android:id="@+id/tvEditarPerfilFecha"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="19/10/2000"
-                    android:textColor="#111827"
-                    android:textSize="15sp"
-                    android:fontFamily="sans-serif"
-                    app:layout_constraintStart_toEndOf="@id/iconCalendario"
-                    app:layout_constraintEnd_toStartOf="@id/iconCalendarioRight"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <ImageView
-                    android:id="@+id/iconCalendarioRight"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_calendar"
-                    android:contentDescription="Seleccionar fecha"
-                    app:tint="#9CA3AF"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- ─────────────────────────────────────
-                 CAMPO: CORREO ELECTRÓNICO
-            ───────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Correo Electrónico"
-                android:textColor="#1F2937"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/bg_edit_profile_input"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp">
-
-                <ImageView
-                    android:id="@+id/iconEmail"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_mail"
-                    android:contentDescription="Email"
-                    app:tint="#5B67F7"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <EditText
-                    android:id="@+id/etEditarPerfilEmail"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@android:color/transparent"
-                    android:hint="correo@ejemplo.com"
-                    android:textColorHint="#9CA3AF"
-                    android:textColor="#111827"
-                    android:textSize="15sp"
-                    android:fontFamily="sans-serif"
-                    android:inputType="textEmailAddress"
-                    android:maxLines="1"
-                    android:importantForAutofill="no"
-                    app:layout_constraintStart_toEndOf="@id/iconEmail"
-                    app:layout_constraintEnd_toStartOf="@id/iconEmailVerificado"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <ImageView
-                    android:id="@+id/iconEmailVerificado"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_check_circle"
-                    android:contentDescription="Verificado"
-                    app:tint="#5B67F7"
-                    android:visibility="gone"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- ─────────────────────────────────────
-                 CAMPO: UBICACIÓN
-            ───────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Ubicación"
-                android:textColor="#1F2937"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/inputUbicacion"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/bg_edit_profile_input"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:id="@+id/iconUbicacion"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_settings_location"
-                    android:contentDescription="Ubicación"
-                    app:tint="#5B67F7"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <TextView
-                    android:id="@+id/tvEditarPerfilUbicacion"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="Estados Unidos"
-                    android:textColor="#111827"
-                    android:textSize="15sp"
-                    android:fontFamily="sans-serif"
-                    app:layout_constraintStart_toEndOf="@id/iconUbicacion"
-                    app:layout_constraintEnd_toStartOf="@id/iconDropdown"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <ImageView
-                    android:id="@+id/iconDropdown"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_chevron_right"
-                    android:contentDescription="Seleccionar"
-                    android:rotation="90"
-                    app:tint="#9CA3AF"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- ─────────────────────────────────────
-                 CAMPO: TELÉFONO
-            ───────────────────────────────────── -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Teléfono"
-                android:textColor="#1F2937"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                android:background="@drawable/bg_edit_profile_input"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp">
-
-                <ImageView
-                    android:id="@+id/iconTelefono"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:src="@drawable/ic_phone"
-                    android:contentDescription="Teléfono"
-                    app:tint="#5B67F7"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <TextView
-                    android:id="@+id/tvCodigoPais"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="🇺🇸"
-                    android:textSize="18sp"
-                    app:layout_constraintStart_toEndOf="@id/iconTelefono"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <ImageView
-                    android:id="@+id/iconDropdownPais"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="4dp"
-                    android:src="@drawable/ic_chevron_right"
-                    android:rotation="90"
-                    android:contentDescription="Seleccionar país"
-                    app:tint="#9CA3AF"
-                    app:layout_constraintStart_toEndOf="@id/tvCodigoPais"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-                <EditText
-                    android:id="@+id/etEditarPerfilTelefono"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:background="@android:color/transparent"
-                    android:hint="+1 111 467 378 399"
-                    android:textColorHint="#9CA3AF"
-                    android:textColor="#111827"
-                    android:textSize="15sp"
-                    android:fontFamily="sans-serif"
-                    android:inputType="phone"
-                    android:maxLines="1"
-                    android:importantForAutofill="no"
-                    app:layout_constraintStart_toEndOf="@id/iconDropdownPais"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- ─────────────────────────────────────
-                 BOTÓN: ACTUALIZAR PERFIL
-            ───────────────────────────────────── -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnActualizarPerfil"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="Actualizar Perfil"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.01"
-                app:backgroundTint="#5B67F7"
-                app:cornerRadius="16dp"
-                app:elevation="0dp"
-                app:icon="@drawable/ic_arrow_forward"
-                app:iconGravity="end"
-                app:iconTint="@color/white"
-                app:iconSize="20dp"
-                app:rippleColor="#80FFFFFF" />
-
-        </LinearLayout>
-
-    </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
