@@ -13,6 +13,7 @@ import com.proyecto.chambaya.data.model.ProfilePhotoSources
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.normalizarUsername
 import com.proyecto.chambaya.data.model.toUserProfile
+import com.proyecto.chambaya.data.remote.CloudinaryUploader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -308,8 +309,11 @@ class ProfileRepository(
                 cambios["profile.profilePhotoUrl"] = photoUrl
                 cambios["profile.profilePhotoPublicId"] = photoPublicId
                 cambios["profile.profilePhotoSource"] = ProfilePhotoSources.CUSTOM
-                // `profilePhotoPath` documenta la carpeta de Cloudinary.
-                cambios["profile.profilePhotoPath"] = "chambaya/perfiles/$uid/profile"
+                // `profilePhotoPath` documenta la carpeta de Cloudinary. Se pide la
+                // misma función que usa la subida en vez de escribir la ruta aquí:
+                // esa carpeta es la que valida `isOwnCloudinaryPhoto` en las Rules,
+                // así que si las dos se desincronizan el guardado se deniega.
+                cambios["profile.profilePhotoPath"] = CloudinaryUploader.carpetaDePerfil(uid)
             }
 
             // 3) `profileCompleted` se deriva del perfil resultante, nunca se

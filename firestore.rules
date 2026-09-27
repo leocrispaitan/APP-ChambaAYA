@@ -152,17 +152,35 @@ service cloud.firestore {
     }
 
     // --- Foto de perfil -
-    // Una foto nueva solo puede venir de la carpeta de Cloudinary del propio
-    // usuario: .../image/upload/chambaya/perfiles/{uid}/archivo
+    // Una foto nueva solo puede venir del módulo de avatares del propio usuario.
+    // La app sube con `folder = chambaya/fotos-perfil/{uid}/profile` y Cloudinary
+    // genera un nombre aleatorio dentro, así que la URL real es:
+    //   https://res.cloudinary.com/<cloud>/image/upload/v1790543492
+    //            /chambaya/fotos-perfil/{uid}/profile/ncr35rzw109sh9ykgagf.jpg
     // Si la foto no cambió se acepta la que haya (p. ej. la de Google que
     // dejó la FASE 1).
+    //
+    // OJO con el segmento `v1790543492`: es la versión del asset y Cloudinary lo
+    // pone SIEMPRE en las URLs de entrega, así que tiene que admitirse. Y ojo con
+    // el nivel extra tras el uid (`profile/<aleatorio>`): los dos se olvidaron
+    // alguna vez y el síntoma era el mismo — la subida funcionaba, la imagen se
+    // veía, y al pulsar "Finalizar" salía un PERMISSION_DENIED sin explicación.
+    //
+    // El patrón se ancla en `chambaya/fotos-perfil/{uid}/` y deja dos niveles
+    // libres después, que es lo que permite renombrar la subcarpeta sin volver a
+    // romper el guardado. Lo que NO se admite es salirse de la carpeta del propio
+    // usuario.
+    //
+    // La carpeta debe ser la MISMA que devuelve `CloudinaryUploader.carpetaDePerfil`,
+    // que es lo que la app escribe en `profile.profilePhotoPath`. Si se cambia una,
+    // hay que cambiar las dos o el guardado se deniega sin motivo visible.
     function isOwnCloudinaryPhoto(uid) {
       let profile = request.resource.data.get('profile', '');
       return profile is map
         && profile.get('profilePhotoUrl', '') is string
         && profile.get('profilePhotoUrl', '').size() > 0
         && profile.get('profilePhotoUrl', '').matches(
-             '^https://res\\.cloudinary\\.com/[^/]+/image/upload/chambaya/perfiles/' + uid + '/[^/]+$');
+             '^https://res\\.cloudinary\\.com/[^/]+/image/upload/(v[0-9]+/)?chambaya/fotos-perfil/' + uid + '/[^/]+/[^/]+$');
     }
 
     function photoUnchanged() {

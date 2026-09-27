@@ -15,14 +15,30 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // ── FASE 2 · Cloudinary (subida de foto de perfil) ──────────────────
+        // ── FASE 2 · Cloudinary (subida de fotos) ────────────────────────────
         // Credenciales PÚBLICAS: cloud name + preset sin firmar.
-        // El "API Secret" (W3mN_1hUVkUbkaU-s1Dhaezx25Q) se queda fuera de la
-        // app a propósito; vive solo en el dashboard de Cloudinary.
+        // El "API Secret" se queda fuera de la app a propósito; vive solo en el
+        // dashboard de Cloudinary.
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"vtmk2tgh\"")
-        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"chambaya_unsigned\"")
-        // Carpeta raíz de fotos de perfil dentro de Cloudinary.
-        buildConfigField("String", "CLOUDINARY_PROFILE_FOLDER", "\"chambaya/perfiles\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"chambaya_preset\"")
+        // Raíz de los módulos de imagen. Cada tipo de imagen va a su propio módulo
+        // para que el dashboard de Cloudinary no mezcle avatares con mapas o con
+        // anuncios:
+        //
+        //   chambaya/
+        //     oficios/            <- imágenes de las categorías de oficios
+        //                              (las sube quien mantiene api_oficios.json)
+        //     fotos-perfil/       <- avatares, una carpeta por uid
+        //     fotos-lugares/      <- fotos de los lugares del mapa
+        //     fotos-publicaciones/<- fotos de los anuncios y publicaciones
+        //
+        // Sin espacios ni acentos a propósito: estas rutas acaban dentro de una
+        // expresión regular de `firestore.rules` y en la URL pública, y un espacio
+        // obligaría a escribir `%20` en los dos sitios.
+        buildConfigField("String", "CLOUDINARY_FOLDER_ROOT", "\"chambaya\"")
+        buildConfigField("String", "CLOUDINARY_FOLDER_PERFILES", "\"fotos-perfil\"")
+        buildConfigField("String", "CLOUDINARY_FOLDER_LUGARES", "\"fotos-lugares\"")
+        buildConfigField("String", "CLOUDINARY_FOLDER_PUBLICACIONES", "\"fotos-publicaciones\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

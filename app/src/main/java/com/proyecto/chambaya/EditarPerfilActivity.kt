@@ -1156,7 +1156,8 @@ class EditarPerfilActivity : AppCompatActivity() {
      *
      * El orden importa: primero se sube la imagen a Cloudinary y se reciben su
      * `url` y su `publicId`, y solo después se escribe el documento. Las Rules
-     * exigen que la foto venga de `chambaya/perfiles/{uid}/`, así que guardarla
+     * exigen que la foto venga de `chambaya/fotos-perfil/{uid}/` (la misma carpeta
+     * que devuelve `CloudinaryUploader.carpetaDePerfil`), así que guardarla
      * antes de tener esos dos datos no sería posible.
      */
     private fun finalizarActualizacionPerfil() {
