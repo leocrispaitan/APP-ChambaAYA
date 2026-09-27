@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Paso 3 (Experiencia Profesional) — selector de especialidades.
+         Alto de la lista cuando está colapsada: ~6 filas de item_oficio_selector
+         visibles, sin importar si el catálogo de api_oficios.json trae 6 o 100
+         oficios. El resto se ve haciendo scroll dentro de la lista o filtrando
+         con el buscador. -->
+    <dimen name="especialidades_lista_alto_colapsado">336dp</dimen>
+
+</resources>

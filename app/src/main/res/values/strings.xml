@@ -343,6 +343,9 @@
 
     <!-- FASE 2 — Wizard de edición de perfil (4 pasos) -->
     <string name="edit_perfil_no_oficios">No hay oficios que coincidan con tu búsqueda</string>
+    <string name="edit_perfil_especialidades_placeholder">Toca para elegir tus especialidades</string>
+    <string name="edit_perfil_especialidades_contador">%1$d/%2$d seleccionadas</string>
+    <string name="edit_perfil_especialidades_toggle_desc">Mostrar u ocultar el selector de especialidades</string>
     <string name="edit_perfil_titulo_paso1">Completa tu Perfil</string>
     <string name="edit_perfil_titulo_paso2">Información Personal</string>
     <string name="edit_perfil_titulo_paso3">Experiencia Profesional</string>

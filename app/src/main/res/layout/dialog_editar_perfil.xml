@@ -1076,71 +1076,133 @@
                     android:fontFamily="sans-serif"
                     android:layout_marginBottom="16dp" />
 
-                <!-- Buscador de oficios -->
+                <!-- Acordeón de especialidades: cabecera siempre visible con el
+                     resumen de lo elegido; al tocarla se despliega el panel de
+                     abajo (buscador + lista). Igual que los selectores de
+                     habilidades de apps profesionales (LinkedIn, Indeed, etc.):
+                     el catálogo puede crecer a cientos de oficios sin que la
+                     pantalla de "Especialidades" se alargue de por sí. -->
                 <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/inputBuscarOficio"
+                    android:id="@+id/headerEspecialidadesSelector"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
+                    android:layout_marginBottom="8dp"
                     android:background="@drawable/bg_edit_profile_input"
                     android:paddingHorizontal="16dp"
-                    android:paddingVertical="12dp"
+                    android:paddingVertical="14dp"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:contentDescription="@string/edit_perfil_especialidades_toggle_desc">
 
-                    <ImageView
-                        android:id="@+id/iconBuscarOficio"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_home_search"
-                        android:contentDescription="Buscar"
-                        app:tint="#9CA3AF"
+                    <TextView
+                        android:id="@+id/tvEspecialidadesResumen"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:text="@string/edit_perfil_especialidades_placeholder"
+                        android:textColor="#64748B"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:maxLines="2"
+                        android:ellipsize="end"
                         app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/ivChevronEspecialidades"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent" />
 
-                    <EditText
-                        android:id="@+id/etBuscarOficio"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:background="@android:color/transparent"
-                        android:hint="Buscar oficio..."
-                        android:textColorHint="#9CA3AF"
-                        android:textColor="#111827"
-                        android:textSize="15sp"
-                        android:fontFamily="sans-serif"
-                        android:inputType="text"
-                        android:maxLines="1"
-                        android:imeOptions="actionSearch"
-                        android:importantForAutofill="no"
-                        app:layout_constraintStart_toEndOf="@id/iconBuscarOficio"
+                    <ImageView
+                        android:id="@+id/ivChevronEspecialidades"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_home_chevron_down"
+                        android:contentDescription="@null"
+                        app:tint="#5B67F7"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-                <!-- Especialidades: multiselección desde api_oficios.json (máx. 3) -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvEspecialidadesSelector"
+                <!-- Panel desplegable: oculto hasta que se toca la cabecera. -->
+                <LinearLayout
+                    android:id="@+id/panelEspecialidadesSelector"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:nestedScrollingEnabled="false"
-                    tools:itemCount="6"
-                    tools:listitem="@layout/item_oficio_selector" />
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
-                <TextView
-                    android:id="@+id/tvSinResultadosOficio"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingVertical="16dp"
-                    android:text="@string/edit_perfil_no_oficios"
-                    android:textColor="#9CA3AF"
-                    android:textSize="13sp"
-                    android:gravity="center"
-                    android:visibility="gone" />
+                    <!-- Buscador de oficios -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/inputBuscarOficio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:background="@drawable/bg_edit_profile_input"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:id="@+id/iconBuscarOficio"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_home_search"
+                            android:contentDescription="Buscar"
+                            app:tint="#9CA3AF"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent" />
+
+                        <EditText
+                            android:id="@+id/etBuscarOficio"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:background="@android:color/transparent"
+                            android:hint="Buscar oficio..."
+                            android:textColorHint="#9CA3AF"
+                            android:textColor="#111827"
+                            android:textSize="15sp"
+                            android:fontFamily="sans-serif"
+                            android:inputType="text"
+                            android:maxLines="1"
+                            android:imeOptions="actionSearch"
+                            android:importantForAutofill="no"
+                            app:layout_constraintStart_toEndOf="@id/iconBuscarOficio"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <!-- Especialidades: multiselección desde api_oficios.json (máx. 3).
+                         Alto fijo ≈ 6 filas: con 6 o 100 oficios en el catálogo la
+                         tarjeta del paso 3 mide siempre lo mismo, y esta lista
+                         interna es la que hace scroll (scroll propio, no el del
+                         diálogo completo). -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvEspecialidadesSelector"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/especialidades_lista_alto_colapsado"
+                        android:layout_marginBottom="8dp"
+                        android:clipToPadding="false"
+                        android:overScrollMode="ifContentScrolls"
+                        tools:itemCount="6"
+                        tools:listitem="@layout/item_oficio_selector" />
+
+                    <TextView
+                        android:id="@+id/tvSinResultadosOficio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="16dp"
+                        android:text="@string/edit_perfil_no_oficios"
+                        android:textColor="#9CA3AF"
+                        android:textSize="13sp"
+                        android:gravity="center"
+                        android:visibility="gone" />
+
+                </LinearLayout>
 
                 <!-- HABILIDADES ADICIONALES -->
                 <TextView

@@ -169,6 +169,10 @@ class EditarPerfilActivity : AppCompatActivity() {
 
     // ==================== PASO 3: EXPERIENCIA PROFESIONAL ====================
     private lateinit var etExperiencia: EditText
+    private lateinit var headerEspecialidadesSelector: ConstraintLayout
+    private lateinit var tvEspecialidadesResumen: TextView
+    private lateinit var ivChevronEspecialidades: ImageView
+    private lateinit var panelEspecialidadesSelector: LinearLayout
     private lateinit var etBuscarOficio: EditText
     private lateinit var rvEspecialidades: RecyclerView
     private lateinit var tvSinResultadosOficio: TextView
@@ -229,6 +233,9 @@ class EditarPerfilActivity : AppCompatActivity() {
     private var entradaCompletar = false
 
     private lateinit var adapterOficios: EspecialidadSelectorAdapter
+
+    /** `true` mientras el panel de especialidades (buscador + lista) está desplegado. */
+    private var panelEspecialidadesExpandido = false
 
     // Launcher para selección de imagen
     private val imagePickerLauncher = registerForActivityResult(
@@ -459,6 +466,10 @@ class EditarPerfilActivity : AppCompatActivity() {
 
         // Paso 3
         etExperiencia = findViewById(R.id.etEditarPerfilExperiencia)
+        headerEspecialidadesSelector = findViewById(R.id.headerEspecialidadesSelector)
+        tvEspecialidadesResumen = findViewById(R.id.tvEspecialidadesResumen)
+        ivChevronEspecialidades = findViewById(R.id.ivChevronEspecialidades)
+        panelEspecialidadesSelector = findViewById(R.id.panelEspecialidadesSelector)
         etBuscarOficio = findViewById(R.id.etBuscarOficio)
         rvEspecialidades = findViewById(R.id.rvEspecialidadesSelector)
         tvSinResultadosOficio = findViewById(R.id.tvSinResultadosOficio)
@@ -838,6 +849,7 @@ class EditarPerfilActivity : AppCompatActivity() {
             if (oficial != null) especialidadesElegidas += oficial.categoria
         }
         adapterOficios.setSeleccionados(especialidadesElegidas)
+        actualizarResumenEspecialidades()
         filtrarOficios(etBuscarOficio.text.toString())
 
         etHabilidades.setText(perfil.worker.skills.joinToString(", "))
@@ -1580,6 +1592,48 @@ class EditarPerfilActivity : AppCompatActivity() {
         rvEspecialidades.adapter = adapterOficios
         rvEspecialidades.itemAnimator = null
         filtrarOficios("")
+        actualizarResumenEspecialidades()
+
+        // Cabecera tipo acordeón: colapsada no se ve ni el buscador ni la lista,
+        // así el catálogo puede tener 6 o 100 oficios sin alargar el paso 3.
+        headerEspecialidadesSelector.setOnClickListener { toggleSelectorEspecialidades() }
+    }
+
+    /** Muestra u oculta el panel de buscador + lista, rotando el chevron. */
+    private fun toggleSelectorEspecialidades() {
+        panelEspecialidadesExpandido = !panelEspecialidadesExpandido
+        panelEspecialidadesSelector.isVisible = panelEspecialidadesExpandido
+        ivChevronEspecialidades.animate()
+            .rotation(if (panelEspecialidadesExpandido) 180f else 0f)
+            .setDuration(180)
+            .start()
+
+        if (panelEspecialidadesExpandido) {
+            // Al abrir siempre se ve el catálogo completo (sin el filtro de la
+            // última búsqueda), igual que un selector que se acaba de abrir.
+            etBuscarOficio.setText("")
+            rvEspecialidades.scrollToPosition(0)
+        } else {
+            ocultarTeclado()
+        }
+    }
+
+    /**
+     * Refleja en la cabecera del acordeón cuántas y cuáles especialidades están
+     * elegidas, para que no haga falta desplegar el panel para verlo.
+     */
+    private fun actualizarResumenEspecialidades() {
+        if (especialidadesElegidas.isEmpty()) {
+            tvEspecialidadesResumen.text = getString(R.string.edit_perfil_especialidades_placeholder)
+            return
+        }
+        val nombres = especialidadesElegidas.joinToString(", ")
+        val contador = getString(
+            R.string.edit_perfil_especialidades_contador,
+            especialidadesElegidas.size,
+            ProfileLimits.SPECIALTY_MAX
+        )
+        tvEspecialidadesResumen.text = "$nombres · $contador"
     }
 
     /**
@@ -1624,6 +1678,7 @@ class EditarPerfilActivity : AppCompatActivity() {
             especialidadesElegidas += categoria
         }
         adapterOficios.setSeleccionados(especialidadesElegidas)
+        actualizarResumenEspecialidades()
         refrescarResumen()
     }
 
