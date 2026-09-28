@@ -220,6 +220,19 @@
     <string name="profile_banner_complete_title">Completa tu perfil</string>
     <string name="profile_banner_complete_sub">Te falta agregar algunos datos para que más personas confíen en ti.</string>
     <string name="profile_banner_complete_btn">Completar perfil</string>
+
+    <!-- Estado de logro del banner (perfil al 100 %).
+
+         Copy de beneficio, no de etiqueta: el título confirma el logro y el
+         subtítulo responde "¿y ahora qué gano?". Se evita inventar cifras (tipo
+         "3x mas solicitudes") porque no hay ningun dato que las respalde; las
+         ventajas que si se cumplen en el producto son aparecer en el buscador y
+         recibir contacto directo. El contratante recibe la variante opuesta
+         porque el beneficio no es el mismo: aqui el que busca trabajo es el
+         usuario. -->
+    <string name="profile_banner_done_title">¡Perfil completado!</string>
+    <string name="profile_banner_done_sub">Ya apareces en el buscador de ChambAYA y los contratantes pueden contactarte directamente.</string>
+    <string name="profile_banner_done_sub_contratante">Ya apareces en el buscador y los trabajadores te contactan directamente para contratarte.</string>
     <string name="profile_btn_edit">Editar perfil</string>
     <string name="profile_btn_view_photos">Ver fotos</string>
 

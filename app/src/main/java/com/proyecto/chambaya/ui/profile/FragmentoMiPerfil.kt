@@ -252,7 +252,55 @@ class FragmentoMiPerfil : Fragment() {
         pintarModoContratante(root, datos)
         pintarContacto(root, datos)
         pintarIdentidad(root, datos)
-        root.findViewById<View>(R.id.cardCompletaPerfil).isVisible = !datos.completion().isComplete
+        pintarBannerCompletitud(root, datos)
+    }
+
+    /**
+     * Banner de completitud: un SOLO componente con dos estados, no dos pantallas.
+     *
+     * Decisión de diseño: el banner NO desaparece al llegar al 100%. Ocultarlo
+     * borraba justo la prueba del trabajo hecho y dejaba la pantalla con un hueco
+     * raro arriba; el anillo a 100% en verde funciona como sello de logro y es lo
+     * que el usuario quiere ver después de invertir dos minutos en llenarlo.
+     *
+     * Lo que sí cambia:
+     *  - fondo y borde: violeta (pendiente) → verde (logro);
+     *  - título: "Completa tu perfil" → "¡Perfil completado!" con check;
+     *  - subtítulo: qué falta → qué ganas por haberlo completado;
+     *  - botón "Completar perfil": se oculta, porque sin nada que completar es un
+     *    CTA sin destino. "Editar perfil" sigue disponible abajo, así que el
+     *    usuario no pierde ninguna acción.
+     *
+     * El texto del logro es específico del rol: para el trabajador el beneficio es
+     * que lo encuentren, y para el contratante es que lo contacten para contratarlo.
+     */
+    private fun pintarBannerCompletitud(root: View, datos: UserProfile) {
+        val card = root.findViewById<View>(R.id.cardCompletaPerfil)
+        val check = root.findViewById<View>(R.id.ivBannerCompletado)
+        val titulo = root.findViewById<TextView>(R.id.tvBannerTitulo)
+        val subtitulo = root.findViewById<TextView>(R.id.tvBannerSubtitulo)
+        val boton = root.findViewById<View>(R.id.btnCompletarPerfil)
+
+        val completo = datos.completion().isComplete
+        val esContratante = datos.activeRole == UserRoles.CONTRATANTE
+
+        card.setBackgroundResource(
+            if (completo) R.drawable.bg_profile_completa_banner_listo
+            else R.drawable.bg_profile_completa_banner
+        )
+        check.isVisible = completo
+        boton.isVisible = !completo
+
+        if (completo) {
+            titulo.setText(R.string.profile_banner_done_title)
+            subtitulo.setText(
+                if (esContratante) R.string.profile_banner_done_sub_contratante
+                else R.string.profile_banner_done_sub
+            )
+        } else {
+            titulo.setText(R.string.profile_banner_complete_title)
+            subtitulo.setText(R.string.profile_banner_complete_sub)
+        }
     }
 
     private fun pintarCabecera(root: View, datos: UserProfile) {

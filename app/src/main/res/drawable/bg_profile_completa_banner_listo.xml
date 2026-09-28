@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Estado de logro del banner de completitud (perfil al 100 %).
+
+    La paleta es la misma familia verde del anillo a 100% (#16A34A), en sus tonos
+    50/200/600. Se mantiene el radio y el grosor del borde del estado "pendiente"
+    para que el cambio de estado se lea como una variación del mismo componente y
+    no como otra tarjeta.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#F0FDF4" />
+    <corners android:radius="18dp" />
+    <stroke
+        android:width="1.2dp"
+        android:color="#A7F3D0" />
+</shape>
