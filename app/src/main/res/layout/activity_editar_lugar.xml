@@ -111,12 +111,6 @@
                             android:src="@drawable/ic_profile_photos"
                             app:shapeAppearanceOverlay="@style/ShapeAppearance.RoundedCorner12" />
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="56dp"
-                            android:layout_gravity="bottom"
-                            android:background="@drawable/bg_gradient_black_bottom" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
