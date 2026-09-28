@@ -774,7 +774,7 @@ Permitir al contratante:
 - dirección;
 - distrito;
 - ubicación;
-- fotografía.
+- fotografía
 
 La fotografía debe subirse a Cloudinary (unsigned upload preset).
 

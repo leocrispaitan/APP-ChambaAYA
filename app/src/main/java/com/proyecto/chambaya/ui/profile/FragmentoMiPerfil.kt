@@ -258,8 +258,11 @@ class FragmentoMiPerfil : Fragment() {
         val completitud = datos.completion()
         val identidadVerificada = datos.identity.identityVerified
 
-        root.findViewById<TextView>(R.id.tvProfileName).text =
-            perfil.fullName.ifBlank { getString(R.string.profile_sin_nombre) }
+        val tvNombre = root.findViewById<TextView>(R.id.tvProfileName)
+        tvNombre.text = perfil.fullName.ifBlank { getString(R.string.profile_sin_nombre) }
+        // El marquee solo se activa si el texto no cabe: con isSelected = true
+        // y ellipsize = "marquee", el sistema lo desplaza automáticamente.
+        tvNombre.isSelected = true
 
         root.findViewById<TextView>(R.id.tvProfileHandle).text =
             if (perfil.username.isNotBlank()) {

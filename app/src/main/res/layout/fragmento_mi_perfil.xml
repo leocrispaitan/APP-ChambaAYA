@@ -119,20 +119,26 @@
         <!-- User Name & Verified Scalloped Badge -->
         <LinearLayout
             android:id="@+id/layoutName"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvCompletionBadge">
+            app:layout_constraintTop_toBottomOf="@id/tvCompletionBadge"
+            app:layout_constraintWidth_percent="0.60">
 
             <TextView
                 android:id="@+id/tvProfileName"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="marquee"
                 android:fontFamily="sans-serif-medium"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
                 android:text="@string/profile_name_mock"
                 android:textColor="@color/profile_text_title"
                 android:textSize="22sp"
