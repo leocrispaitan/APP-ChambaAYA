@@ -66,6 +66,14 @@
             android:exported="false"
             android:theme="@style/Theme.ChambAYA.EditProfile"
             android:windowSoftInputMode="adjustResize" />
+
+        <!-- Ajuste de la foto de perfil. Va aparte del wizard y con tema
+             propio (oscuro) porque el recorte se hace con un velillo negro
+             alrededor del círculo. -->
+        <activity
+            android:name=".ui.foto.RecortarFotoActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ChambAYA.RecorteFoto" />
     </application>
 
 </manifest>

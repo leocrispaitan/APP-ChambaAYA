@@ -382,6 +382,17 @@
     <string name="edit_perfil_foto_error">No se pudo subir la foto: %1$s</string>
     <string name="edit_perfil_foto_sin_conexion">No se pudo subir la foto: revisa tu conexión</string>
 
+    <!-- Recorte de la foto de perfil -->
+    <string name="recorte_foto_titulo">Ajustar foto</string>
+    <string name="recorte_foto_cerrar">Cerrar</string>
+    <string name="recorte_foto_pista">Arrastra para centrar · pellizca para acercar</string>
+    <string name="recorte_foto_rotar">Girar</string>
+    <string name="recorte_foto_restablecer">Restablecer</string>
+    <string name="recorte_foto_aplicar">Aplicar</string>
+    <string name="recorte_foto_error_lectura">No se pudo abrir esa imagen</string>
+    <string name="recorte_foto_error_escritura">No se pudo guardar la foto ajustada</string>
+    <string name="recorte_foto_sin_memoria">La foto es demasiado grande para este dispositivo</string>
+
     <!-- Wizard: validación y errores -->
     <string name="edit_perfil_error_nombre">Ingresa tu nombre completo (mín. 3 caracteres)</string>
     <string name="edit_perfil_error_telefono">Ingresa un teléfono válido (9 a 20 dígitos)</string>

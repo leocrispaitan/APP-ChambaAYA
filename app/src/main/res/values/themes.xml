@@ -148,4 +148,16 @@
         <item name="android:windowEnterAnimation">@anim/dialog_slide_up</item>
         <item name="android:windowExitAnimation">@anim/dialog_slide_down</item>
     </style>
+
+    <!-- Recorte de la foto de perfil.
+         Fondo oscuro a propósito: el recorte se hace con un velillo negro
+         fuera del círculo, y un fondo claro haría que los bordes de la foto se
+         confundieran con el de la pantalla. Sin animación de ventana, para que
+         no choque con el `dialog_slide_up` con el que se abre el wizard. -->
+    <style name="Theme.ChambAYA.RecorteFoto" parent="Theme.ChambAYA">
+        <item name="android:windowBackground">#0B0B0F</item>
+        <item name="android:statusBarColor">#0B0B0F</item>
+        <item name="android:navigationBarColor">#0B0B0F</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

@@ -61,12 +61,14 @@ import com.proyecto.chambaya.data.repository.PadronRepository
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.UsernameYaTomado
 import com.proyecto.chambaya.data.repository.motivoFirestore
+import com.proyecto.chambaya.ui.foto.RecortarFotoActivity
 import com.proyecto.chambaya.ui.profile.EspecialidadSelectorAdapter
 import com.proyecto.chambaya.ui.profile.OficioIcons
 import com.proyecto.chambaya.ui.profile.ProfileCache
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Calendar
 import java.util.LinkedHashSet
 
@@ -198,6 +200,15 @@ class EditarPerfilActivity : AppCompatActivity() {
     /** Foto elegida en esta sesión y todavía NO subida a Cloudinary. */
     private var selectedImageUri: Uri? = null
 
+    /**
+     * Foto recién elegida de la galería, a la espera del recorte.
+     *
+     * Vive aparte de [selectedImageUri] porque todavía no es "la foto del
+     * perfil": es la que el usuario quiere, y el recorte necesita poder
+     * recuperarla si el usuario cierra el ajuste sin confirmar.
+     */
+    private var uriFotoSinRecortar: Uri? = null
+
     /** `true` si hay una foto nueva pendiente de subir. */
     private var fotoPendiente = false
 
@@ -245,14 +256,43 @@ class EditarPerfilActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
-                selectedImageUri = uri
-                fotoPendiente = true
-                // Vista previa inmediata: la subida real ocurre al guardar, para
-                // no dejar imágenes huérfanas en Cloudinary si el usuario cancela.
-                ivAvatar.load(uri) { crossfade(true) }
-                showToast(getString(R.string.edit_perfil_foto_elegida))
+                // Elegir la imagen NO es aplicarla todavía: primero pasa por el
+                // recorte, que es donde el usuario centra la cara en el círculo.
+                uriFotoSinRecortar = uri
+                recorteLauncher.launch(
+                    Intent(this, RecortarFotoActivity::class.java)
+                        .putExtra(RecortarFotoActivity.EXTRA_ORIGEN, uri)
+                )
             }
         }
+    }
+
+    /**
+     * Recoge el recorte de la foto.
+     *
+     * Cancelar el recorte **no** descarta la foto: se usa la original tal cual,
+     * que es lo mismo que ocurría antes de que existiera el recorte. Tirarla
+     * obligaría a volver a la galería, y cancelar un ajuste no significa
+     * querer deshacer la elección.
+     */
+    private val recorteLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val original = uriFotoSinRecortar
+        uriFotoSinRecortar = null
+        if (original == null) return@registerForActivityResult
+
+        val recortada = result.data
+            ?.getStringExtra(RecortarFotoActivity.EXTRA_RUTA_RECORTE)
+            ?.let { ruta -> Uri.fromFile(File(ruta)) }
+
+        val definitiva = recortada ?: original
+        selectedImageUri = definitiva
+        fotoPendiente = true
+        // Vista previa inmediata: la subida real ocurre al guardar, para no
+        // dejar imágenes huérfanas en Cloudinary si el usuario cancela.
+        ivAvatar.load(definitiva) { crossfade(true) }
+        showToast(getString(R.string.edit_perfil_foto_elegida))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
