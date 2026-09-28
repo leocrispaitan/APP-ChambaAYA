@@ -128,4 +128,29 @@
     <string name="lugar_sin_lugar_titulo">Register your place</string>
     <string name="lugar_sin_lugar_sub">Add your shop, workshop or site so your posts have a location.</string>
     <string name="lugar_sin_lugar_btn">Create place</string>
+
+    <!-- Modern redesign: form, card, map and success -->
+    <string name="lugar_foto_portada">Cover photo</string>
+    <string name="lugar_paso_departamento">Department</string>
+    <string name="lugar_paso_provincia">Province</string>
+    <string name="lugar_paso_distrito">District</string>
+    <string name="lugar_paso_elegir">Tap to choose</string>
+    <string name="lugar_paso_bloqueado">Complete the previous step</string>
+    <string name="lugar_btn_ver_mapa">Map</string>
+    <string name="lugar_btn_eliminar_corto">Delete</string>
+    <string name="lugar_stat_sector">Sector</string>
+    <string name="lugar_stat_distrito">District</string>
+    <string name="lugar_stat_gps">GPS</string>
+    <string name="lugar_acerca_titulo">About this place</string>
+    <string name="lugar_gps_fijado">Set</string>
+    <string name="lugar_gps_corto_sin_fijar">Not set</string>
+    <string name="lugar_sin_descripcion">The contractor hasn\'t added a description yet.</string>
+    <string name="lugar_mapa_titulo">Choose the location</string>
+    <string name="lugar_mapa_hint">Tap the map to move the pin, or use your current location.</string>
+    <string name="lugar_mapa_mi_ubicacion">My location</string>
+    <string name="lugar_mapa_confirmar">Confirm</string>
+    <string name="lugar_mapa_sin_punto">Tap the map to choose a point</string>
+    <string name="lugar_exito_titulo">Place saved!</string>
+    <string name="lugar_exito_sub">Your new place was added successfully.</string>
+    <string name="lugar_exito_btn">Done</string>
 </resources>

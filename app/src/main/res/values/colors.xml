@@ -72,4 +72,16 @@
     <color name="profile_perk_spotlight_bg">#FFF9E6</color>
     <color name="profile_perk_community_bg">#E8FBF8</color>
     <color name="profile_card_icon_tint">#1B1838</color>
+
+    <!-- Lugar / establecimiento (estilo moderno lima + tinta) -->
+    <color name="lugar_lime_bg">#CCF14F</color>
+    <color name="lugar_lime_ink">#243300</color>
+    <color name="lugar_stat_stroke">#E9EDF4</color>
+    <color name="lugar_notice_bg">#F1F5F9</color>
+    <color name="lugar_chip_bg">#F1F5F9</color>
+    <color name="lugar_chip_stroke">#E2E8F0</color>
+    <color name="lugar_dark">#111827</color>
+    <color name="lugar_success_outer">#DDF6A3</color>
+    <color name="lugar_success_inner">#B4E834</color>
+    <color name="lugar_success_check">#2E4D00</color>
 </resources>

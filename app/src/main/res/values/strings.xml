@@ -499,4 +499,29 @@
     <string name="lugar_sin_lugar_titulo">Registra tu lugar</string>
     <string name="lugar_sin_lugar_sub">Agrega tu local, taller u obra para que tus publicaciones tengan sede.</string>
     <string name="lugar_sin_lugar_btn">Crear lugar</string>
+
+    <!-- Rediseño moderno: formulario, tarjeta, mapa y éxito -->
+    <string name="lugar_foto_portada">Foto de portada</string>
+    <string name="lugar_paso_departamento">Departamento</string>
+    <string name="lugar_paso_provincia">Provincia</string>
+    <string name="lugar_paso_distrito">Distrito</string>
+    <string name="lugar_paso_elegir">Toca para elegir</string>
+    <string name="lugar_paso_bloqueado">Completa el paso anterior</string>
+    <string name="lugar_btn_ver_mapa">Mapa</string>
+    <string name="lugar_btn_eliminar_corto">Eliminar</string>
+    <string name="lugar_stat_sector">Sector</string>
+    <string name="lugar_stat_distrito">Distrito</string>
+    <string name="lugar_stat_gps">GPS</string>
+    <string name="lugar_acerca_titulo">Acerca de este lugar</string>
+    <string name="lugar_gps_fijado">Fijado</string>
+    <string name="lugar_gps_corto_sin_fijar">Sin fijar</string>
+    <string name="lugar_sin_descripcion">El contratante aún no agregó una descripción.</string>
+    <string name="lugar_mapa_titulo">Elige la ubicación</string>
+    <string name="lugar_mapa_hint">Toca el mapa para mover el pin, o usa tu ubicación actual.</string>
+    <string name="lugar_mapa_mi_ubicacion">Mi ubicación</string>
+    <string name="lugar_mapa_confirmar">Confirmar</string>
+    <string name="lugar_mapa_sin_punto">Toca el mapa para elegir un punto</string>
+    <string name="lugar_exito_titulo">¡Lugar guardado!</string>
+    <string name="lugar_exito_sub">Tu nuevo lugar se agregó correctamente.</string>
+    <string name="lugar_exito_btn">Listo</string>
 </resources>

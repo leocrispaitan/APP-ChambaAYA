@@ -88,10 +88,17 @@ class FragmentoPublicar : Fragment() {
     private lateinit var emptyLugar: View
     private lateinit var cardLugar: View
     private lateinit var ivLugarFoto: ImageView
+    private lateinit var ivLugarTipoIcono: ImageView
     private lateinit var tvLugarNombre: TextView
     private lateinit var tvLugarTipo: TextView
     private lateinit var tvLugarDireccion: TextView
     private lateinit var tvLugarFecha: TextView
+    private lateinit var tvLugarDescripcion: TextView
+    private lateinit var ivStatSectorIcono: ImageView
+    private lateinit var tvStatSectorValor: TextView
+    private lateinit var tvStatDistritoValor: TextView
+    private lateinit var tvStatGpsValor: TextView
+    private var iconosOficios: coil.ImageLoader? = null
 
     private val lugarLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -181,11 +188,19 @@ class FragmentoPublicar : Fragment() {
         emptyLugar = root.findViewById(R.id.emptyLugar)
         cardLugar = root.findViewById(R.id.cardLugar)
         ivLugarFoto = root.findViewById(R.id.ivLugarFoto)
+        ivLugarTipoIcono = root.findViewById(R.id.ivLugarTipoIcono)
         tvLugarNombre = root.findViewById(R.id.tvLugarNombre)
         tvLugarTipo = root.findViewById(R.id.tvLugarTipo)
         tvLugarDireccion = root.findViewById(R.id.tvLugarDireccion)
         tvLugarFecha = root.findViewById(R.id.tvLugarFecha)
+        tvLugarDescripcion = root.findViewById(R.id.tvLugarDescripcion)
+        ivStatSectorIcono = root.findViewById(R.id.ivStatSectorIcono)
+        tvStatSectorValor = root.findViewById(R.id.tvStatSectorValor)
+        tvStatDistritoValor = root.findViewById(R.id.tvStatDistritoValor)
+        tvStatGpsValor = root.findViewById(R.id.tvStatGpsValor)
+        iconosOficios = com.proyecto.chambaya.ui.profile.OficioIcons.nuevoImageLoader(requireContext())
         root.findViewById<View>(R.id.btnLugarEditar).setOnClickListener { abrirEditorLugar() }
+        root.findViewById<View>(R.id.btnLugarEditarTexto).setOnClickListener { abrirEditorLugar() }
         root.findViewById<View>(R.id.btnLugarEliminar).setOnClickListener { confirmarEliminarLugar() }
     }
 
@@ -254,11 +269,31 @@ class FragmentoPublicar : Fragment() {
         emptyLugar.visibility = View.GONE
         cardLugar.visibility = View.VISIBLE
         tvLugarNombre.text = lugar.name
-        val detalleTipo = buildString {
-            append(lugar.typeLabel)
-            if (lugar.sector.isNotBlank()) append(" • ${lugar.sector}")
+        // Pastilla lima: icono + etiqueta del tipo.
+        ivLugarTipoIcono.setImageResource(
+            com.proyecto.chambaya.ui.workplace.LugarIcons.local(lugar.type)
+        )
+        tvLugarTipo.text = lugar.typeLabel
+        // Tarjeta 1 · Sector con icono del catálogo de oficios (SVG) o respaldo local.
+        tvStatSectorValor.text = lugar.sector.ifBlank { "—" }
+        if (lugar.sector.isNotBlank()) {
+            com.proyecto.chambaya.ui.profile.OficioIcons.cargar(
+                ivStatSectorIcono, lugar.sector, iconosOficios
+            )
+        } else {
+            ivStatSectorIcono.setImageResource(R.drawable.ic_profile_wrench)
         }
-        tvLugarTipo.text = detalleTipo
+        // Tarjeta 2 · Distrito (o provincia como respaldo).
+        tvStatDistritoValor.text = lugar.district.ifBlank { lugar.province.ifBlank { "—" } }
+        // Tarjeta 3 · GPS fijado o no.
+        tvStatGpsValor.text = if (lugar.location.hasCoords) {
+            getString(R.string.lugar_gps_fijado)
+        } else {
+            getString(R.string.lugar_gps_corto_sin_fijar)
+        }
+        tvLugarDescripcion.text = lugar.description.ifBlank {
+            getString(R.string.lugar_sin_descripcion)
+        }
         val direccion = buildString {
             if (lugar.address.isNotBlank()) append(lugar.address)
             if (lugar.locationLabel.isNotBlank()) {

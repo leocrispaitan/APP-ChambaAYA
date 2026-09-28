@@ -4,13 +4,13 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -19,14 +19,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import coil.load
-import com.google.android.gms.location.LocationServices
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
+import com.proyecto.chambaya.data.model.OficioCatalog
 import com.proyecto.chambaya.data.model.PeruLocations
 import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.Workplace
@@ -67,13 +71,20 @@ class EditarLugarActivity : AppCompatActivity() {
     private lateinit var btnCambiarFoto: MaterialButton
     private lateinit var btnQuitarFoto: MaterialButton
     private lateinit var etNombre: EditText
-    private lateinit var inputTipo: FrameLayout
-    private lateinit var tvTipo: TextView
+    private lateinit var chipsTipo: LinearLayout
     private lateinit var etSector: EditText
+    private lateinit var chipsSector: LinearLayout
     private lateinit var etDescripcion: EditText
     private lateinit var etDireccion: EditText
-    private lateinit var inputUbicacion: FrameLayout
-    private lateinit var tvUbicacion: TextView
+    private lateinit var pasoDep: android.view.View
+    private lateinit var pasoProv: android.view.View
+    private lateinit var pasoDist: android.view.View
+    private lateinit var tvNumDep: TextView
+    private lateinit var tvNumProv: TextView
+    private lateinit var tvNumDist: TextView
+    private lateinit var tvPasoDepValor: TextView
+    private lateinit var tvPasoProvValor: TextView
+    private lateinit var tvPasoDistValor: TextView
     private lateinit var tvCoords: TextView
     private lateinit var btnGps: MaterialButton
     private lateinit var btnGuardar: MaterialButton
@@ -110,15 +121,35 @@ class EditarLugarActivity : AppCompatActivity() {
     ) { permisos ->
         val ok = permisos[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             permisos[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (ok) fijarGps() else toast(getString(R.string.lugar_gps_sin_permiso))
+        if (ok) abrirMapa() else toast(getString(R.string.lugar_gps_sin_permiso))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         BarraEstadoUtils.aplicarColor(this, Color.parseColor("#FFFFFF"))
         setContentView(R.layout.activity_editar_lugar)
+        // Baja todo el contenido por debajo de la barra de estado
+        // (hora, batería, señal): con edge-to-edge el encabezado quedaba
+        // montado sobre los iconos del sistema.
+        val raiz = findViewById<android.view.View>(R.id.rootEditarLugar)
+        ViewCompat.setOnApplyWindowInsetsListener(raiz) { v, insets ->
+            v.updatePadding(top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top)
+            insets
+        }
+        ViewCompat.requestApplyInsets(raiz)
+        supportFragmentManager.setFragmentResultListener(
+            MapaUbicacionSheet.RESULTADO_KEY, this
+        ) { _, datos ->
+            latitud = datos.getDouble(MapaUbicacionSheet.EXTRA_LAT)
+            longitud = datos.getDouble(MapaUbicacionSheet.EXTRA_LNG)
+            pintarCoords()
+            toast(getString(R.string.lugar_gps_ok))
+        }
         enlazar()
         escuchar()
+        construirChipsTipo()
+        construirChipsSector()
+        ajustarPie()
         cargar()
     }
 
@@ -128,13 +159,20 @@ class EditarLugarActivity : AppCompatActivity() {
         btnCambiarFoto = findViewById(R.id.btnCambiarFotoLugar)
         btnQuitarFoto = findViewById(R.id.btnQuitarFotoLugar)
         etNombre = findViewById(R.id.etNombreLugar)
-        inputTipo = findViewById(R.id.inputTipoLugar)
-        tvTipo = findViewById(R.id.tvTipoLugar)
+        chipsTipo = findViewById(R.id.chipsTipoLugar)
         etSector = findViewById(R.id.etSectorLugar)
+        chipsSector = findViewById(R.id.chipsSectorLugar)
         etDescripcion = findViewById(R.id.etDescripcionLugar)
         etDireccion = findViewById(R.id.etDireccionLugar)
-        inputUbicacion = findViewById(R.id.inputUbicacionLugar)
-        tvUbicacion = findViewById(R.id.tvUbicacionLugar)
+        pasoDep = findViewById(R.id.pasoDepLugar)
+        pasoProv = findViewById(R.id.pasoProvLugar)
+        pasoDist = findViewById(R.id.pasoDistLugar)
+        tvNumDep = findViewById(R.id.tvNumDepLugar)
+        tvNumProv = findViewById(R.id.tvNumProvLugar)
+        tvNumDist = findViewById(R.id.tvNumDistLugar)
+        tvPasoDepValor = findViewById(R.id.tvPasoDepValor)
+        tvPasoProvValor = findViewById(R.id.tvPasoProvValor)
+        tvPasoDistValor = findViewById(R.id.tvPasoDistValor)
         tvCoords = findViewById(R.id.tvCoordsLugar)
         btnGps = findViewById(R.id.btnGpsLugar)
         btnGuardar = findViewById(R.id.btnGuardarLugar)
@@ -144,6 +182,7 @@ class EditarLugarActivity : AppCompatActivity() {
     private fun escuchar() {
         findViewById<android.view.View>(R.id.btnCerrarLugar).setOnClickListener { finish() }
         btnCambiarFoto.setOnClickListener { abrirGaleria() }
+        findViewById<android.view.View>(R.id.badgeFotoLugar).setOnClickListener { abrirGaleria() }
         ivFoto.setOnClickListener { abrirGaleria() }
         btnQuitarFoto.setOnClickListener {
             fotoUriPendiente = null
@@ -151,9 +190,18 @@ class EditarLugarActivity : AppCompatActivity() {
             ivFoto.setImageResource(R.drawable.ic_profile_photos)
             toast(getString(R.string.lugar_foto_quitada))
         }
-        inputTipo.setOnClickListener { elegirTipo() }
-        inputUbicacion.setOnClickListener { elegirUbicacion() }
-        btnGps.setOnClickListener { pedirGps() }
+        pasoDep.setOnClickListener { elegirDepartamento() }
+        pasoProv.setOnClickListener {
+            if (depElegido.isBlank()) elegirDepartamento() else elegirProvincia()
+        }
+        pasoDist.setOnClickListener {
+            when {
+                depElegido.isBlank() -> elegirDepartamento()
+                provElegida.isBlank() -> elegirProvincia()
+                else -> elegirDistrito()
+            }
+        }
+        btnGps.setOnClickListener { pedirMapa() }
         btnGuardar.setOnClickListener { guardar() }
         btnEliminar.setOnClickListener { confirmarEliminar() }
     }
@@ -200,7 +248,7 @@ class EditarLugarActivity : AppCompatActivity() {
         tvTitulo.setText(R.string.lugar_titulo_editar)
         etNombre.setText(lugar.name)
         tipoElegido = lugar.type
-        pintarTipo()
+        pintarChipsTipo()
         etSector.setText(lugar.sector.ifBlank { sectorSugerido })
         etDescripcion.setText(lugar.description)
         etDireccion.setText(lugar.address)
@@ -219,37 +267,120 @@ class EditarLugarActivity : AppCompatActivity() {
             }
         }
         btnEliminar.visibility = android.view.View.VISIBLE
+        ajustarPie()
     }
 
-    // ── Selectores ────────────────────────────────────────────────
+    /** Sin botón eliminar, el CTA ocupa todo el ancho del pie. */
+    private fun ajustarPie() {
+        val params = btnGuardar.layoutParams as? LinearLayout.LayoutParams ?: return
+        val margen = if (btnEliminar.visibility == android.view.View.VISIBLE) {
+            (12 * resources.displayMetrics.density).toInt()
+        } else 0
+        params.marginStart = margen
+        btnGuardar.layoutParams = params
+    }
 
-    private fun elegirTipo() {
-        val opciones = WorkplaceTypes.ALL
-        val etiquetas = opciones.map { WorkplaceTypes.label(it) }.toTypedArray()
-        val actual = opciones.indexOf(tipoElegido).coerceAtLeast(0)
-        AlertDialog.Builder(this, R.style.CustomAlertDialog)
-            .setTitle(getString(R.string.lugar_label_tipo))
-            .setSingleChoiceItems(etiquetas, actual) { dialog, which ->
-                tipoElegido = opciones[which]
-                pintarTipo()
-                dialog.dismiss()
+    // ── Tipo: chips con iconos ────────────────────────────────────
+
+    /** Chips horizontales de los 8 tipos (más táctil que el diálogo). */
+    private fun construirChipsTipo() {
+        chipsTipo.removeAllViews()
+        val densidad = resources.displayMetrics.density
+        WorkplaceTypes.ALL.forEachIndexed { indice, tipo ->
+            val chip = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(
+                    (14 * densidad).toInt(), (10 * densidad).toInt(),
+                    (16 * densidad).toInt(), (10 * densidad).toInt()
+                )
+                tag = tipo
+                setOnClickListener {
+                    tipoElegido = tipo
+                    pintarChipsTipo()
+                }
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            val icono = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    (22 * densidad).toInt(), (22 * densidad).toInt()
+                )
+                setImageResource(LugarIcons.local(tipo))
+            }
+            val etiqueta = TextView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { marginStart = (8 * densidad).toInt() }
+                text = WorkplaceTypes.label(tipo)
+                textSize = 13f
+                typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+            }
+            chip.addView(icono)
+            chip.addView(etiqueta)
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            if (indice < WorkplaceTypes.ALL.size - 1) {
+                params.marginEnd = (8 * densidad).toInt()
+            }
+            chipsTipo.addView(chip, params)
+        }
+        pintarChipsTipo()
     }
 
-    private fun pintarTipo() {
-        tvTipo.text = WorkplaceTypes.label(tipoElegido)
-        tvTipo.setTextColor(Color.parseColor("#111827"))
-    }
-
-    private fun elegirUbicacion() {
-        when {
-            depElegido.isBlank() -> elegirDepartamento()
-            provElegida.isBlank() -> elegirProvincia()
-            else -> elegirDistrito()
+    private fun pintarChipsTipo() {
+        for (i in 0 until chipsTipo.childCount) {
+            val chip = chipsTipo.getChildAt(i) as LinearLayout
+            val activo = chip.tag == tipoElegido
+            chip.setBackgroundResource(
+                if (activo) R.drawable.bg_lugar_chip_tipo_activo
+                else R.drawable.bg_lugar_chip_tipo
+            )
+            val icono = chip.getChildAt(0) as ImageView
+            val etiqueta = chip.getChildAt(1) as TextView
+            val color = if (activo) Color.WHITE else Color.parseColor("#0F172A")
+            icono.imageTintList = ColorStateList.valueOf(
+                if (activo) Color.WHITE else Color.parseColor("#5B67F7")
+            )
+            etiqueta.setTextColor(color)
         }
     }
+
+    // ── Sector: sugerencias del catálogo ──────────────────────────
+
+    /**
+     * Chips con las categorías de `api_oficios.json`: un toque rellena el
+     * campo, que sigue siendo editable para rubros fuera del catálogo.
+     */
+    private fun construirChipsSector() {
+        chipsSector.removeAllViews()
+        val densidad = resources.displayMetrics.density
+        OficioCatalog.nombres(this).take(8).forEachIndexed { indice, categoria ->
+            val chip = TextView(this).apply {
+                text = categoria
+                textSize = 13f
+                setTextColor(Color.parseColor("#334155"))
+                setBackgroundResource(R.drawable.bg_lugar_sector_chip)
+                setPadding(
+                    (14 * densidad).toInt(), (9 * densidad).toInt(),
+                    (14 * densidad).toInt(), (9 * densidad).toInt()
+                )
+                setOnClickListener {
+                    etSector.setText(categoria)
+                    etSector.setSelection(categoria.length)
+                }
+            }
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            if (indice < 7) params.marginEnd = (8 * densidad).toInt()
+            chipsSector.addView(chip, params)
+        }
+    }
+
+    // ── Ubicación en 3 pasos ──────────────────────────────────────
 
     private fun elegirDepartamento() {
         val opciones = PeruLocations.departamentos + PeruLocations.OTRO
@@ -353,14 +484,59 @@ class EditarLugarActivity : AppCompatActivity() {
             .show()
     }
 
+    /**
+     * Pinta los 3 pasos en cascada: cada nivel se desbloquea al completar el
+     * anterior (1 departamento → 2 provincia → 3 distrito).
+     */
     private fun pintarUbicacion() {
-        val etiqueta = PeruLocations.etiqueta(distElegido, provElegida, depElegido)
-        if (etiqueta.isNotBlank()) {
-            tvUbicacion.text = etiqueta
-            tvUbicacion.setTextColor(Color.parseColor("#111827"))
+        pintarPaso(
+            numero = tvNumDep, valor = tvPasoDepValor, contenedor = pasoDep,
+            texto = depElegido, desbloqueado = true
+        )
+        pintarPaso(
+            numero = tvNumProv, valor = tvPasoProvValor, contenedor = pasoProv,
+            texto = provElegida, desbloqueado = depElegido.isNotBlank()
+        )
+        pintarPaso(
+            numero = tvNumDist, valor = tvPasoDistValor, contenedor = pasoDist,
+            texto = distElegido, desbloqueado = provElegida.isNotBlank()
+        )
+    }
+
+    private fun pintarPaso(
+        numero: TextView,
+        valor: TextView,
+        contenedor: android.view.View,
+        texto: String,
+        desbloqueado: Boolean
+    ) {
+        contenedor.alpha = if (desbloqueado) 1f else 0.45f
+        if (texto.isNotBlank()) {
+            valor.text = texto
+            valor.setTextColor(Color.parseColor("#111827"))
+            numero.text = "✓"
+            numero.setBackgroundResource(R.drawable.bg_step_circle_completed)
+            numero.setTextColor(Color.WHITE)
+        } else if (desbloqueado) {
+            valor.setText(R.string.lugar_paso_elegir)
+            valor.setTextColor(Color.parseColor("#9CA3AF"))
+            numero.text = when (numero) {
+                tvNumDep -> "1"
+                tvNumProv -> "2"
+                else -> "3"
+            }
+            numero.setBackgroundResource(R.drawable.bg_step_circle_active)
+            numero.setTextColor(Color.WHITE)
         } else {
-            tvUbicacion.setText(R.string.lugar_hint_ubicacion)
-            tvUbicacion.setTextColor(Color.parseColor("#9CA3AF"))
+            valor.setText(R.string.lugar_paso_bloqueado)
+            valor.setTextColor(Color.parseColor("#CBD5E1"))
+            numero.text = when (numero) {
+                tvNumDep -> "1"
+                tvNumProv -> "2"
+                else -> "3"
+            }
+            numero.setBackgroundResource(R.drawable.bg_step_circle_inactive)
+            numero.setTextColor(Color.parseColor("#64748B"))
         }
     }
 
@@ -382,7 +558,10 @@ class EditarLugarActivity : AppCompatActivity() {
         pickerLauncher.launch(intent)
     }
 
-    private fun pedirGps() {
+    // ── Mapa en bottom sheet ────────────────────────────────────
+
+    /** Abre el mapa: con permiso va directo, sin permiso lo pide primero. */
+    private fun pedirMapa() {
         val fino = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
@@ -390,7 +569,7 @@ class EditarLugarActivity : AppCompatActivity() {
             this, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         if (fino || grueso) {
-            fijarGps()
+            abrirMapa()
         } else {
             permisoGpsLauncher.launch(
                 arrayOf(
@@ -401,36 +580,10 @@ class EditarLugarActivity : AppCompatActivity() {
         }
     }
 
-    private fun fijarGps() {
-        try {
-            val cliente = LocationServices.getFusedLocationProviderClient(this)
-            val fino = ContextCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-            val grueso = ContextCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!fino && !grueso) {
-                toast(getString(R.string.lugar_gps_sin_permiso))
-                return
-            }
-            cliente.lastLocation
-                .addOnSuccessListener { loc ->
-                    if (loc != null) {
-                        latitud = loc.latitude
-                        longitud = loc.longitude
-                        pintarCoords()
-                        toast(getString(R.string.lugar_gps_ok))
-                    } else {
-                        toast(getString(R.string.lugar_gps_no_disponible))
-                    }
-                }
-                .addOnFailureListener {
-                    toast(getString(R.string.lugar_gps_no_disponible))
-                }
-        } catch (e: SecurityException) {
-            toast(getString(R.string.lugar_gps_sin_permiso))
-        }
+    private fun abrirMapa() {
+        if (isFinishing || isDestroyed) return
+        MapaUbicacionSheet.nueva(latitud, longitud)
+            .show(supportFragmentManager, TAG_MAPA)
     }
 
     // ── Guardado ──────────────────────────────────────────────────
@@ -518,15 +671,33 @@ class EditarLugarActivity : AppCompatActivity() {
                         val perfil = profileRepository.loadProfile(actual).getOrNull()
                         if (perfil != null) ProfileCache.perfil = perfil
                     }
-                    toast(getString(R.string.lugar_guardado))
-                    setResult(Activity.RESULT_OK)
-                    finish()
+                    bloquear(false)
+                    mostrarExito()
                 }
                 .onFailure { e ->
                     bloquear(false)
                     toast(getString(R.string.lugar_error_guardar, motivoFirestore(e)))
                 }
         }
+    }
+
+    /**
+     * Hoja de éxito (estilo "Successful"): insignia, mensaje y Done.
+     * Al pulsar Done se vuelve a Publicar, que recarga el lugar al volver.
+     */
+    private fun mostrarExito() {
+        if (isFinishing || isDestroyed) return
+        val sheet = BottomSheetDialog(this)
+        sheet.setContentView(R.layout.bottom_sheet_lugar_guardado)
+        sheet.setCancelable(false)
+        (sheet.findViewById<android.view.View>(R.id.sheetExitoRoot)?.parent as? android.view.View)
+            ?.setBackgroundColor(Color.TRANSPARENT)
+        sheet.findViewById<android.view.View>(R.id.btnExitoDone)?.setOnClickListener {
+            sheet.dismiss()
+            setResult(Activity.RESULT_OK)
+            finish()
+        }
+        sheet.show()
     }
 
     private fun confirmarEliminar() {
@@ -579,5 +750,7 @@ class EditarLugarActivity : AppCompatActivity() {
 
         /** Para `startActivityForResult`: recargar el lugar al volver. */
         const val REQUEST_LUGAR = 7401
+
+        private const val TAG_MAPA = "mapa_ubicacion"
     }
 }

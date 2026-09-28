@@ -1,357 +1,663 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- FASE 4 — Crear / editar lugar del contratante.
-     Estilo de ActivarContratante: fondo claro, tarjetas blancas, inputs
-     bg_edit_profile_input y botón principal #5B67F7. -->
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- FASE 4 — Crear / editar lugar (rediseño moderno: héroe de foto, chips de
+     tipo, sugerencias de sector, selector de ubicación en 3 pasos, mapa en
+     bottom sheet y CTA fijo al pie). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootEditarLugar"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8F9FB"
-    android:fillViewport="true">
+    android:orientation="vertical"
+    android:paddingTop="28dp">
 
+    <!-- Cabecera -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:paddingBottom="32dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="8dp">
 
-        <!-- Cabecera -->
+        <FrameLayout
+            android:id="@+id/btnCerrarLugar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_circle_white_shadow"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="Volver"
+                android:src="@drawable/ic_profile_arrow_back"
+                app:tint="#111827" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTituloLugar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lugar_titulo_crear"
+                android:textColor="#0F172A"
+                android:textSize="21sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/lugar_subtitulo"
+                android:textColor="#64748B"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="16dp">
 
-            <FrameLayout
-                android:id="@+id/btnCerrarLugar"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="Volver"
-                    android:src="@drawable/ic_profile_arrow_back"
-                    app:tint="#111827" />
-            </FrameLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tvTituloLugar"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/lugar_titulo_crear"
-                    android:textColor="#0F172A"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/lugar_subtitulo"
-                    android:textColor="#64748B"
-                    android:textSize="13sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Foto -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
+            <!-- Foto héroe -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/ivFotoLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="170dp"
-                    android:contentDescription="@string/lugar_foto_desc"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_profile_photos"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.RoundedCorner12" />
+                android:layout_marginTop="6dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnCambiarFotoLugar"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        android:text="@string/lugar_btn_cambiar_foto"
-                        android:textAllCaps="false"
-                        app:backgroundTint="#5B67F7"
-                        app:cornerRadius="12dp" />
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="168dp">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnQuitarFotoLugar"
-                        style="@style/Widget.Material3.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:text="@string/lugar_btn_quitar_foto"
-                        android:textAllCaps="false"
-                        android:textColor="#DC2626"
-                        app:cornerRadius="12dp"
-                        app:strokeColor="#FCA5A5" />
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/ivFotoLugar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="@string/lugar_foto_desc"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_profile_photos"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearance.RoundedCorner12" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:layout_gravity="bottom"
+                            android:background="@drawable/bg_gradient_black_bottom" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|start"
+                            android:layout_marginStart="12dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="@drawable/bg_badge_white"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingStart="12dp"
+                            android:paddingTop="6dp"
+                            android:paddingEnd="12dp"
+                            android:paddingBottom="6dp"
+                            android:text="@string/lugar_foto_portada"
+                            android:textColor="#0F172A"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <FrameLayout
+                            android:id="@+id/badgeFotoLugar"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:layout_gravity="bottom|end"
+                            android:layout_marginEnd="12dp"
+                            android:layout_marginBottom="10dp"
+                            android:background="@drawable/bg_lugar_pill_lima"
+                            android:clickable="true"
+                            android:elevation="4dp"
+                            android:focusable="true">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@string/lugar_btn_cambiar_foto"
+                                android:src="@drawable/ic_chat_camera"
+                                app:tint="@color/lugar_lime_ink" />
+                        </FrameLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCambiarFotoLugar"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:text="@string/lugar_btn_cambiar_foto"
+                            android:textAllCaps="false"
+                            app:cornerRadius="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnQuitarFotoLugar"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="44dp"
+                            android:text="@string/lugar_btn_quitar_foto"
+                            android:textAllCaps="false"
+                            android:textColor="#DC2626" />
+                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+            </androidx.cardview.widget.CardView>
 
-        <!-- Datos -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
+            <!-- Nombre -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lugar_label_nombre"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/lugar_label_nombre"
-                    android:textColor="#1F2937"
-                    android:textStyle="bold" />
+            <EditText
+                android:id="@+id/etNombreLugar"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_lugar_stat_card"
+                android:hint="@string/lugar_hint_nombre"
+                android:inputType="textCapWords"
+                android:maxLength="120"
+                android:paddingHorizontal="16dp"
+                android:textColor="#111827"
+                android:textColorHint="#9CA3AF"
+                android:textSize="15sp" />
 
-                <EditText
-                    android:id="@+id/etNombreLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="7dp"
-                    android:background="@drawable/bg_edit_profile_input"
-                    android:hint="@string/lugar_hint_nombre"
-                    android:inputType="textCapWords"
-                    android:maxLength="120"
-                    android:paddingHorizontal="16dp"
-                    android:textColor="#111827"
-                    android:textSize="15sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/lugar_label_tipo"
-                    android:textColor="#1F2937"
-                    android:textStyle="bold" />
-
-                <FrameLayout
-                    android:id="@+id/inputTipoLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="7dp"
-                    android:background="@drawable/bg_edit_profile_input"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingHorizontal="16dp">
-
-                    <TextView
-                        android:id="@+id/tvTipoLugar"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:text="@string/lugar_hint_tipo"
-                        android:textColor="#9CA3AF"
-                        android:textSize="15sp" />
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center_vertical|end"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_home_chevron_down"
-                        app:tint="#64748B" />
-                </FrameLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/lugar_label_sector"
-                    android:textColor="#1F2937"
-                    android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/etSectorLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="7dp"
-                    android:background="@drawable/bg_edit_profile_input"
-                    android:hint="@string/lugar_hint_sector"
-                    android:inputType="textCapWords"
-                    android:maxLength="120"
-                    android:paddingHorizontal="16dp"
-                    android:textColor="#111827"
-                    android:textSize="15sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/lugar_label_descripcion"
-                    android:textColor="#1F2937"
-                    android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/etDescripcionLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="110dp"
-                    android:layout_marginTop="7dp"
-                    android:background="@drawable/bg_edit_profile_input"
-                    android:gravity="top"
-                    android:hint="@string/lugar_hint_descripcion"
-                    android:inputType="textMultiLine|textCapSentences"
-                    android:maxLength="1000"
-                    android:padding="16dp"
-                    android:textColor="#111827"
-                    android:textSize="15sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/lugar_label_direccion"
-                    android:textColor="#1F2937"
-                    android:textStyle="bold" />
-
-                <EditText
-                    android:id="@+id/etDireccionLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="7dp"
-                    android:background="@drawable/bg_edit_profile_input"
-                    android:hint="@string/lugar_hint_direccion"
-                    android:inputType="textPostalAddress"
-                    android:maxLength="200"
-                    android:paddingHorizontal="16dp"
-                    android:textColor="#111827"
-                    android:textSize="15sp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Ubicación -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="0dp">
-
-            <LinearLayout
+            <!-- Tipo: chips con iconos -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lugar_label_tipo"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
-                <TextView
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/chipsTipoLugar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <!-- Sector + sugerencias del catálogo -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lugar_label_sector"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etSectorLugar"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_lugar_stat_card"
+                android:hint="@string/lugar_hint_sector"
+                android:inputType="textCapWords"
+                android:maxLength="120"
+                android:paddingHorizontal="16dp"
+                android:textColor="#111827"
+                android:textColorHint="#9CA3AF"
+                android:textSize="15sp" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/chipsSectorLugar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <!-- Descripción -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lugar_label_descripcion"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etDescripcionLugar"
+                android:layout_width="match_parent"
+                android:layout_height="110dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_lugar_stat_card"
+                android:gravity="top"
+                android:hint="@string/lugar_hint_descripcion"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLength="1000"
+                android:padding="16dp"
+                android:textColor="#111827"
+                android:textColorHint="#9CA3AF"
+                android:textSize="15sp" />
+
+            <!-- Dirección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lugar_label_direccion"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etDireccionLugar"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_lugar_stat_card"
+                android:hint="@string/lugar_hint_direccion"
+                android:inputType="textPostalAddress"
+                android:maxLength="200"
+                android:paddingHorizontal="16dp"
+                android:textColor="#111827"
+                android:textColorHint="#9CA3AF"
+                android:textSize="15sp" />
+
+            <!-- Ubicación en 3 pasos -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/lugar_label_ubicacion"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/lugar_label_ubicacion"
-                    android:textColor="#1F2937"
-                    android:textStyle="bold" />
+                    android:orientation="vertical"
+                    android:padding="8dp">
 
-                <FrameLayout
-                    android:id="@+id/inputUbicacionLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="7dp"
-                    android:background="@drawable/bg_edit_profile_input"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:paddingHorizontal="16dp">
-
-                    <TextView
-                        android:id="@+id/tvUbicacionLugar"
-                        android:layout_width="wrap_content"
+                    <FrameLayout
+                        android:id="@+id/pasoDepLugar"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:text="@string/lugar_hint_ubicacion"
-                        android:textColor="#9CA3AF"
-                        android:textSize="15sp" />
-                </FrameLayout>
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="10dp">
 
-                <TextView
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvNumDepLugar"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:background="@drawable/bg_step_circle_active"
+                                android:fontFamily="sans-serif-medium"
+                                android:gravity="center"
+                                android:text="1"
+                                android:textColor="@color/white"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/lugar_paso_departamento"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvPasoDepValor"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/lugar_paso_elegir"
+                                    android:textColor="#9CA3AF"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_chevron_right"
+                                app:tint="#94A3B8" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="@color/profile_divider" />
+
+                    <FrameLayout
+                        android:id="@+id/pasoProvLugar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="10dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvNumProvLugar"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:background="@drawable/bg_step_circle_inactive"
+                                android:fontFamily="sans-serif-medium"
+                                android:gravity="center"
+                                android:text="2"
+                                android:textColor="#64748B"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/lugar_paso_provincia"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvPasoProvValor"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/lugar_paso_elegir"
+                                    android:textColor="#9CA3AF"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_chevron_right"
+                                app:tint="#94A3B8" />
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginHorizontal="12dp"
+                        android:background="@color/profile_divider" />
+
+                    <FrameLayout
+                        android:id="@+id/pasoDistLugar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="10dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvNumDistLugar"
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:background="@drawable/bg_step_circle_inactive"
+                                android:fontFamily="sans-serif-medium"
+                                android:gravity="center"
+                                android:text="3"
+                                android:textColor="#64748B"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/lugar_paso_distrito"
+                                    android:textColor="#0F172A"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvPasoDistValor"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="@string/lugar_paso_elegir"
+                                    android:textColor="#9CA3AF"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_chevron_right"
+                                app:tint="#94A3B8" />
+                        </LinearLayout>
+                    </FrameLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- GPS con mapa -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="@string/lugar_label_gps"
-                    android:textColor="#1F2937"
-                    android:textStyle="bold" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/tvCoordsLugar"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/lugar_gps_sin_fijar"
-                    android:textColor="#64748B"
-                    android:textSize="13sp" />
+                    <FrameLayout
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:background="@drawable/bg_lugar_notice">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnGpsLugar"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/lugar_btn_usar_gps"
-                    android:textAllCaps="false"
-                    app:cornerRadius="12dp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_map_main_pin" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/lugar_label_gps"
+                            android:textColor="#0F172A"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvCoordsLugar"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/lugar_gps_sin_fijar"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGpsLugar"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:text="@string/lugar_btn_ver_mapa"
+                        android:textAllCaps="false"
+                        app:backgroundTint="@color/lugar_dark"
+                        app:cornerRadius="12dp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- CTA fijo al pie -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="20dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEliminarLugar"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:minWidth="0dp"
+            android:text="@string/lugar_btn_eliminar_corto"
+            android:textAllCaps="false"
+            android:textColor="#DC2626"
+            android:visibility="gone"
+            app:cornerRadius="16dp"
+            app:strokeColor="#FCA5A5" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGuardarLugar"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="56dp"
-            android:layout_marginTop="22dp"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
             android:text="@string/lugar_btn_guardar"
             android:textAllCaps="false"
             android:textSize="16sp"
             android:textStyle="bold"
             app:backgroundTint="#5B67F7"
             app:cornerRadius="16dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEliminarLugar"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="12dp"
-            android:text="@string/lugar_btn_eliminar"
-            android:textAllCaps="false"
-            android:textColor="#DC2626"
-            android:visibility="gone"
-            app:cornerRadius="16dp"
-            app:strokeColor="#FCA5A5" />
     </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</LinearLayout>

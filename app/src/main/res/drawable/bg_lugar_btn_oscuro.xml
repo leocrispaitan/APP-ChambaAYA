@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botón oscuro premium (estilo "Done"/"Book Schedule" de referencia). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/lugar_dark" />
+    <corners android:radius="16dp" />
+</shape>
