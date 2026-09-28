@@ -13,6 +13,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.proyecto.chambaya.BarraEstadoUtils
@@ -59,6 +62,15 @@ class FragmentoPublicar : Fragment() {
 
         barraTabs = view.findViewById(R.id.barraTabs)
         indicador = view.findViewById(R.id.indicadorTab)
+        // Baja la barra de pestañas por debajo de la barra de estado
+        // (batería, señal, wifi). Sin esto, con edge-to-edge los iconos
+        // quedan montados sobre el sistema, como se veía en el reporte.
+        ViewCompat.setOnApplyWindowInsetsListener(barraTabs) { v, insets ->
+            val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            v.updatePadding(top = statusBar.top)
+            insets
+        }
+        ViewCompat.requestApplyInsets(barraTabs)
         tabs = listOf(
             view.findViewById(R.id.tabPublicar),
             view.findViewById(R.id.tabPublicaciones),

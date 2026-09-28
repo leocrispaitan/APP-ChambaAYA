@@ -3,23 +3,29 @@
      de pestañas de solo iconos, indicador animado y cambio por toque o deslizando. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootPublicar"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
     android:orientation="vertical"
     tools:context=".ui.publish.FragmentoPublicar">
 
-    <!-- Barra de pestañas -->
+    <!-- Barra de pestañas. El padding superior se ajusta en código con el
+         alto real de la barra de estado (WindowInsets), para que los iconos
+         nunca queden debajo de la batería/señal/wifi. El 28dp es solo
+         fallback para la vista previa. -->
     <LinearLayout
         android:id="@+id/barraTabs"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:orientation="horizontal"
+        android:paddingTop="28dp">
 
         <FrameLayout
             android:id="@+id/tabPublicar"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
             android:contentDescription="@string/publicar_tab_publicar"
@@ -38,7 +44,7 @@
         <FrameLayout
             android:id="@+id/tabPublicaciones"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
             android:contentDescription="@string/publicar_tab_publicaciones"
@@ -57,7 +63,7 @@
         <FrameLayout
             android:id="@+id/tabSolicitudes"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
             android:contentDescription="@string/publicar_tab_solicitudes"
