@@ -775,6 +775,7 @@ Permitir al contratante:
 - distrito;
 - ubicación;
 - fotografía
+- fecha y hora de publicacion - automatico sin escribir manuealmente
 
 La fotografía debe subirse a Cloudinary (unsigned upload preset).
 

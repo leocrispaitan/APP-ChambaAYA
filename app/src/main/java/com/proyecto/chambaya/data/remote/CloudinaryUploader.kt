@@ -106,20 +106,53 @@ class CloudinaryUploader(
             if (uid.isBlank()) {
                 return@withContext PhotoUploadResult.Rejected("No se pudo identificar al usuario.")
             }
-
-            val bytes = leerBitmapComprimido(context, uri)
-                ?: return@withContext PhotoUploadResult.Rejected("No se pudo leer la imagen seleccionada.")
-
-            val folder = carpetaDe(uid)
-            val boundary = "ChambAYA${UUID.randomUUID().toString().replace("-", "")}"
-            val cuerpo = multipart(boundary, uploadPreset, folder, bytes)
-
-            when (val http = post(boundary, cuerpo)) {
-                is HttpCall.Failure -> PhotoUploadResult.NetworkError(http.message)
-                is HttpCall.HttpError -> PhotoUploadResult.Rejected(explicarError(http.code, cloudName, uploadPreset))
-                is HttpCall.Body -> parse(http.json)
-            }
+            subir(context, carpetaDePerfil(uid), uri, "profile.jpg")
         }
+
+    /**
+     * FASE 4 — Sube [uri] como foto del lugar [workplaceId] del usuario [uid].
+     *
+     * Carpeta: `chambaya/fotos-lugares/{uid}/{workplaceId}/`. Vive bajo el uid
+     * para que `isOwnLugarPhoto` en `firestore.rules` pueda comprobar que nadie
+     * guarda la foto de otro. La foto es OPCIONAL en el lugar: si no hay foto,
+     * simplemente no se llama a esta función y Firestore guarda cadenas vacías.
+     */
+    suspend fun uploadWorkplacePhoto(
+        context: Context,
+        uid: String,
+        workplaceId: String,
+        uri: Uri
+    ): PhotoUploadResult = withContext(Dispatchers.IO) {
+        if (uid.isBlank() || workplaceId.isBlank()) {
+            return@withContext PhotoUploadResult.Rejected("No se pudo identificar el lugar.")
+        }
+        subir(context, carpetaDeLugar(uid, workplaceId), uri, "lugar.jpg")
+    }
+
+    /**
+     * Núcleo común de subida: comprime, arma el multipart y publica.
+     *
+     * [uploadProfilePhoto] y [uploadWorkplacePhoto] solo deciden la carpeta;
+     * el HTTP y el parseo son los mismos para no duplicar lógica.
+     */
+    private suspend fun subir(
+        context: Context,
+        folder: String,
+        uri: Uri,
+        nombreArchivo: String
+    ): PhotoUploadResult {
+        val bytes = leerBitmapComprimido(context, uri)
+            ?: return PhotoUploadResult.Rejected("No se pudo leer la imagen seleccionada.")
+
+        val boundary = "ChambAYA${UUID.randomUUID().toString().replace("-", "")}"
+        val cuerpo = multipart(boundary, uploadPreset, folder, bytes, nombreArchivo)
+
+        return when (val http = post(boundary, cuerpo)) {
+            is HttpCall.Failure -> PhotoUploadResult.NetworkError(http.message)
+            is HttpCall.HttpError -> PhotoUploadResult.Rejected(explicarError(http.code, cloudName, uploadPreset))
+            is HttpCall.Body -> parse(http.json)
+        }
+    }
 
     /**
      * Traduce un código HTTP de Cloudinary a algo accionable.
@@ -189,7 +222,8 @@ class CloudinaryUploader(
         boundary: String,
         preset: String,
         folder: String,
-        bytes: ByteArray
+        bytes: ByteArray,
+        nombreArchivo: String = "profile.jpg"
     ): ByteArray {
         val salida = ByteArrayOutputStream()
         DataOutputStream(salida).use { out ->
@@ -204,7 +238,7 @@ class CloudinaryUploader(
 
             out.writeBytes("--$boundary\r\n")
             out.writeBytes(
-                "Content-Disposition: form-data; name=\"file\"; filename=\"profile.jpg\"\r\n"
+                "Content-Disposition: form-data; name=\"file\"; filename=\"$nombreArchivo\"\r\n"
             )
             out.writeBytes("Content-Type: image/jpeg\r\n\r\n")
             out.write(bytes)
@@ -398,5 +432,16 @@ class CloudinaryUploader(
          */
         fun carpetaDePerfil(uid: String): String =
             "${ModuloImagen.PERFILES.raiz}/$uid/profile"
+
+        /**
+         * FASE 4 — Carpeta de la foto del lugar: `chambaya/fotos-lugares/{uid}/{workplaceId}`.
+         *
+         * Un nivel por lugar (y no uno solo por usuario) para que, si mañana un
+         * contratante tiene varios locales, las fotos no se mezclen. La regla
+         * `isOwnLugarPhoto` en `firestore.rules` exige este prefijo con el uid
+         * del dueño.
+         */
+        fun carpetaDeLugar(uid: String, workplaceId: String): String =
+            "${ModuloImagen.LUGARES.raiz}/$uid/$workplaceId"
     }
 }

@@ -291,6 +291,10 @@ service cloud.firestore {
         )
         && employer.get('identityName', '') is string
         && employer.get('identityName', '').size() >= 3
+        // FASE 4 — enlace al lugar principal. Nulo = aún sin lugar.
+        && (employer.get('workplaceId', null) == null
+          || (employer.get('workplaceId', '') is string
+            && employer.get('workplaceId', '').size() <= 80))
         && employer.get('publishedCount', 0) is number
         && employer.get('hiredCount', 0) is number
         && employer.get('ratingAverage', 0.0) is number
@@ -375,6 +379,95 @@ service cloud.firestore {
             && request.resource.data.get('employer', '').get('enabled', false) == true
           )
         );
+    }
+
+    // =============================================================
+    //  FASE 4 — Lugar / establecimiento (workplaces)
+    // =============================================================
+    //
+    // Un contratante tiene UN lugar principal enlazado en
+    // `users/{uid}.employer.workplaceId` (la Fase 5 lo usa como sede).
+    // La foto es opcional; cuando hay, debe venir del módulo
+    // `chambaya/fotos-lugares/{ownerUid}/` del propio dueño, igual que el
+    // avatar exige `chambaya/fotos-perfil/{uid}/`.
+
+    function isValidWorkplaceType(value) {
+      return value is string && value in [
+        'VIVIENDA', 'LOCAL_COMERCIAL', 'EMPRESA', 'TALLER',
+        'RESTAURANTE', 'OBRA', 'CAMPO', 'OTRO'
+      ];
+    }
+
+    function isValidWorkplaceLocation(loc) {
+      return loc is map
+        && (loc.get('latitude', null) == null || loc.get('latitude', 0) is number)
+        && (loc.get('longitude', null) == null || loc.get('longitude', 0) is number)
+        && (loc.get('latitude', null) == null || loc.get('longitude', null) == null
+          || (loc.get('latitude', 0) >= -90 && loc.get('latitude', 0) <= 90
+            && loc.get('longitude', 0) >= -180 && loc.get('longitude', 0) <= 180));
+    }
+
+    // Foto del lugar: vacía (lugar sin foto, válido) o URL de Cloudinary del
+    // propio dueño con su publicId. El segmento `v123/` de versión se admite,
+    // igual que en `isOwnCloudinaryPhoto`.
+    function isOwnLugarPhoto(ownerUid) {
+      return request.resource.data.get('photoUrl', '') is string
+        && request.resource.data.get('photoUrl', '').size() > 0
+        && request.resource.data.get('photoPublicId', '') is string
+        && request.resource.data.get('photoPublicId', '').size() > 0
+        && request.resource.data.get('photoUrl', '').matches(
+             '^https://res\\.cloudinary\\.com/[^/]+/image/upload/(v[0-9]+/)?chambaya/fotos-lugares/' + ownerUid + '/[^/]+/[^/]+$');
+    }
+
+    function lugarPhotoOk(ownerUid) {
+      let url = request.resource.data.get('photoUrl', '');
+      let pid = request.resource.data.get('photoPublicId', '');
+      return (url == '' && pid == '')
+        || isOwnLugarPhoto(ownerUid);
+    }
+
+    // Campos editables comunes a crear y actualizar.
+    function hasValidWorkplaceFields(ownerUid) {
+      let d = request.resource.data;
+      return d.get('name', '') is string
+        && d.get('name', '').size() >= 3
+        && d.get('name', '').size() <= 120
+        && isValidWorkplaceType(d.get('type', ''))
+        && d.get('sector', '') is string
+        && d.get('sector', '').size() <= 120
+        && d.get('description', '') is string
+        && d.get('description', '').size() <= 1000
+        && d.get('address', '') is string
+        && d.get('address', '').size() <= 200
+        && d.get('district', '') is string
+        && d.get('district', '').size() <= 80
+        && d.get('province', '') is string
+        && d.get('province', '').size() <= 80
+        && d.get('department', '') is string
+        && d.get('department', '').size() <= 80
+        && isValidWorkplaceLocation(d.get('location', {}))
+        && d.get('photoPath', '') is string
+        && lugarPhotoOk(ownerUid);
+    }
+
+    function isValidWorkplaceCreate(workplaceId) {
+      let d = request.resource.data;
+      return d.get('workplaceId', '') == workplaceId
+        && d.get('ownerUid', '') == request.auth.uid
+        && hasValidWorkplaceFields(d.get('ownerUid', ''))
+        // Nadie se autoverifica: nace en false y solo la plataforma lo cambia.
+        && d.get('verified', true) == false
+        && d.get('createdAt', null) != null
+        && d.get('updatedAt', null) != null;
+    }
+
+    function isValidWorkplaceUpdate() {
+      let d = request.resource.data;
+      return d.get('workplaceId', '') == resource.data.get('workplaceId', '')
+        && d.get('ownerUid', '') == resource.data.get('ownerUid', '')
+        && hasValidWorkplaceFields(resource.data.get('ownerUid', ''))
+        && d.get('verified', false) == resource.data.get('verified', false)
+        && d.get('createdAt', null) == resource.data.get('createdAt', null);
     }
 
     // --- Reputación: intocable para el usuario -
@@ -554,6 +647,30 @@ service cloud.firestore {
       // Al cambiar o borrar el perfil, el @usuario viejo queda libre.
       allow delete: if request.auth != null
         && resource.data.uid == request.auth.uid;
+    }
+
+    // =============================================================
+    //  workplaces/{workplaceId} — FASE 4 Lugar / establecimiento
+    // =============================================================
+    //
+    // Lectura para autenticados (la Fase 5-6 muestra la sede en publicaciones
+    // y búsquedas cercanas); escritura solo del dueño con campos validados.
+    match /workplaces/{workplaceId} {
+      allow get: if request.auth != null;
+
+      // Sin listado masivo: la Fase 6 filtra por dueño o cercanía con
+      // consultas acotadas, no barriendo la colección.
+      allow list: if request.auth != null;
+
+      allow create: if request.auth != null
+        && isValidWorkplaceCreate(workplaceId);
+
+      allow update: if request.auth != null
+        && resource.data.get('ownerUid', '') == request.auth.uid
+        && isValidWorkplaceUpdate();
+
+      allow delete: if request.auth != null
+        && resource.data.get('ownerUid', '') == request.auth.uid;
     }
   }
 }

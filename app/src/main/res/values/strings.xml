@@ -450,4 +450,53 @@
     <string name="settings_campo_documento">Documento: %1$s</string>
     <string name="settings_campo_registro">Registrado a nombre de %1$s</string>
     <string name="settings_sesion_cerrada">Sesión cerrada</string>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FASE 4 — Lugar / establecimiento del contratante
+    ════════════════════════════════════════════════════════════ -->
+    <string name="lugar_titulo_crear">Crear mi lugar</string>
+    <string name="lugar_titulo_editar">Editar mi lugar</string>
+    <string name="lugar_subtitulo">Se usará como sede en tus publicaciones (Fase 5).</string>
+    <string name="lugar_foto_desc">Foto del lugar</string>
+    <string name="lugar_btn_cambiar_foto">Cambiar foto</string>
+    <string name="lugar_btn_quitar_foto">Quitar</string>
+    <string name="lugar_label_nombre">Nombre del lugar</string>
+    <string name="lugar_hint_nombre">Ej: Ferretería El Sol</string>
+    <string name="lugar_label_tipo">Tipo de lugar</string>
+    <string name="lugar_hint_tipo">Elige el tipo</string>
+    <string name="lugar_label_sector">Sector / rubro</string>
+    <string name="lugar_hint_sector">Ej: Ferretería, Restaurante, Taller…</string>
+    <string name="lugar_label_descripcion">Descripción</string>
+    <string name="lugar_hint_descripcion">Cuenta qué ofrecen en este lugar (opcional)</string>
+    <string name="lugar_label_direccion">Dirección</string>
+    <string name="lugar_hint_direccion">Ej: Jr. Libertad 123</string>
+    <string name="lugar_label_ubicacion">Distrito / provincia / departamento</string>
+    <string name="lugar_hint_ubicacion">Selecciona tu ubicación</string>
+    <string name="lugar_label_gps">Ubicación GPS (opcional)</string>
+    <string name="lugar_gps_sin_fijar">Sin fijar: se usará solo tu dirección escrita.</string>
+    <string name="lugar_btn_usar_gps">Usar mi ubicación actual</string>
+    <string name="lugar_btn_guardar">Guardar lugar</string>
+    <string name="lugar_btn_guardando">Guardando…</string>
+    <string name="lugar_btn_eliminar">Eliminar lugar</string>
+    <string name="lugar_eliminar_titulo">Eliminar lugar</string>
+    <string name="lugar_eliminar_mensaje">¿Eliminar “%1$s”? Tus futuras publicaciones ya no tendrán sede. Esta acción no se puede deshacer.</string>
+    <string name="lugar_guardado">✓ Lugar guardado</string>
+    <string name="lugar_eliminado">Lugar eliminado</string>
+    <string name="lugar_error_sesion">Tu sesión expiró. Vuelve a iniciar sesión.</string>
+    <string name="lugar_error_solo_contratante">Activa el modo contratante para crear tu lugar.</string>
+    <string name="lugar_error_guardar">No se pudo guardar: %1$s</string>
+    <string name="lugar_error_foto">No se pudo subir la foto: %1$s</string>
+    <string name="lugar_error_foto_conexion">No se pudo subir la foto: revisa tu conexión</string>
+    <string name="lugar_foto_elegida">✓ Foto lista. Se sube al guardar.</string>
+    <string name="lugar_foto_quitada">Foto quitada</string>
+    <string name="lugar_gps_ok">✓ Ubicación fijada</string>
+    <string name="lugar_gps_sin_permiso">Activa el permiso de ubicación para fijar el punto GPS.</string>
+    <string name="lugar_gps_no_disponible">No se pudo obtener tu ubicación ahora mismo.</string>
+    <string name="lugar_publicado_el">Publicado el %1$s</string>
+    <string name="lugar_card_editar">Editar</string>
+    <string name="lugar_card_eliminar">Eliminar</string>
+    <string name="lugar_card_nota_fase5">Este lugar se usará como sede de tus chambas.</string>
+    <string name="lugar_sin_lugar_titulo">Registra tu lugar</string>
+    <string name="lugar_sin_lugar_sub">Agrega tu local, taller u obra para que tus publicaciones tengan sede.</string>
+    <string name="lugar_sin_lugar_btn">Crear lugar</string>
 </resources>

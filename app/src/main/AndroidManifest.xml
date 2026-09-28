@@ -67,6 +67,14 @@
             android:theme="@style/Theme.ChambAYA.EditProfile"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- FASE 4 — Crear / editar el lugar del contratante. Mismo tema y
+             ajuste de teclado que el resto de formularios. -->
+        <activity
+            android:name=".ui.workplace.EditarLugarActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ChambAYA.EditProfile"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Ajuste de la foto de perfil. Va aparte del wizard y con tema
              propio (oscuro) porque el recorte se hace con un velillo negro
              alrededor del círculo. -->
