@@ -1033,7 +1033,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:background="@android:color/transparent"
-                        android:hint="Ej: 3"
+                        android:hint="Ej: 3 · escribe 0 si aún no tienes"
                         android:textColorHint="#9CA3AF"
                         android:textColor="#111827"
                         android:textSize="15sp"

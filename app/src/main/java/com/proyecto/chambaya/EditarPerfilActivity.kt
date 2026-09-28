@@ -760,12 +760,9 @@ class EditarPerfilActivity : AppCompatActivity() {
      */
     private fun primerPasoIncompleto(perfil: UserProfile): Int {
         val faltan = perfil.completion().missing
-        return when {
-            faltan.any { it in CAMPOS_PASO_1 } -> 1
-            faltan.any { it in CAMPOS_PASO_2 } -> 2
-            faltan.any { it in CAMPOS_PASO_3 } -> 3
-            else -> PASOS_TOTAL
-        }
+        return CAMPOS_POR_PASO.keys.sorted().firstOrNull { paso ->
+            faltan.any { it in CAMPOS_POR_PASO.getValue(paso) }
+        } ?: PASOS_TOTAL
     }
 
     /**
@@ -893,8 +890,14 @@ class EditarPerfilActivity : AppCompatActivity() {
         selectedDistrito = perfil.profile.district
         pintarUbicacion()
 
+        // El `0` se muestra si el usuario ya lo respondió: antes se ocultaba y el
+        // campo volvía a parecer pendiente, aunque su respuesta fuera correcta.
         etExperiencia.setText(
-            if (perfil.worker.experienceYears > 0) perfil.worker.experienceYears.toString() else ""
+            when {
+                perfil.worker.experienceYears > 0 -> perfil.worker.experienceYears.toString()
+                perfil.worker.experienceDeclared -> "0"
+                else -> ""
+            }
         )
 
         // Solo se ofrecen las especialidades que siguen en el catálogo: si el
@@ -1030,6 +1033,7 @@ class EditarPerfilActivity : AppCompatActivity() {
             ),
             worker = base.worker.copy(
                 experienceYears = experienciaActual(),
+                experienceDeclared = experienciaRespondida(),
                 specialties = especialidadesElegidas.toList(),
                 skills = repository.parseSkills(etHabilidades.text.toString())
             )
@@ -1193,15 +1197,18 @@ class EditarPerfilActivity : AppCompatActivity() {
     }
 
     /**
-     * Solo bloquea lo que las Firestore Security Rules rechazan.
+     * Solo bloquea lo que las Firestore Security Rules rechazan, más el teléfono
+     * a medio escribir.
      *
      * El nombre y el `@usuario` sí son obligatorios (la regla exige 3-30
-     * caracteres). El teléfono NO: el registro de la FASE 1 no lo pide, así que
-     * si se bloqueara aquí nadie podría guardar hasta ponerse uno. Se avisa y se
-     * deja pasar; el paso 4 recuerda que falta y el porcentaje lo refleja.
+     * caracteres). El teléfono VACIO sigue siendo opcional —el registro de la
+     * FASE 1 no lo pide, así que bloquearlo dejaría a nadie guardar—, pero uno
+     * con menos de [ProfileLimits.PHONE_MIN] dígitos sí es un error, no una
+     * decisión: antes solo se avisaba, se guardaba, y el perfil se quedaba
+     * siempre en 92 % sin señalar ningún campo culpable.
      *
-     * Los pasos 2 y 3 tampoco bloquean por la misma razón: sus campos son
-     * opcionales y el resumen del paso 4 ya enseña lo que falta.
+     * Los pasos 2 y 3 no bloquean: sus campos son opcionales y el resumen del
+     * paso 4 ya enseña lo que falta.
      */
     private fun validateStep1(): Boolean {
         val nombre = etNombre.text.toString().trim()
@@ -1222,14 +1229,16 @@ class EditarPerfilActivity : AppCompatActivity() {
             return false
         }
 
-        // Aviso, no bloqueo: un teléfono mal escrito se avisa, uno vacío no.
+        // Bloquea, no solo avisa: un teléfono incompleto nunca iba a contar como
+        // campo relleno, así que dejarlo pasar solo escondía el motivo del 92 %.
         val digitos = telefono.filter { it.isDigit() }
         if (digitos.isNotEmpty() && digitos.length !in ProfileLimits.PHONE_MIN..ProfileLimits.PHONE_MAX) {
             etTelefono.error = getString(R.string.edit_perfil_error_telefono)
+            etTelefono.requestFocus()
             showToast(getString(R.string.edit_perfil_error_telefono))
-        } else {
-            etTelefono.error = null
+            return false
         }
+        etTelefono.error = null
 
         return true
     }
@@ -1362,6 +1371,7 @@ class EditarPerfilActivity : AppCompatActivity() {
             province = selectedProvincia,
             district = selectedDistrito,
             experienceYears = experienciaActual(),
+            experienceDeclared = experienciaRespondida(),
             // Se vuelve a pasar por el catálogo: el paso 3 solo ofrece oficios que
             // existen, pero así el documento nunca guarda un oficio inventado.
             specialties = repository.filtrarEspecialidades(this, especialidadesElegidas.toList()),
@@ -1377,6 +1387,16 @@ class EditarPerfilActivity : AppCompatActivity() {
     private fun experienciaActual(): Int =
         etExperiencia.text.toString().trim().toIntOrNull()?.coerceIn(0, ProfileLimits.EXPERIENCE_MAX)
             ?: 0
+
+    /**
+     * `true` si el usuario escribió algo en "Años de experiencia".
+     *
+     * Es lo que separa `0` (respuesta válida: todavía no tengo experiencia) de
+     * "campo sin tocar". Sin esta distinción el resumen del paso 4 pedía el campo
+     * indefinidamente a quien correctamente había escrito cero.
+     */
+    private fun experienciaRespondida(): Boolean =
+        etExperiencia.text.toString().trim().isNotEmpty()
 
     private fun bloquearBotones(bloquear: Boolean) {
         if (bloquear) {
@@ -1788,15 +1808,22 @@ class EditarPerfilActivity : AppCompatActivity() {
         // Qué campos de cada paso se revisan para decidir por dónde empezar. Son
         // las etiquetas de `ProfileCompletion.checksFor`; ver la nota de
         // `primerPasoIncompleto`.
-        private val CAMPOS_PASO_1 = setOf(
-            "Foto de perfil", "Nombre completo", "Nombre de usuario", "Teléfono"
-        )
-        private val CAMPOS_PASO_2 = setOf(
-            "Descripción", "Distrito", "Provincia", "Departamento",
-            "Fecha de nacimiento", "Género"
-        )
-        private val CAMPOS_PASO_3 = setOf(
-            "Años de experiencia", "Especialidades", "Habilidades"
+        //
+        // Es pública y la consume `FragmentoMiPerfil` para el botón "Completar
+        // perfil": antes cada uno tenía su propia copia y por eso se
+        // desincronizaron (el banner mandaba a contratantes al resumen y les
+        // decía que el perfil estaba completo cuando no lo estaba).
+        val CAMPOS_POR_PASO: Map<Int, Set<String>> = mapOf(
+            1 to setOf(
+                "Foto de perfil", "Nombre completo", "Nombre de usuario", "Teléfono"
+            ),
+            2 to setOf(
+                "Descripción", "Distrito", "Provincia", "Departamento",
+                "Fecha de nacimiento", "Género"
+            ),
+            3 to setOf(
+                "Años de experiencia", "Especialidades", "Habilidades"
+            )
         )
 
         private val COLOR_ENTRADA = Color.parseColor("#111827")

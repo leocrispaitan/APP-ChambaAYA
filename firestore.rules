@@ -238,6 +238,10 @@ service cloud.firestore {
           && worker.get('experienceYears', 0) is number
           && worker.get('experienceYears', 0) >= 0
           && worker.get('experienceYears', 0) <= 70
+          // Distingue "escribí 0 años" de "nunca toqué el campo". Sin esto, un
+          // trabajador que empieza y no tiene experiencia no podía llegar nunca
+          // al 100 %: el perfil se quedaba en 92 para siempre.
+          && worker.get('experienceDeclared', false) is bool
           && isValidStringList(worker.get('specialties', []), 3, 180)
           && isValidStringList(worker.get('skills', []), 10, 600)
           && worker.get('profileCompleted', 0) is number

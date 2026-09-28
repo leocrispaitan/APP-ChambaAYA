@@ -149,6 +149,19 @@ data class ProfileBlock(
 data class WorkerBlock(
     val enabled: Boolean = true,
     val experienceYears: Int = 0,
+    /**
+     * `true` cuando el usuario respondió el campo "Años de experiencia", incluso
+     * si la respuesta fue `0`.
+     *
+     * Hace falta porque [experienceYears] es un `Int` que vale `0` sin responder:
+     * un trabajador sin experiencia es un caso legítimo —de hecho, es el caso
+     * mayoritario en ChambAYA— y antes era imposible de representar, así que
+     * escribir `0` dejaba el perfil clavado en 92 % para siempre. Con esta
+     * bandera, `0` es una respuesta válida y guardable, y "sin responder" sigue
+     * siendo un estado distinguible. La admiten las Rules sin cambios de esquema
+     * (`isValidWorkerUpdate` valida claves concretas, no un esquema cerrado).
+     */
+    val experienceDeclared: Boolean = false,
     val specialties: List<String> = emptyList(),
     val skills: List<String> = emptyList(),
     val workCount: Int = 0,
@@ -304,7 +317,12 @@ data class ProfileCompletion(
         private val WORKER_CHECKS: List<Pair<String, (UserProfile) -> Boolean>> = listOf(
             "Fecha de nacimiento" to { it.profile.birthDate.isNotBlank() },
             "Género" to { it.profile.gender.isNotBlank() },
-            "Años de experiencia" to { it.worker.experienceYears > 0 },
+            // `0` cuenta como respuesta: quien empieza en ChambAYA legítimamente no
+            // tiene años de experiencia. `experienceDeclared` es lo que distingue
+            // "escribí 0" de "nunca lo toqué".
+            "Años de experiencia" to {
+                it.worker.experienceYears > 0 || it.worker.experienceDeclared
+            },
             "Especialidades" to { it.worker.specialties.isNotEmpty() },
             "Habilidades" to { it.worker.skills.isNotEmpty() }
         )
@@ -360,6 +378,7 @@ data class ProfileDraft(
     val province: String = "",
     val district: String = "",
     val experienceYears: Int = 0,
+    val experienceDeclared: Boolean = false,
     val specialties: List<String> = emptyList(),
     val skills: List<String> = emptyList(),
     val showPhone: Boolean = false,
@@ -384,6 +403,7 @@ data class ProfileDraft(
             province = profile.profile.province,
             district = profile.profile.district,
             experienceYears = profile.worker.experienceYears,
+            experienceDeclared = profile.worker.experienceDeclared,
             specialties = profile.worker.specialties,
             skills = profile.worker.skills,
             showPhone = profile.privacy.showPhone,
@@ -448,6 +468,7 @@ internal fun DocumentSnapshot.workerBlock(): WorkerBlock {
     return WorkerBlock(
         enabled = data["enabled"] as? Boolean ?: true,
         experienceYears = (data["experienceYears"] as? Number)?.toInt() ?: 0,
+        experienceDeclared = data["experienceDeclared"] as? Boolean ?: false,
         specialties = data.strList("specialties"),
         skills = data.strList("skills"),
         workCount = (data["workCount"] as? Number)?.toInt() ?: 0,

@@ -482,6 +482,9 @@ class ProfileRepository(
 
                 "worker.enabled" to draft.workerEnabled,
                 "worker.experienceYears" to draft.experienceYears,
+                // Distingue "escribí 0 años" de "nunca toqué el campo": sin esto,
+                // el que empieza de cero no podía llegar nunca al 100 %.
+                "worker.experienceDeclared" to draft.experienceDeclared,
                 "worker.specialties" to draft.specialties,
                 "worker.skills" to draft.skills,
 
@@ -550,6 +553,8 @@ class ProfileRepository(
                 enabled = cambios["worker.enabled"] as? Boolean ?: previo.worker.enabled,
                 experienceYears = (cambios["worker.experienceYears"] as? Int)
                     ?: previo.worker.experienceYears,
+                experienceDeclared = cambios["worker.experienceDeclared"] as? Boolean
+                    ?: previo.worker.experienceDeclared,
                 specialties = cambios.listaDeTextos("worker.specialties")
                     ?: previo.worker.specialties,
                 skills = cambios.listaDeTextos("worker.skills") ?: previo.worker.skills

@@ -19,6 +19,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import coil.ImageLoader
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.EditarPerfilActivity
@@ -27,6 +28,7 @@ import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.ProfileBlock
 import com.proyecto.chambaya.data.model.StatisticsBlock
 import com.proyecto.chambaya.data.model.UserProfile
+import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.WorkerBlock
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.motivoFirestore
@@ -505,16 +507,7 @@ class FragmentoMiPerfil : Fragment() {
         // Lo único accionable del top bar son los ajustes.
 
         root.findViewById<View>(R.id.btnSettings)?.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .setCustomAnimations(
-                    R.anim.dialog_slide_up,   // enter
-                    android.R.anim.fade_out,  // exit
-                    android.R.anim.fade_in,   // popEnter
-                    R.anim.dialog_slide_down  // popExit
-                )
-                .replace(R.id.fragmentContainer, FragmentoAjustesPerfil(), "SETTINGS")
-                .addToBackStack("SETTINGS")
-                .commit()
+            abrirAjustes()
         }
     }
 
@@ -532,9 +525,7 @@ class FragmentoMiPerfil : Fragment() {
 
         root.findViewById<View>(R.id.btnCompletarPerfil)?.setOnClickListener {
             animateTap(it)
-            // "Completar perfil" entra por el paso 3, donde están las
-            // especialidades: es lo que más pesa en el porcentaje.
-            abrirEdicion(EditarPerfilActivity.PASO_INICIO_COMPLETAR)
+            abrirEdicionEnPasoIncompleto()
         }
     }
 
@@ -563,6 +554,142 @@ class FragmentoMiPerfil : Fragment() {
                 android.R.anim.fade_out
             )
         }
+    }
+
+    /**
+     * "Completar perfil": explica exactamente qué falta y lleva al paso que lo resuelve.
+     *
+     * Antes solo lanzaba un `Toast` con la lista completa de pendientes y abría el
+     * primer paso incompleto. Eso tenía dos fallos reales:
+     *  - el `Toast` se solapaba con la transición a `EditarPerfilActivity` y a
+     *    veces no se leía, así que el usuario no sabía qué corregir;
+     *  - en modo CONTRATANTE los campos que faltan (`Tipo de contratante`,
+     *    `Identidad del contratante`, `Nombre comercial o negocio`) no están en
+     *    ningún paso del asistente, caían en el `else` y el mensaje afirmaba
+     *    "Tu perfil está completo" con el perfil incompleto.
+     *
+     * Ahora el mensaje va en un diálogo (no se pierde con la navegación), solo
+     * lista los campos del paso al que se va, y un contratante incompleto se
+     * manda a Ajustes, que es donde están esos campos.
+     */
+    private fun abrirEdicionEnPasoIncompleto() {
+        // La copia del fragmento va primero: `sincronizarConCacheCompartido` la
+        // mantiene al día, y `ProfileCache` podría venir de otra pantalla.
+        val datos = perfil ?: ProfileCache.perfil ?: run {
+            abrirEdicion(EditarPerfilActivity.PASO_INICIO_EDITAR)
+            return
+        }
+
+        val completion = datos.completion()
+        if (completion.isComplete) {
+            mostrarDialogoPerfilCompleto()
+            return
+        }
+
+        val faltan = completion.missing
+        val esContratante = datos.activeRole == UserRoles.CONTRATANTE
+        val paso = EditarPerfilActivity.CAMPOS_POR_PASO.keys.sorted()
+            .firstOrNull { p -> faltan.any { it in EditarPerfilActivity.CAMPOS_POR_PASO.getValue(p) } }
+        val tituloPaso = paso?.let { nombreDePaso(it, esContratante) }
+
+        // En CONTRATANTE, lo pendiente pertenece al bloque `employer`, que no está
+        // en este asistente: se dice dónde está en vez de prometer un paso que no
+        // contiene esos campos.
+        if (paso == null && esContratante) {
+            mostrarDialogoFaltaContratante(faltan)
+            return
+        }
+
+        val destino = paso ?: 4
+        val camposDelPaso = when (paso) {
+            null -> faltan
+            else -> faltan.filter { it in EditarPerfilActivity.CAMPOS_POR_PASO.getValue(paso) }
+        }
+        // Lo que queda para después no se oculta: el mensaje dice dónde empieza el
+        // usuario y cuánto le falta en total, no solo lo de esta fase.
+        val otros = faltan - camposDelPaso.toSet()
+
+        val mensaje = buildString {
+            append("Tu perfil está al ${completion.percent}%.")
+            if (camposDelPaso.size == 1) {
+                append(" Para llegar al 100% te falta un campo:")
+            } else {
+                append(" Para llegar al 100% te faltan ${camposDelPaso.size} campos:")
+            }
+            append("\n\n")
+            camposDelPaso.forEach { append("• $it\n") }
+            if (otros.isNotEmpty()) {
+                append("\nDespués de esta fase, quedará pendiente:\n")
+                otros.forEach { append("• $it\n") }
+            }
+            if (tituloPaso != null) {
+                append("\nTe llevamos a: $tituloPaso")
+            }
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Completa tu perfil")
+            .setIcon(R.drawable.ic_home_chevron_down)
+            .setMessage(mensaje)
+            .setPositiveButton("Completar ahora") { _, _ -> abrirEdicion(destino) }
+            .setNegativeButton("Ahora no", null)
+            .show()
+    }
+
+    /** Nombre legible de cada fase, tal como lo anuncia el asistente. */
+    private fun nombreDePaso(paso: Int, esContratante: Boolean): String = when (paso) {
+        1 -> "Fase 1 · Información básica"
+        2 -> "Fase 2 · Información personal"
+        3 -> "Fase 3 · Experiencia profesional"
+        else -> if (esContratante) {
+            "Fase 4 · Datos de contratante"
+        } else {
+            "Fase 4 · Privacidad y resumen"
+        }
+    }
+
+    /**
+     * Perfil de contratante a medias.
+     *
+     * Los tres campos que faltan (`employer.*`) los pide `ActivarContratanteActivity`,
+     * no el asistente de edición, así que el botón lleva a Ajustes en vez de abrir un
+     * paso donde esos campos no existen.
+     */
+    private fun mostrarDialogoFaltaContratante(faltan: List<String>) {
+        val mensaje = buildString {
+            append("Tu perfil de contratante todavía está incompleto. Te falta:\n\n")
+            faltan.forEach { append("• $it\n") }
+            append("\nEstos datos se completan en Ajustes → Datos de contratante.")
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Completa tu perfil de contratante")
+            .setMessage(mensaje)
+            .setPositiveButton("Ir a Ajustes") { _, _ -> abrirAjustes() }
+            .setNegativeButton("Ahora no", null)
+            .show()
+    }
+
+    private fun mostrarDialogoPerfilCompleto() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("¡Perfil completo!")
+            .setMessage("Ya tienes el 100%. Tu perfil está listo para que otros usuarios lo vean y te contacten.")
+            .setPositiveButton("Ver perfil") { _, _ -> abrirEdicion(EditarPerfilActivity.PASO_INICIO_EDITAR) }
+            .setNegativeButton("Entendido", null)
+            .show()
+    }
+
+    private fun abrirAjustes() {
+        parentFragmentManager.beginTransaction()
+            .setCustomAnimations(
+                R.anim.dialog_slide_up,
+                android.R.anim.fade_out,
+                android.R.anim.fade_in,
+                R.anim.dialog_slide_down
+            )
+            .replace(R.id.fragmentContainer, FragmentoAjustesPerfil(), "SETTINGS")
+            .addToBackStack("SETTINGS")
+            .commit()
     }
 
     /** Intento de compartir: el `@usuario` es el identificador público del perfil. */
