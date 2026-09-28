@@ -288,8 +288,34 @@ class FragmentoMiPerfil : Fragment() {
         root.findViewById<TextView>(R.id.tvCompletionBadge).text =
             getString(R.string.profile_completado, completitud.percent)
 
-        root.findViewById<TextView>(R.id.tvProgressRing).text =
-            getString(R.string.profile_porcentaje, completitud.percent)
+        actualizarProgresoPerfil(root, completitud.percent)
+    }
+
+    /**
+     * Actualiza el anillo de progreso circular con color dinámico según el nivel.
+     *
+     * Colores por rango:
+     *  - 0% – 39%   Rojo    (#EF4444)
+     *  - 40% – 69%  Ámbar   (#F59E0B)
+     *  - 70% – 99%  Azul    (#2563EB)
+     *  - 100%       Verde   (#16A34A)
+     */
+    private fun actualizarProgresoPerfil(root: View, porcentaje: Int) {
+        val tvPorcentaje = root.findViewById<TextView>(R.id.tvProgressRing)
+        val progressRing = root.findViewById<com.google.android.material.progressindicator.CircularProgressIndicator>(R.id.progressRing)
+
+        tvPorcentaje.text = getString(R.string.profile_porcentaje, porcentaje)
+
+        val color = when {
+            porcentaje >= 100 -> android.graphics.Color.parseColor("#16A34A")
+            porcentaje >= 70 -> android.graphics.Color.parseColor("#2563EB")
+            porcentaje >= 40 -> android.graphics.Color.parseColor("#F59E0B")
+            else -> android.graphics.Color.parseColor("#EF4444")
+        }
+
+        progressRing.setIndicatorColor(color)
+        tvPorcentaje.setTextColor(color)
+        progressRing.setProgress(porcentaje, true)
     }
 
     private fun pintarEstadisticas(root: View, datos: UserProfile) {

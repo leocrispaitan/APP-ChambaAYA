@@ -327,11 +327,23 @@
                     android:orientation="horizontal"
                     android:padding="14dp">
 
-                    <!-- Circular Progress Ring (90%) -->
+                    <!-- Circular Progress Ring dinámico -->
                     <FrameLayout
-                        android:layout_width="46dp"
-                        android:layout_height="46dp"
-                        android:background="@drawable/bg_profile_progress_circle">
+                        android:layout_width="52dp"
+                        android:layout_height="52dp">
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/progressRing"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:layout_gravity="center"
+                            android:max="100"
+                            android:padding="4dp"
+                            android:progress="0"
+                            app:indicatorColor="#7047EB"
+                            app:indicatorSize="46dp"
+                            app:trackColor="#E0E0E0"
+                            app:trackThickness="4dp" />
 
                         <TextView
                             android:id="@+id/tvProgressRing"
@@ -340,10 +352,11 @@
                             android:layout_gravity="center"
                             android:fontFamily="sans-serif-bold"
                             android:includeFontPadding="false"
-                            android:text="90%"
+                            android:text="0%"
                             android:textColor="#7047EB"
-                            android:textSize="12sp"
+                            android:textSize="10sp"
                             android:textStyle="bold" />
+
                     </FrameLayout>
 
                     <!-- Text description -->
