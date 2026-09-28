@@ -175,6 +175,7 @@ data class EmployerBlock(
     val sector: String = "",
     val documentType: String = "",
     val documentNumber: String = "",
+    val documentNumberMasked: String = "",
     val ruc: String? = null,
     val identityName: String = "",
     val workplaceId: String? = null,
@@ -185,7 +186,8 @@ data class EmployerBlock(
 ) {
     val isConfigured: Boolean get() = enabled && employerType.isNotBlank()
     val documentLabel: String
-        get() = listOf(documentType, documentNumber).filter { it.isNotBlank() }.joinToString(": ")
+        get() = listOf(documentType, documentNumberMasked.ifBlank { documentNumber })
+            .filter { it.isNotBlank() }.joinToString(": ")
 }
 
 /** `privacy` de `users/{uid}`. Por defecto nada se muestra públicamente. */
@@ -430,6 +432,7 @@ internal fun DocumentSnapshot.employerBlock(): EmployerBlock {
         sector = data.str("sector"),
         documentType = data.str("documentType"),
         documentNumber = data.str("documentNumber"),
+        documentNumberMasked = data.str("documentNumberMasked"),
         ruc = data.str("ruc").ifBlank { null },
         identityName = data.str("identityName"),
         workplaceId = data.str("workplaceId").ifBlank { null },

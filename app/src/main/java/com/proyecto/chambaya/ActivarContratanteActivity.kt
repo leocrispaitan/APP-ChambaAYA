@@ -57,6 +57,7 @@ class ActivarContratanteActivity : AppCompatActivity() {
         bindListeners()
         cargarExistente()
         actualizarTipo()
+        autocompletarDniTrabajador()
     }
 
     private fun bindViews() {
@@ -98,6 +99,36 @@ class ActivarContratanteActivity : AppCompatActivity() {
         etSector.setText(employer.sector)
     }
 
+    /**
+     * Autocompleta el DNI del trabajador cuando el tipo es PERSONA/INDEPENDIENTE.
+     *
+     * Si el usuario ya se registró como trabajador con un DNI verificado, ese
+     * mismo DNI se usa para el rol de contratante (PERSONA/INDEPENDIENTE).
+     * No hace falta volver a validarlo: ya pasó por RENIEC/SUNAT en FASE 1.
+     */
+    private fun autocompletarDniTrabajador() {
+        val perfil = ProfileCache.perfil ?: return
+        val identidad = perfil.identity
+
+        // Solo autocompletar si el tipo es PERSONA o INDEPENDIENTE (DNI)
+        val tipo = tipoSeleccionado()
+        if (tipo != "PERSONA" && tipo != "INDEPENDIENTE") return
+
+        // Solo si el trabajador tiene un DNI verificado
+        if (!identidad.identityVerified) return
+        if (identidad.documentType != IdentityDocumentTypes.DNI) return
+        if (identidad.documentNumber.isBlank()) return
+
+        // Autocompletar el documento
+        etDocumento.setText(identidad.documentNumber)
+        selectedDocumentType = IdentityDocumentTypes.DNI
+
+        // Autocompletar el nombre con el nombre oficial del padrón
+        if (etNombre.text.isNullOrBlank()) {
+            etNombre.setText(identidad.identityName)
+        }
+    }
+
     private fun tipoSeleccionado(): String = when {
         rbEmpresa.isChecked -> "EMPRESA"
         rbNegocio.isChecked -> "NEGOCIO"
@@ -130,6 +161,11 @@ class ActivarContratanteActivity : AppCompatActivity() {
         }
         etComercial.isVisible = tipo != "PERSONA"
         etSector.isVisible = tipo != "PERSONA"
+
+        // Si cambió a PERSONA/INDEPENDIENTE, autocompletar el DNI del trabajador
+        if (!requiereRuc) {
+            autocompletarDniTrabajador()
+        }
     }
 
     private fun guardar() {
@@ -137,6 +173,30 @@ class ActivarContratanteActivity : AppCompatActivity() {
             Toast.makeText(this, "Tu sesión expiró. Vuelve a iniciar sesión.", Toast.LENGTH_LONG).show()
             return
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  VERIFICAR REQUISITOS PREVIOS
+        // ═══════════════════════════════════════════════════════════════
+        val perfil = ProfileCache.perfil
+        if (perfil != null) {
+            if (!perfil.identity.identityVerified) {
+                mostrarError("Tu identidad debe estar verificada para activar el modo contratante.")
+                return
+            }
+            if (!perfil.auth.emailVerified) {
+                mostrarError("Tu correo debe estar verificado para activar el modo contratante.")
+                return
+            }
+            if (perfil.profile.fullName.isBlank() || perfil.profile.username.isBlank()) {
+                mostrarError("Completa tu perfil básico antes de activar el modo contratante.")
+                return
+            }
+            if (perfil.profile.phone.isBlank()) {
+                mostrarError("Agrega un teléfono a tu perfil antes de activar el modo contratante.")
+                return
+            }
+        }
+
         val tipo = tipoSeleccionado()
         val documento = etDocumento.text.toString().filter(Char::isDigit)
         val nombre = etNombre.text.toString().trim()
@@ -158,40 +218,63 @@ class ActivarContratanteActivity : AppCompatActivity() {
         btnGuardar.text = "Verificando..."
 
         lifecycleScope.launch {
-            val identidad = when (selectedDocumentType) {
-                IdentityDocumentTypes.RUC -> identityService.validateRuc(documento)
-                else -> identityService.validateDni(documento)
+            // ═══════════════════════════════════════════════════════════
+            //  VALIDACIÓN INTELIGENTE
+            // ═══════════════════════════════════════════════════════════
+            // Si el documento coincide con la identidad verificada del trabajador,
+            // no hace falta llamada HTTP: ya está validado.
+            val documentoCoincide = perfil?.let {
+                it.identity.documentType == selectedDocumentType &&
+                it.identity.documentNumber == documento
+            } ?: false
+
+            val identityName = if (documentoCoincide) {
+                perfil?.identity?.identityName ?: nombre
+            } else {
+                // Documento diferente: validar externamente
+                val identidad = when (selectedDocumentType) {
+                    IdentityDocumentTypes.RUC -> identityService.validateRuc(documento)
+                    else -> identityService.validateDni(documento)
+                }
+
+                when (identidad) {
+                    is IdentityValidationResult.Success -> identidad.identity.fullName
+                    is IdentityValidationResult.Rejected -> {
+                        mostrarError(identidad.message)
+                        return@launch
+                    }
+                    is IdentityValidationResult.ServiceError -> {
+                        mostrarError("El servicio de identidad no está disponible (HTTP ${identidad.httpCode}).")
+                        return@launch
+                    }
+                    is IdentityValidationResult.NetworkError -> {
+                        mostrarError("No hay conexión para verificar el documento.")
+                        return@launch
+                    }
+                }
             }
 
-            when (identidad) {
-                is IdentityValidationResult.Success -> {
-                    val identityName = identidad.identity.fullName
-                    val draft = EmployerDraft(
-                        employerType = tipo,
-                        businessName = if (selectedDocumentType == IdentityDocumentTypes.RUC) identityName else nombre,
-                        commercialName = etComercial.text.toString().trim(),
-                        sector = etSector.text.toString().trim(),
-                        documentType = selectedDocumentType,
-                        documentNumber = documento,
-                        identityName = identityName,
-                        ruc = documento.takeIf { selectedDocumentType == IdentityDocumentTypes.RUC }
-                    )
-                    repository.activateContractor(uid, draft)
-                        .onSuccess {
-                            ProfileCache.perfil = it
-                            setResult(Activity.RESULT_OK)
-                            Toast.makeText(this@ActivarContratanteActivity, "Modo contratante activado.", Toast.LENGTH_SHORT).show()
-                            finish()
-                        }
-                        .onFailure {
-                            Log.e(TAG, "No se pudo activar contratante", it)
-                            mostrarError(it.message ?: "No se pudo guardar el perfil.")
-                        }
+            val draft = EmployerDraft(
+                employerType = tipo,
+                businessName = if (selectedDocumentType == IdentityDocumentTypes.RUC) identityName else nombre,
+                commercialName = etComercial.text.toString().trim(),
+                sector = etSector.text.toString().trim(),
+                documentType = selectedDocumentType,
+                documentNumber = documento,
+                identityName = identityName,
+                ruc = documento.takeIf { selectedDocumentType == IdentityDocumentTypes.RUC }
+            )
+            repository.activateContractor(uid, draft)
+                .onSuccess {
+                    ProfileCache.perfil = it
+                    setResult(Activity.RESULT_OK)
+                    Toast.makeText(this@ActivarContratanteActivity, "Modo contratante activado.", Toast.LENGTH_SHORT).show()
+                    finish()
                 }
-                is IdentityValidationResult.Rejected -> mostrarError(identidad.message)
-                is IdentityValidationResult.ServiceError -> mostrarError("El servicio de identidad no está disponible (HTTP ${identidad.httpCode}).")
-                is IdentityValidationResult.NetworkError -> mostrarError("No hay conexión para verificar el documento.")
-            }
+                .onFailure {
+                    Log.e(TAG, "No se pudo activar contratante", it)
+                    mostrarError(it.message ?: "No se pudo guardar el perfil.")
+                }
         }
     }
 

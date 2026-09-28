@@ -319,12 +319,44 @@ service cloud.firestore {
         && keepsEmployerReputation();
     }
 
+    // Requisitos previos para activar contratante (FASE 3):
+    // identidad verificada, correo verificado, perfil básico completo
+    function hasContractorPrerequisites() {
+      let identity = resource.data.get('identity', '');
+      let auth = resource.data.get('auth', '');
+      let profile = resource.data.get('profile', '');
+      return identity is map
+        && identity.get('identityVerified', false) == true
+        && auth is map
+        && auth.get('emailVerified', false) == true
+        && profile is map
+        && profile.get('fullName', '') is string
+        && profile.get('fullName', '').size() > 0
+        && profile.get('username', '') is string
+        && profile.get('username', '').size() > 0
+        && profile.get('phone', '') is string
+        && profile.get('phone', '').size() > 0;
+    }
+
     function isAllowedContractorActivation(uid) {
       return request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['roles', 'activeRole', 'employer', 'updatedAt'])
         && resource.data.roles is list
         && resource.data.roles.hasOnly(['TRABAJADOR'])
-        && validRoleListWithEmployer();
+        && validRoleListWithEmployer()
+        && hasContractorPrerequisites();
+    }
+
+    // Permitir actualizar employer cuando el usuario ya tiene ambos roles
+    // (aunque activeRole sea TRABAJADOR): no es una activación nueva, solo
+    // una edición de datos de contratante ya existente.
+    function isAllowedEmployerUpdate(uid) {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['employer', 'updatedAt'])
+        && resource.data.roles is list
+        && resource.data.roles.hasOnly(['TRABAJADOR', 'CONTRATANTE'])
+        && isValidEmployerBlock()
+        && keepsEmployerReputation();
     }
 
     function isAllowedActiveRoleSwitch() {
@@ -482,6 +514,7 @@ service cloud.firestore {
             && isCompleteRegistration()
             && keepsDocumentNumber())
           || isAllowedContractorActivation(uid)
+          || isAllowedEmployerUpdate(uid)
           || isAllowedActiveRoleSwitch()
           || isAllowedProfileUpdate(uid));
 

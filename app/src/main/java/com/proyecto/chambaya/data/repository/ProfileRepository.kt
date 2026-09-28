@@ -14,9 +14,12 @@ import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.ProfileLimits
 import com.proyecto.chambaya.data.model.ProfilePhotoSources
 import com.proyecto.chambaya.data.model.UserProfile
+import com.proyecto.chambaya.data.model.ValidatedIdentity
 import com.proyecto.chambaya.data.model.normalizarUsername
 import com.proyecto.chambaya.data.model.toUserProfile
 import com.proyecto.chambaya.data.remote.CloudinaryUploader
+import com.proyecto.chambaya.data.remote.IdentityValidationResult
+import com.proyecto.chambaya.data.remote.IdentityValidationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -51,7 +54,8 @@ import kotlinx.coroutines.withContext
  *    usuarios no puedan tomar el mismo `@usuario` a la vez.
  */
 class ProfileRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val identityService: IdentityValidationService = IdentityValidationService()
 ) {
 
     // ═══════════════════════════════════════════════════════════════
@@ -190,6 +194,16 @@ class ProfileRepository(
      * Activa CONTRATANTE sin crear otra cuenta. La información de `worker` no
      * se toca. Si el usuario ya tenía un perfil employer, se actualizan solo
      * sus datos de contratante y se conserva el mismo uid.
+     *
+     * Requisitos previos (FASE 3):
+     *  - Identidad verificada (DNI/RUC con RENIEC/SUNAT)
+     *  - Correo verificado
+     *  - Perfil básico completo (nombre, @usuario, teléfono)
+     *
+     * Validación inteligente:
+     *  - Si el documento del employer coincide con el de la identidad verificada,
+     *    no se hace llamada HTTP a RENIEC/SUNAT (ya está validado).
+     *  - Si es diferente, se valida externamente antes de guardar.
      */
     suspend fun activateContractor(
         uid: String,
@@ -215,6 +229,51 @@ class ProfileRepository(
             val actual = Tasks.await(ref.get()).toUserProfile()
             require(actual.uid == uid) { "La cuenta no es válida." }
 
+            // ═══════════════════════════════════════════════════════════════
+            //  REQUISITOS PREVIOS (FASE 3)
+            // ═══════════════════════════════════════════════════════════════
+            require(actual.identity.identityVerified) {
+                "Tu identidad debe estar verificada para activar el modo contratante."
+            }
+            require(actual.auth.emailVerified) {
+                "Tu correo debe estar verificado para activar el modo contratante."
+            }
+            require(actual.profile.fullName.isNotBlank() && actual.profile.username.isNotBlank()) {
+                "Completa tu perfil básico antes de activar el modo contratante."
+            }
+            require(actual.profile.phone.isNotBlank()) {
+                "Agrega un teléfono a tu perfil antes de activar el modo contratante."
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            //  VALIDACIÓN INTELIGENTE
+            // ═══════════════════════════════════════════════════════════════
+            // Si el documento del employer coincide con el de la identidad
+            // verificada, ya está validado: no hace falta llamada HTTP.
+            val documentoCoincide = actual.identity.documentType == draft.documentType &&
+                actual.identity.documentNumber == cleanDocument
+
+            val identityName = if (documentoCoincide) {
+                actual.identity.identityName
+            } else {
+                // Documento diferente: validar externamente
+                val identidad = when (draft.documentType) {
+                    IdentityDocumentTypes.RUC -> identityService.validateRuc(cleanDocument)
+                    else -> identityService.validateDni(cleanDocument)
+                }
+                when (identidad) {
+                    is IdentityValidationResult.Success -> identidad.identity.fullName
+                    is IdentityValidationResult.Rejected ->
+                        throw IllegalArgumentException(identidad.message)
+                    is IdentityValidationResult.ServiceError ->
+                        throw IllegalArgumentException(
+                            "El servicio de identidad no está disponible (HTTP ${identidad.httpCode})."
+                        )
+                    is IdentityValidationResult.NetworkError ->
+                        throw IllegalArgumentException("No hay conexión para verificar el documento.")
+                }
+            }
+
             val roles = linkedSetOf<String>()
             roles += UserRoles.TRABAJADOR
             roles += UserRoles.CONTRATANTE
@@ -227,8 +286,9 @@ class ProfileRepository(
                 "sector" to draft.sector.trim(),
                 "documentType" to draft.documentType,
                 "documentNumber" to cleanDocument,
+                "documentNumberMasked" to ValidatedIdentity.maskDocumentNumber(cleanDocument),
                 "ruc" to draft.ruc?.filter(Char::isDigit)?.takeIf { it.isNotBlank() },
-                "identityName" to draft.identityName.trim(),
+                "identityName" to identityName,
                 "workplaceId" to actual.employer.workplaceId,
                 "publishedCount" to actual.employer.publishedCount,
                 "hiredCount" to actual.employer.hiredCount,
