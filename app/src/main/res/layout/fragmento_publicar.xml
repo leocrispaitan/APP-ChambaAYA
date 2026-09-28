@@ -1,24 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<!-- Publicar: tres secciones (Publicar · Publicaciones · Solicitudes) con barra
+     de pestañas de solo iconos, indicador animado y cambio por toque o deslizando. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
+    android:orientation="vertical"
     tools:context=".ui.publish.FragmentoPublicar">
 
-    <TextView
-        android:id="@+id/tvSectionTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-medium"
-        android:gravity="center"
-        android:text="@string/section_welcome_publicar"
-        android:textColor="@color/brand_color"
-        android:textSize="22sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <!-- Barra de pestañas -->
+    <LinearLayout
+        android:id="@+id/barraTabs"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <FrameLayout
+            android:id="@+id/tabPublicar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/publicar_tab_publicar"
+            android:focusable="true"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/iconoPublicar"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_tab_publicar" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/tabPublicaciones"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/publicar_tab_publicaciones"
+            android:focusable="true"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/iconoPublicaciones"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_tab_publicaciones" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/tabSolicitudes"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/publicar_tab_solicitudes"
+            android:focusable="true"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/iconoSolicitudes"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_tab_solicitudes" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- Línea divisoria + indicador deslizante -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="2dp">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_gravity="bottom"
+            android:background="@color/profile_divider" />
+
+        <View
+            android:id="@+id/indicadorTab"
+            android:layout_width="56dp"
+            android:layout_height="2dp"
+            android:layout_gravity="bottom"
+            android:background="@color/profile_tab_active" />
+    </FrameLayout>
+
+    <!-- Contenido de cada sección (el mismo diseño, textos distintos) -->
+    <com.proyecto.chambaya.ui.publish.ContenedorDeslizable
+        android:id="@+id/contenedorSecciones"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <include
+            android:id="@+id/panelPublicar"
+            layout="@layout/item_publicar_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <include
+            android:id="@+id/panelPublicaciones"
+            layout="@layout/item_publicar_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/panelSolicitudes"
+            layout="@layout/item_publicar_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </com.proyecto.chambaya.ui.publish.ContenedorDeslizable>
+
+</LinearLayout>

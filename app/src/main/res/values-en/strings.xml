@@ -56,6 +56,20 @@
     <string name="section_welcome_mensajes">Welcome to Messages</string>
     <string name="section_welcome_perfil">Welcome to My Profile</string>
 
+    <!-- Publish: tabs and empty states -->
+    <string name="publicar_tab_publicar">Publish</string>
+    <string name="publicar_tab_publicaciones">Posts</string>
+    <string name="publicar_tab_solicitudes">Requests</string>
+    <string name="publicar_nueva_titulo">Post your first job</string>
+    <string name="publicar_nueva_sub">Tell us what you need and get applications from specialists.</string>
+    <string name="publicar_nueva_btn">Create</string>
+    <string name="publicaciones_vacio_titulo">You have no posts yet</string>
+    <string name="publicaciones_vacio_sub">The jobs you post will show up here.</string>
+    <string name="publicaciones_vacio_btn">Post a job</string>
+    <string name="solicitudes_vacio_titulo">You have no requests yet</string>
+    <string name="solicitudes_vacio_sub">When a specialist applies to your job, you\'ll see it here.</string>
+    <string name="solicitudes_vacio_btn">View posts</string>
+
     <!-- Chat Screen Strings -->
     <string name="chat_title_chats">Chats</string>
     <string name="chat_btn_new_chat">New chat</string>

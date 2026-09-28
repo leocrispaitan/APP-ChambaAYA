@@ -80,6 +80,20 @@
     <string name="section_welcome_mensajes">Bienvenido a Mensajes</string>
     <string name="section_welcome_perfil">Bienvenido a Mi Perfil</string>
 
+    <!-- Publicar: pestañas y estados vacíos -->
+    <string name="publicar_tab_publicar">Publicar</string>
+    <string name="publicar_tab_publicaciones">Publicaciones</string>
+    <string name="publicar_tab_solicitudes">Solicitudes</string>
+    <string name="publicar_nueva_titulo">Publica tu primera chamba</string>
+    <string name="publicar_nueva_sub">Cuenta qué necesitas y recibe postulaciones de especialistas.</string>
+    <string name="publicar_nueva_btn">Crear</string>
+    <string name="publicaciones_vacio_titulo">Aún no tienes publicaciones</string>
+    <string name="publicaciones_vacio_sub">Las chambas que publiques aparecerán aquí.</string>
+    <string name="publicaciones_vacio_btn">Publicar chamba</string>
+    <string name="solicitudes_vacio_titulo">Aún no tienes solicitudes</string>
+    <string name="solicitudes_vacio_sub">Cuando un especialista se postule a tu chamba, lo verás aquí.</string>
+    <string name="solicitudes_vacio_btn">Ver publicaciones</string>
+
     <!-- Map Redesign Strings -->
     <string name="map_title_location">Location</string>
     <string name="map_subtitle_address">1234 Sunset Blvd, Los Angeles, CA</string>
