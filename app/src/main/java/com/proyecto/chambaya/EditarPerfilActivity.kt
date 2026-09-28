@@ -178,6 +178,8 @@ class EditarPerfilActivity : AppCompatActivity() {
     private lateinit var tvSinResultadosOficio: TextView
     private lateinit var etHabilidades: EditText
 
+    private var modoContratante = false
+
     // ==================== PASO 4: PRIVACIDAD ====================
     private lateinit var switchMostrarTelefono: SwitchCompat
     private lateinit var switchMostrarEmail: SwitchCompat
@@ -520,7 +522,8 @@ class EditarPerfilActivity : AppCompatActivity() {
         btnAtras.setOnClickListener {
             if (currentStep > 1) {
                 ocultarTeclado()
-                updateStep(currentStep - 1)
+                val anterior = if (modoContratante && currentStep == 4) 2 else currentStep - 1
+                updateStep(anterior)
             }
         }
 
@@ -710,9 +713,10 @@ class EditarPerfilActivity : AppCompatActivity() {
      * siempre un paso fijo, aterriza donde el usuario puede subir el porcentaje de
      * verdad. Si no falta nada, se abre el resumen (paso 4).
      *
-     * Los nombres comparados son las etiquetas de [ProfileCompletion.CHECKS], que
-     * son las que el resumen del paso 4 enseña al usuario: si se renombraran allí,
-     * dejarían de casar y habría que actualizar las dos listas.
+     * Los nombres comparados son las etiquetas que devuelve
+     * [ProfileCompletion.checksFor], que son las que el resumen del paso 4
+     * enseña al usuario: si se renombraran allí, dejarían de casar y habría que
+     * actualizar las dos listas.
      */
     private fun primerPasoIncompleto(perfil: UserProfile): Int {
         val faltan = perfil.completion().missing
@@ -759,12 +763,28 @@ class EditarPerfilActivity : AppCompatActivity() {
         llenandoFormulario = true
 
         // --- Paso 1: lo que viene del registro es de solo lectura ---
+        modoContratante = perfil.activeRole == com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE
         val identidad = perfil.identity
-        if (identidad.identityVerified) {
-            // Número completo, no el enmascarado: este es el formulario del propio
-            // dueño y las Rules ya permiten leer `identity` (`allow get: if
-            // isOwner`). La versión enmascarada es para vistas públicas, y aquí solo
-            // haría que el usuario tuviera que adivinar su propio documento.
+        val documentoContratante = perfil.employer.documentNumber
+        val tipoDocumentoContratante = perfil.employer.documentType
+        val esContratanteConIdentidadPropia =
+            modoContratante && documentoContratante.isNotBlank() && tipoDocumentoContratante.isNotBlank()
+
+        findViewById<TextView>(R.id.labelDocumento).text =
+            if (esContratanteConIdentidadPropia) tipoDocumentoContratante
+            else if (identidad.documentType == com.proyecto.chambaya.data.model.IdentityDocumentTypes.RUC) "RUC"
+            else "DNI"
+
+        if (esContratanteConIdentidadPropia) {
+            tvDni.text = documentoContratante
+            iconDniVerificado.isVisible = true
+            tvDniNota.isVisible = true
+            tvDniNota.text = if (tipoDocumentoContratante == com.proyecto.chambaya.data.model.IdentityDocumentTypes.RUC) {
+                "✓ Verificado con SUNAT - No se puede modificar aquí"
+            } else {
+                "✓ Verificado con RENIEC - No se puede modificar aquí"
+            }
+        } else if (identidad.identityVerified) {
             tvDni.text = identidad.documentNumber.ifBlank { identidad.documentNumberMasked }
             iconDniVerificado.isVisible = true
             tvDniNota.isVisible = true
@@ -776,7 +796,6 @@ class EditarPerfilActivity : AppCompatActivity() {
                 }
             )
         } else {
-            // Sin identidad validada no se inventa un documento: se dice.
             tvDni.text = getString(R.string.edit_perfil_dni_no_verificado)
             iconDniVerificado.isVisible = false
             tvDniNota.isVisible = false
@@ -857,6 +876,20 @@ class EditarPerfilActivity : AppCompatActivity() {
         switchMostrarTelefono.isChecked = perfil.privacy.showPhone
         switchMostrarEmail.isChecked = perfil.privacy.showEmail
         switchMostrarUbicacion.isChecked = perfil.privacy.showExactAddress
+
+        // CONTRATANTE no necesita datos biográficos del trabajador.
+        findViewById<View>(R.id.labelFechaNacimiento).isVisible = !modoContratante
+        inputFechaNacimiento.isVisible = !modoContratante
+        findViewById<View>(R.id.labelGenero).isVisible = !modoContratante
+        rgGenero.isVisible = !modoContratante
+
+        // `layoutStep3` es el contenedor del paso entero, a diferencia de los campos
+        // de arriba, que son de un paso concreto. Por eso NO basta con mirar el rol:
+        // se muestra solo si además es el paso visible. Sin la condición del paso,
+        // abrir en el 1 ("Editar perfil") dejaba el paso 3 del trabajador encima del
+        // 1, porque esto corre DESPUÉS de `updateStep` y lo pisaba. Con ella, ambas
+        // reglas coinciden y el orden deja de importar.
+        layoutStep3.isVisible = !modoContratante && currentStep == 3
 
         llenandoFormulario = false
 
@@ -1004,24 +1037,25 @@ class EditarPerfilActivity : AppCompatActivity() {
     // ═══════════════════════════════════════════════════════════════
 
     private fun updateStep(step: Int) {
-        currentStep = step
+        currentStep = if (modoContratante && step == 3) 4 else step
+        val visibleStep = currentStep
 
         // Actualizar título e indicador
         tvTitulo.setText(
-            when (step) {
+            when (visibleStep) {
                 1 -> R.string.edit_perfil_titulo_paso1
                 2 -> R.string.edit_perfil_titulo_paso2
                 3 -> R.string.edit_perfil_titulo_paso3
                 else -> R.string.edit_perfil_titulo_paso4
             }
         )
-        tvStepIndicator.text = getString(R.string.edit_perfil_paso_de, step, PASOS_TOTAL)
+        tvStepIndicator.text = getString(R.string.edit_perfil_paso_de, visibleStep, PASOS_TOTAL)
 
         // Mostrar/ocultar contenedores
-        layoutStep1.isVisible = step == 1
-        layoutStep2.isVisible = step == 2
-        layoutStep3.isVisible = step == 3
-        layoutStep4.isVisible = step == 4
+        layoutStep1.isVisible = visibleStep == 1
+        layoutStep2.isVisible = visibleStep == 2
+        layoutStep3.isVisible = visibleStep == 3
+        layoutStep4.isVisible = visibleStep == 4
 
         // Actualizar stepper visual
         updateStepperVisuals()
@@ -1111,7 +1145,8 @@ class EditarPerfilActivity : AppCompatActivity() {
         if (currentStep == 1 && !validateStep1()) return
 
         if (currentStep < PASOS_TOTAL) {
-            updateStep(currentStep + 1)
+            val siguiente = if (modoContratante && currentStep == 2) 4 else currentStep + 1
+            updateStep(siguiente)
         } else {
             finalizarActualizacionPerfil()
         }
@@ -1711,7 +1746,7 @@ class EditarPerfilActivity : AppCompatActivity() {
         private const val ANIO_MINIMO = 1926
 
         // Qué campos de cada paso se revisan para decidir por dónde empezar. Son
-        // las etiquetas de `ProfileCompletion.CHECKS`; ver la nota de
+        // las etiquetas de `ProfileCompletion.checksFor`; ver la nota de
         // `primerPasoIncompleto`.
         private val CAMPOS_PASO_1 = setOf(
             "Foto de perfil", "Nombre completo", "Nombre de usuario", "Teléfono"

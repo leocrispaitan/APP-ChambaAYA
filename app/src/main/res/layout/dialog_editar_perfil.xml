@@ -374,6 +374,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:id="@+id/labelDocumento"
                     android:text="DNI"
                     android:textColor="#1F2937"
                     android:textSize="15sp"
@@ -740,6 +741,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:id="@+id/labelFechaNacimiento"
                     android:text="Fecha de Nacimiento"
                     android:textColor="#1F2937"
                     android:textSize="15sp"
@@ -800,6 +802,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:id="@+id/labelGenero"
                     android:text="Género"
                     android:textColor="#1F2937"
                     android:textSize="15sp"
@@ -976,6 +979,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:id="@+id/tvStep3Title"
                     android:text="Experiencia Profesional"
                     android:textColor="#0F172A"
                     android:textSize="24sp"
@@ -986,6 +990,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:id="@+id/tvStep3Subtitle"
                     android:text="Destaca tus habilidades y experiencia"
                     android:textColor="#64748B"
                     android:textSize="14sp"

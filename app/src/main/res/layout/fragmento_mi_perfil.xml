@@ -217,6 +217,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="3dp"
                             android:fontFamily="sans-serif"
+                            android:id="@+id/tvStatsLabel1"
                             android:text="@string/profile_posts_label"
                             android:textColor="@color/profile_text_stat_label"
                             android:textSize="13sp" />
@@ -251,6 +252,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="3dp"
                             android:fontFamily="sans-serif"
+                            android:id="@+id/tvStatsLabel2"
                             android:text="@string/profile_following_label"
                             android:textColor="@color/profile_text_stat_label"
                             android:textSize="13sp" />
@@ -299,6 +301,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="3dp"
                             android:fontFamily="sans-serif"
+                            android:id="@+id/tvStatsLabel3"
                             android:text="@string/profile_followers_label"
                             android:textColor="@color/profile_text_stat_label"
                             android:textSize="13sp" />

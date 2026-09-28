@@ -253,6 +253,94 @@ service cloud.firestore {
           && privacy.get('showExactAddress', false) is bool);
     }
 
+
+    // =============================================================
+    //  FASE 3 — Perfil CONTRATANTE
+    // =============================================================
+
+    function isValidEmployerDocument(documentType, documentNumber) {
+      return isValidDocumentNumber(documentType, documentNumber);
+    }
+
+    function isValidEmployerBlock() {
+      let employer = request.resource.data.get('employer', '');
+      return employer is map
+        && employer.get('enabled', false) == true
+        && employer.get('employerType', '') in ['PERSONA', 'EMPRESA', 'NEGOCIO', 'INDEPENDIENTE']
+        && isValidDocumentType(employer.get('documentType', ''))
+        && isValidEmployerDocument(
+             employer.get('documentType', ''),
+             employer.get('documentNumber', ''))
+        && employer.get('businessName', '') is string
+        && employer.get('businessName', '').size() >= 3
+        && employer.get('businessName', '').size() <= 120
+        && employer.get('commercialName', '') is string
+        && employer.get('commercialName', '').size() <= 120
+        && employer.get('sector', '') is string
+        && employer.get('sector', '').size() <= 120
+        && employer.get('documentNumber', '') is string
+        && (
+          (employer.get('documentType', '') == 'RUC'
+            && employer.get('ruc', '') == employer.get('documentNumber', ''))
+          || (employer.get('documentType', '') == 'DNI'
+            && (employer.get('ruc', null) == null || employer.get('ruc', '') == ''))
+        )
+        && employer.get('identityName', '') is string
+        && employer.get('identityName', '').size() >= 3
+        && employer.get('publishedCount', 0) is number
+        && employer.get('hiredCount', 0) is number
+        && employer.get('ratingAverage', 0.0) is number
+        && employer.get('ratingCount', 0) is number;
+    }
+
+    function keepsEmployerReputation() {
+      let before = resource.data.get('employer', '');
+      let after = request.resource.data.get('employer', '');
+      return !(after is map)
+        || (!(before is map)
+          && after.get('publishedCount', 0) == 0
+          && after.get('hiredCount', 0) == 0
+          && after.get('ratingAverage', 0.0) == 0.0
+          && after.get('ratingCount', 0) == 0)
+        || (before is map
+          && after.get('publishedCount', 0) == before.get('publishedCount', 0)
+          && after.get('hiredCount', 0) == before.get('hiredCount', 0)
+          && after.get('ratingAverage', 0.0) == before.get('ratingAverage', 0.0)
+          && after.get('ratingCount', 0) == before.get('ratingCount', 0));
+    }
+
+    function validRoleListWithEmployer() {
+      let roles = request.resource.data.get('roles', []);
+      return roles is list
+        && roles.size() == 2
+        && roles.hasOnly(['TRABAJADOR', 'CONTRATANTE'])
+        && request.resource.data.get('activeRole', '') == 'CONTRATANTE'
+        && isValidEmployerBlock()
+        && keepsEmployerReputation();
+    }
+
+    function isAllowedContractorActivation(uid) {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['roles', 'activeRole', 'employer', 'updatedAt'])
+        && resource.data.roles is list
+        && resource.data.roles.hasOnly(['TRABAJADOR'])
+        && validRoleListWithEmployer();
+    }
+
+    function isAllowedActiveRoleSwitch() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['activeRole', 'updatedAt'])
+        && request.resource.data.activeRole in request.resource.data.roles
+        && request.resource.data.roles == resource.data.roles
+        && (
+          request.resource.data.activeRole == 'TRABAJADOR'
+          || (
+            request.resource.data.activeRole == 'CONTRATANTE'
+            && request.resource.data.get('employer', '').get('enabled', false) == true
+          )
+        );
+    }
+
     // --- Reputación: intocable para el usuario -
     // `workCount`, `ratingAverage` y `ratingCount` los calcula la plataforma.
     // La primera vez que se crea el bloque tienen que valer cero; después
@@ -317,13 +405,21 @@ service cloud.firestore {
     function isAllowedProfileUpdate(uid) {
       return request.resource.data.diff(resource.data)
           .affectedKeys()
-          .hasOnly(['profile', 'worker', 'privacy', 'statistics', 'updatedAt'])
+          .hasOnly(['profile', 'worker', 'privacy', 'statistics', 'employer', 'updatedAt'])
         && isValidProfileUpdate()
         && isValidWorkerUpdate()
         && isValidPrivacyUpdate()
         && photoBelongsToOwner(uid)
         && keepsWorkerReputation()
-        && createsZeroStatistics();
+        && createsZeroStatistics()
+        && (
+          !(request.resource.data.diff(resource.data).affectedKeys().hasAny(['employer']))
+          || (
+            request.resource.data.activeRole == 'CONTRATANTE'
+            && isValidEmployerBlock()
+            && keepsEmployerReputation()
+          )
+        );
     }
 
     // =============================================================
@@ -385,6 +481,8 @@ service cloud.firestore {
           || (resource.data.registrationStatus != 'VERIFIED'
             && isCompleteRegistration()
             && keepsDocumentNumber())
+          || isAllowedContractorActivation(uid)
+          || isAllowedActiveRoleSwitch()
           || isAllowedProfileUpdate(uid));
 
       allow delete: if false;

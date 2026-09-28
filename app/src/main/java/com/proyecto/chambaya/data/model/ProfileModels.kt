@@ -156,8 +156,36 @@ data class WorkerBlock(
     val ratingCount: Int = 0,
     val profileCompleted: Int = 0
 ) {
-    /** `true` si el usuario es trabajador activo (FASE 3 sumará CONTRATANTE). */
     val isWorker: Boolean get() = enabled
+}
+
+/**
+ * Datos persistentes del modo CONTRATANTE.
+ *
+ * Se mantiene separado de `worker` para que cambiar de modo nunca obligue a
+ * repetir los datos del trabajador. El documento de identidad del registro
+ * original no se reemplaza; este bloque guarda la identidad que el usuario
+ * decidió usar como contratante.
+ */
+data class EmployerBlock(
+    val enabled: Boolean = false,
+    val employerType: String = "",
+    val businessName: String = "",
+    val commercialName: String = "",
+    val sector: String = "",
+    val documentType: String = "",
+    val documentNumber: String = "",
+    val ruc: String? = null,
+    val identityName: String = "",
+    val workplaceId: String? = null,
+    val publishedCount: Int = 0,
+    val hiredCount: Int = 0,
+    val ratingAverage: Double = 0.0,
+    val ratingCount: Int = 0
+) {
+    val isConfigured: Boolean get() = enabled && employerType.isNotBlank()
+    val documentLabel: String
+        get() = listOf(documentType, documentNumber).filter { it.isNotBlank() }.joinToString(": ")
 }
 
 /** `privacy` de `users/{uid}`. Por defecto nada se muestra públicamente. */
@@ -214,11 +242,13 @@ data class AuthBlock(
  */
 data class UserProfile(
     val uid: String = "",
+    val roles: List<String> = listOf(UserRoles.TRABAJADOR),
     val activeRole: String = UserRoles.TRABAJADOR,
     val registrationStatus: String = "",
     val accountStatus: String = "",
     val profile: ProfileBlock = ProfileBlock(),
     val worker: WorkerBlock = WorkerBlock(),
+    val employer: EmployerBlock = EmployerBlock(),
     val privacy: PrivacyBlock = PrivacyBlock(),
     val statistics: StatisticsBlock = StatisticsBlock(),
     val identity: IdentityBlock = IdentityBlock(),
@@ -257,10 +287,7 @@ data class ProfileCompletion(
     val isComplete: Boolean get() = percent >= 100
 
     companion object {
-        /** Campos que el usuario puede rellenar desde "Editar perfil". */
-        val CHECKS: List<Pair<String, (UserProfile) -> Boolean>> = listOf(
-            // Cuenta cualquier foto, incluida la que dejó la FASE 1 desde Google:
-            // lo que se pide es que el perfil tenga una, no que sea de Cloudinary.
+        private val COMMON_CHECKS: List<Pair<String, (UserProfile) -> Boolean>> = listOf(
             "Foto de perfil" to { it.hasPhoto },
             "Nombre completo" to { it.profile.fullName.isNotBlank() },
             "Nombre de usuario" to { it.profile.username.isNotBlank() },
@@ -269,24 +296,37 @@ data class ProfileCompletion(
             "Distrito" to { it.profile.district.isNotBlank() },
             "Provincia" to { it.profile.province.isNotBlank() },
             "Departamento" to { it.profile.department.isNotBlank() },
+            "Privacidad" to { true }
+        )
+
+        private val WORKER_CHECKS: List<Pair<String, (UserProfile) -> Boolean>> = listOf(
             "Fecha de nacimiento" to { it.profile.birthDate.isNotBlank() },
             "Género" to { it.profile.gender.isNotBlank() },
             "Años de experiencia" to { it.worker.experienceYears > 0 },
             "Especialidades" to { it.worker.specialties.isNotEmpty() },
-            "Habilidades" to { it.worker.skills.isNotEmpty() },
-            "Privacidad" to { true }
+            "Habilidades" to { it.worker.skills.isNotEmpty() }
         )
 
+        private val EMPLOYER_CHECKS: List<Pair<String, (UserProfile) -> Boolean>> = listOf(
+            "Tipo de contratante" to { it.employer.employerType.isNotBlank() },
+            "Identidad del contratante" to { it.employer.documentType.isNotBlank() && it.employer.documentNumber.isNotBlank() },
+            "Nombre comercial o negocio" to { it.employer.businessName.isNotBlank() }
+        )
+
+        fun checksFor(profile: UserProfile): List<Pair<String, (UserProfile) -> Boolean>> =
+            COMMON_CHECKS + if (profile.activeRole == UserRoles.CONTRATANTE) EMPLOYER_CHECKS else WORKER_CHECKS
+
         fun from(profile: UserProfile): ProfileCompletion {
-            val faltan = CHECKS.filterNot { it.second(profile) }.map { it.first }
-            val completados = CHECKS.size - faltan.size
+            val checks = checksFor(profile)
+            val faltan = checks.filterNot { it.second(profile) }.map { it.first }
+            val completados = checks.size - faltan.size
             return ProfileCompletion(
-                percent = (completados * 100) / CHECKS.size,
+                percent = (completados * 100) / checks.size,
                 missing = faltan
             )
         }
 
-        fun empty(): ProfileCompletion = ProfileCompletion(0, CHECKS.map { it.first })
+        fun empty(): ProfileCompletion = ProfileCompletion(0, COMMON_CHECKS.map { it.first } + WORKER_CHECKS.map { it.first })
     }
 }
 
@@ -296,6 +336,17 @@ data class ProfileCompletion(
  * Solo contiene campos editables: si algo falta en el borrador, el
  * repositorio conserva el valor que ya estaba en Firestore.
  */
+data class EmployerDraft(
+    val employerType: String,
+    val businessName: String,
+    val commercialName: String,
+    val sector: String,
+    val documentType: String,
+    val documentNumber: String,
+    val identityName: String,
+    val ruc: String? = null
+)
+
 data class ProfileDraft(
     val fullName: String = "",
     val username: String = "",
@@ -369,6 +420,26 @@ internal fun DocumentSnapshot.profileBlock(): ProfileBlock {
     )
 }
 
+internal fun DocumentSnapshot.employerBlock(): EmployerBlock {
+    val data = get("employer") as? Map<*, *> ?: emptyMap<Any, Any>()
+    return EmployerBlock(
+        enabled = data["enabled"] as? Boolean ?: false,
+        employerType = data.str("employerType"),
+        businessName = data.str("businessName"),
+        commercialName = data.str("commercialName"),
+        sector = data.str("sector"),
+        documentType = data.str("documentType"),
+        documentNumber = data.str("documentNumber"),
+        ruc = data.str("ruc").ifBlank { null },
+        identityName = data.str("identityName"),
+        workplaceId = data.str("workplaceId").ifBlank { null },
+        publishedCount = (data["publishedCount"] as? Number)?.toInt() ?: 0,
+        hiredCount = (data["hiredCount"] as? Number)?.toInt() ?: 0,
+        ratingAverage = (data["ratingAverage"] as? Number)?.toDouble() ?: 0.0,
+        ratingCount = (data["ratingCount"] as? Number)?.toInt() ?: 0
+    )
+}
+
 internal fun DocumentSnapshot.workerBlock(): WorkerBlock {
     val data = get("worker") as? Map<*, *> ?: emptyMap<Any, Any>()
     return WorkerBlock(
@@ -427,13 +498,21 @@ internal fun DocumentSnapshot.authBlock(): AuthBlock {
 }
 
 /** Construye el [UserProfile] completo desde el documento de Firestore. */
-internal fun DocumentSnapshot.toUserProfile(): UserProfile = UserProfile(
+internal fun DocumentSnapshot.toUserProfile(): UserProfile {
+    val rolesParsed = (get("roles") as? List<*>)?.mapNotNull { it?.toString() }
+        ?.filter(UserRoles::isValid)
+        ?.ifEmpty { listOf(UserRoles.TRABAJADOR) }
+        ?: listOf(getString("activeRole") ?: getString("role") ?: UserRoles.TRABAJADOR)
+    val workerParsed = workerBlock()
+    return UserProfile(
     uid = id,
+    roles = rolesParsed,
     activeRole = getString("activeRole") ?: getString("role") ?: UserRoles.TRABAJADOR,
     registrationStatus = getString("registrationStatus").orEmpty(),
     accountStatus = getString("accountStatus").orEmpty(),
     profile = profileBlock(),
-    worker = workerBlock(),
+    worker = workerParsed.copy(enabled = rolesParsed.contains(UserRoles.TRABAJADOR) && workerParsed.enabled),
+    employer = employerBlock(),
     privacy = privacyBlock(),
     statistics = statisticsBlock(),
     identity = identityBlock(),
@@ -445,7 +524,8 @@ internal fun DocumentSnapshot.toUserProfile(): UserProfile = UserProfile(
         get("privacy") is Map<*, *> &&
         get("statistics") is Map<*, *> &&
         !getString("profile.username").isNullOrBlank()
-)
+    )
+}
 
 // ── helpers de lectura tolerante ──────────────────────────────────
 

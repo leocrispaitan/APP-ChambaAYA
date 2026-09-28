@@ -102,8 +102,10 @@ class FragmentoMiPerfil : Fragment() {
         setupEmptyStateButtons(view)
         ocultarSeccionesDeFasesPosteriores(view)
 
-        // Con datos ya cargados (rotación) se repinta sin volver a ir a Firestore.
-        val cacheado = perfil
+        // El caché compartido manda sobre la copia local del fragmento: si el
+        // perfil se editó desde otra pantalla, ahí está lo más reciente.
+        val cacheado = ProfileCache.perfil ?: perfil
+        perfil = cacheado
         if (cacheado != null) pintar(view, cacheado) else cargarPerfil()
     }
 
@@ -116,6 +118,31 @@ class FragmentoMiPerfil : Fragment() {
         )
         // Ensure bottom nav is visible when coming back from Settings
         (activity as? MainActivity)?.showBottomNav()
+        sincronizarConCacheCompartido()
+    }
+
+    /**
+     * Repinta si el caché compartido tiene un perfil más nuevo que el pintado.
+     *
+     * El perfil se puede editar desde "Ajustes", que no es esta pantalla. Al
+     * volver, [ProfileCache.perfil] ya trae lo guardado, pero el campo [perfil] de
+     * este fragmento seguía con la copia anterior y `onViewCreated` la pintaba
+     * sin volver a leer. Peor: como `MainActivity` conserva el fragmento con
+     * `by lazy` y la navegación por pestañas usa `hide()`/`show()` en vez de
+     * `replace()`, `onViewCreated` tampoco se repite al cambiar de pestaña. Por
+     * eso los cambios solo aparecían al reiniciar la app.
+     *
+     * Se compara contra el caché y no se relee Firestore: el guardado ya publica
+     * ahí el documento nuevo, así que el repintado es inmediato y sin red. Tras
+     * pintar, [perfil] y el caché vuelven a ser el mismo dato, así que esto no
+     * se repite en cada `onResume`.
+     */
+    private fun sincronizarConCacheCompartido() {
+        val root = view ?: return
+        val compartido = ProfileCache.perfil ?: return
+        if (compartido == perfil) return
+        perfil = compartido
+        pintar(root, compartido)
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -216,10 +243,11 @@ class FragmentoMiPerfil : Fragment() {
 
     private fun pintar(root: View, datos: UserProfile) {
         pintarCabecera(root, datos)
-        pintarEstadisticas(root, datos.worker, datos.statistics)
+        pintarEstadisticas(root, datos)
         pintarBiografia(root, datos.profile.bio)
         pintarEspecialidades(root, datos.worker.specialties)
         pintarUbicacionYExperiencia(root, datos.profile, datos.worker)
+        pintarModoContratante(root, datos)
         pintarContacto(root, datos)
         pintarIdentidad(root, datos)
         root.findViewById<View>(R.id.cardCompletaPerfil).isVisible = !datos.completion().isComplete
@@ -261,21 +289,59 @@ class FragmentoMiPerfil : Fragment() {
             getString(R.string.profile_porcentaje, completitud.percent)
     }
 
-    private fun pintarEstadisticas(root: View, worker: WorkerBlock, estadisticas: StatisticsBlock) {
-        // "Trabajos": los cuenta la plataforma, no el usuario.
-        root.findViewById<TextView>(R.id.tvPostsCount).text =
-            estadisticas.completedJobsCount.toString()
+    private fun pintarEstadisticas(root: View, datos: UserProfile) {
+        if (datos.activeRole == com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE) {
+            root.findViewById<TextView>(R.id.tvStatsLabel1).text = "Publicaciones"
+            root.findViewById<TextView>(R.id.tvStatsLabel2).text = "Contratados"
+            root.findViewById<TextView>(R.id.tvStatsLabel3).text = "Calificación"
+            root.findViewById<TextView>(R.id.tvPostsCount).text = datos.employer.publishedCount.toString()
+            root.findViewById<TextView>(R.id.tvFollowingCount).text = datos.employer.hiredCount.toString()
+            root.findViewById<TextView>(R.id.tvFollowersCount).text =
+                if (datos.employer.ratingCount > 0) {
+                    String.format(Locale.US, "%.1f", datos.employer.ratingAverage)
+                } else {
+                    getString(R.string.profile_sin_puntuar)
+                }
+        } else {
+            root.findViewById<TextView>(R.id.tvStatsLabel1).text = getString(R.string.profile_posts_label)
+            root.findViewById<TextView>(R.id.tvStatsLabel2).text = getString(R.string.profile_following_label)
+            root.findViewById<TextView>(R.id.tvStatsLabel3).text = getString(R.string.profile_followers_label)
+            root.findViewById<TextView>(R.id.tvPostsCount).text =
+                datos.statistics.completedJobsCount.toString()
+            root.findViewById<TextView>(R.id.tvFollowingCount).text =
+                getString(R.string.profile_anios_experiencia, datos.worker.experienceYears)
+            root.findViewById<TextView>(R.id.tvFollowersCount).text =
+                if (datos.worker.ratingCount > 0) {
+                    String.format(Locale.US, "%.1f", datos.worker.ratingAverage)
+                } else {
+                    getString(R.string.profile_sin_puntuar)
+                }
+        }
+    }
 
-        root.findViewById<TextView>(R.id.tvFollowingCount).text =
-            getString(R.string.profile_anios_experiencia, worker.experienceYears)
+    private fun pintarModoContratante(root: View, datos: UserProfile) {
+        val contratante = datos.activeRole == com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE
+        root.findViewById<View>(R.id.cardSkills).isVisible = !contratante
+        root.findViewById<View>(R.id.cardInfoRow).isVisible = !contratante
+        root.findViewById<View>(R.id.cardExperience).isVisible = !contratante
 
-        // Sin reseñas no hay calificación: se muestra "—" en vez de inventar un 4.9.
-        root.findViewById<TextView>(R.id.tvFollowersCount).text =
-            if (worker.ratingCount > 0) {
-                String.format(Locale.US, "%.1f", worker.ratingAverage)
+        root.findViewById<TextView>(R.id.tvHeaderTitle).text =
+            if (contratante) "Perfil de contratante" else getString(R.string.profile_title)
+
+        root.findViewById<TextView>(R.id.tvProfileHandle).text =
+            if (contratante) {
+                datos.employer.commercialName.ifBlank {
+                    datos.employer.businessName.ifBlank { "@${datos.profile.username}" }
+                }
             } else {
-                getString(R.string.profile_sin_puntuar)
+                if (datos.profile.username.isNotBlank()) "@${datos.profile.username}"
+                else getString(R.string.profile_sin_username)
             }
+
+        if (contratante && datos.employer.documentNumber.isNotBlank()) {
+            root.findViewById<TextView>(R.id.tvDniVerificado).text =
+                "${datos.employer.documentType}: ${datos.employer.documentNumber}"
+        }
     }
 
     private fun pintarBiografia(root: View, bio: String) {

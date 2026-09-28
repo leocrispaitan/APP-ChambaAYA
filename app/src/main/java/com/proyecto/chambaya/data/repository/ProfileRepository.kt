@@ -8,6 +8,9 @@ import com.proyecto.chambaya.data.model.OficioCatalog
 import com.proyecto.chambaya.data.model.PeruLocations
 import com.proyecto.chambaya.data.model.ProfileCompletion
 import com.proyecto.chambaya.data.model.ProfileDraft
+import com.proyecto.chambaya.data.model.EmployerDraft
+import com.proyecto.chambaya.data.model.IdentityDocumentTypes
+import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.ProfileLimits
 import com.proyecto.chambaya.data.model.ProfilePhotoSources
 import com.proyecto.chambaya.data.model.UserProfile
@@ -85,7 +88,8 @@ class ProfileRepository(
                 val actual = Tasks.await(ref.get())
                 val perfil = actual.toUserProfile()
 
-                if (perfil.tieneBloquesFase2) return@runCatching perfil
+                val employerNecesario = perfil.activeRole == UserRoles.CONTRATANTE && actual.get("employer") !is Map<*, *>
+                if (perfil.tieneBloquesFase2 && !employerNecesario) return@runCatching perfil
 
                 // `username` se guarda SIEMPRE normalizado, para que coincida
                 // con `usernameNormalized` y con la clave de `usernames/`.
@@ -115,7 +119,7 @@ class ProfileRepository(
 
                 if (actual.get("worker") !is Map<*, *>) {
                     cambios["worker"] = mapOf(
-                        "enabled" to true,
+                        "enabled" to (perfil.roles.contains(UserRoles.TRABAJADOR)),
                         "experienceYears" to 0,
                         "specialties" to emptyList<String>(),
                         "skills" to emptyList<String>(),
@@ -144,9 +148,133 @@ class ProfileRepository(
                     )
                 }
 
+                // Las cuentas que se registraron originalmente como CONTRATANTE
+                // llegan con `roles=["CONTRATANTE"]` y no necesitan una segunda
+                // cuenta: sembramos su bloque employer desde la identidad ya
+                // verificada en FASE 1.
+                if (perfil.activeRole == UserRoles.CONTRATANTE && actual.get("employer") !is Map<*, *>) {
+                    val identidad = perfil.identity
+                    val tipo = if (identidad.documentType == IdentityDocumentTypes.RUC) "EMPRESA" else "PERSONA"
+                    cambios["employer"] = mapOf(
+                        "enabled" to true,
+                        "employerType" to tipo,
+                        "businessName" to identidad.identityName.ifBlank { perfil.profile.fullName },
+                        "commercialName" to "",
+                        "sector" to "",
+                        "documentType" to identidad.documentType,
+                        "documentNumber" to identidad.documentNumber,
+                        "ruc" to identidad.documentNumber.takeIf {
+                            identidad.documentType == IdentityDocumentTypes.RUC
+                        },
+                        "identityName" to identidad.identityName.ifBlank { perfil.profile.fullName },
+                        "workplaceId" to null,
+                        "publishedCount" to 0,
+                        "hiredCount" to 0,
+                        "ratingAverage" to 0.0,
+                        "ratingCount" to 0
+                    )
+                }
+
                 cambios["updatedAt"] = FieldValue.serverTimestamp()
 
                 Tasks.await(ref.update(cambios))
+                Tasks.await(ref.get()).toUserProfile()
+            }
+        }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  FASE 3 — CONTRATANTE / CAMBIO DE MODO
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Activa CONTRATANTE sin crear otra cuenta. La información de `worker` no
+     * se toca. Si el usuario ya tenía un perfil employer, se actualizan solo
+     * sus datos de contratante y se conserva el mismo uid.
+     */
+    suspend fun activateContractor(
+        uid: String,
+        draft: EmployerDraft
+    ): Result<UserProfile> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(draft.documentType == IdentityDocumentTypes.DNI ||
+                draft.documentType == IdentityDocumentTypes.RUC) {
+                "Selecciona DNI o RUC."
+            }
+            val cleanDocument = draft.documentNumber.filter(Char::isDigit)
+            require(
+                (draft.documentType == IdentityDocumentTypes.DNI && cleanDocument.length == 8) ||
+                    (draft.documentType == IdentityDocumentTypes.RUC && cleanDocument.length == 11)
+            ) {
+                if (draft.documentType == IdentityDocumentTypes.DNI)
+                    "El DNI debe tener 8 dígitos."
+                else
+                    "El RUC debe tener 11 dígitos."
+            }
+
+            val ref = firestore.collection(COLLECTION_USERS).document(uid)
+            val actual = Tasks.await(ref.get()).toUserProfile()
+            require(actual.uid == uid) { "La cuenta no es válida." }
+
+            val roles = linkedSetOf<String>()
+            roles += UserRoles.TRABAJADOR
+            roles += UserRoles.CONTRATANTE
+
+            val employer = mapOf(
+                "enabled" to true,
+                "employerType" to draft.employerType,
+                "businessName" to draft.businessName.trim(),
+                "commercialName" to draft.commercialName.trim(),
+                "sector" to draft.sector.trim(),
+                "documentType" to draft.documentType,
+                "documentNumber" to cleanDocument,
+                "ruc" to draft.ruc?.filter(Char::isDigit)?.takeIf { it.isNotBlank() },
+                "identityName" to draft.identityName.trim(),
+                "workplaceId" to actual.employer.workplaceId,
+                "publishedCount" to actual.employer.publishedCount,
+                "hiredCount" to actual.employer.hiredCount,
+                "ratingAverage" to actual.employer.ratingAverage,
+                "ratingCount" to actual.employer.ratingCount
+            )
+
+            Tasks.await(
+                ref.update(
+                    mapOf(
+                        "roles" to roles.toList(),
+                        "activeRole" to UserRoles.CONTRATANTE,
+                        "employer" to employer,
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                )
+            )
+            Tasks.await(ref.get()).toUserProfile()
+        }
+    }
+
+    /** Cambia el modo activo sin borrar ningún perfil. */
+    suspend fun switchActiveRole(uid: String, role: String): Result<UserProfile> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                require(UserRoles.isValid(role)) { "Rol no válido." }
+                val ref = firestore.collection(COLLECTION_USERS).document(uid)
+                val snapshot = Tasks.await(ref.get())
+                val roles = snapshot.get("roles") as? List<*>
+                require(roles?.contains(role) == true) {
+                    "Ese modo todavía no está activado."
+                }
+                if (role == UserRoles.CONTRATANTE) {
+                    val employer = snapshot.get("employer") as? Map<*, *>
+                    require(employer?.get("enabled") == true) {
+                        "Completa el perfil de contratante antes de cambiar de modo."
+                    }
+                }
+                Tasks.await(
+                    ref.update(
+                        mapOf(
+                            "activeRole" to role,
+                            "updatedAt" to FieldValue.serverTimestamp()
+                        )
+                    )
+                )
                 Tasks.await(ref.get()).toUserProfile()
             }
         }

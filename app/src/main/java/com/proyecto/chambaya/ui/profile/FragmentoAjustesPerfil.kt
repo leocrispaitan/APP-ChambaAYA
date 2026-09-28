@@ -27,6 +27,7 @@ import com.proyecto.chambaya.LoginActivity
 import com.proyecto.chambaya.MainActivity
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.UserProfile
+import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import kotlinx.coroutines.launch
 
@@ -91,6 +92,13 @@ class FragmentoAjustesPerfil : Fragment() {
         if (cacheado != null) pintarUsuario(view, cacheado) else cargarPerfil()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CONTRATANTE && resultCode == Activity.RESULT_OK) {
+            cargarPerfil()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         // Status bar blanca con iconos oscuros para coincidir con el top bar claro
@@ -142,6 +150,12 @@ class FragmentoAjustesPerfil : Fragment() {
         root.findViewById<View>(R.id.btnSettingsEditProfile)?.setOnClickListener {
             animateTap(it)
             openEditProfileScreen()
+        }
+
+        // FASE 3 — cambio de modo sin crear otra cuenta.
+        root.findViewById<View>(R.id.btnCambiarModo)?.setOnClickListener {
+            animateTap(it)
+            cambiarModo()
         }
 
         // Section: Cuenta
@@ -258,6 +272,68 @@ class FragmentoAjustesPerfil : Fragment() {
             datos.profile.fullName,
             datos.profile.username.ifBlank { datos.uid }
         )
+
+        val roleTitle = root.findViewById<TextView>(R.id.tvRoleModeTitle)
+        val roleSubtitle = root.findViewById<TextView>(R.id.tvRoleModeSubtitle)
+        val tieneContratante = datos.roles().contains(UserRoles.CONTRATANTE)
+        if (datos.activeRole == UserRoles.CONTRATANTE) {
+            roleTitle?.text = "Modo contratante"
+            roleSubtitle?.text = if (tieneContratante) {
+                "Cambiar al modo trabajador"
+            } else {
+                "Completa tu perfil de contratante"
+            }
+        } else {
+            roleTitle?.text = "Modo trabajador"
+            roleSubtitle?.text = if (tieneContratante) {
+                "Cambiar al modo contratante"
+            } else {
+                "Activa también el modo contratante"
+            }
+        }
+    }
+
+    private fun UserProfile.roles(): List<String> = roles
+
+    private fun cambiarModo() {
+        val datos = perfil ?: return
+        val uid = auth.currentUser?.uid ?: return
+
+        if (datos.activeRole == UserRoles.CONTRATANTE) {
+            lifecycleScope.launch {
+                repository.switchActiveRole(uid, UserRoles.TRABAJADOR)
+                    .onSuccess {
+                        perfil = it
+                        ProfileCache.perfil = it
+                        view?.let { root -> pintarUsuario(root, it) }
+                        Toast.makeText(requireContext(), "Modo trabajador activo.", Toast.LENGTH_SHORT).show()
+                    }
+                    .onFailure {
+                        Toast.makeText(requireContext(), it.message ?: "No se pudo cambiar de modo.", Toast.LENGTH_LONG).show()
+                    }
+            }
+            return
+        }
+
+        if (datos.employer.enabled) {
+            lifecycleScope.launch {
+                repository.switchActiveRole(uid, UserRoles.CONTRATANTE)
+                    .onSuccess {
+                        perfil = it
+                        ProfileCache.perfil = it
+                        view?.let { root -> pintarUsuario(root, it) }
+                        Toast.makeText(requireContext(), "Modo contratante activo.", Toast.LENGTH_SHORT).show()
+                    }
+                    .onFailure {
+                        Toast.makeText(requireContext(), it.message ?: "No se pudo cambiar de modo.", Toast.LENGTH_LONG).show()
+                    }
+            }
+        } else {
+            startActivityForResult(
+                Intent(requireContext(), com.proyecto.chambaya.ActivarContratanteActivity::class.java),
+                REQUEST_CONTRATANTE
+            )
+        }
     }
 
     /**
@@ -393,6 +469,10 @@ class FragmentoAjustesPerfil : Fragment() {
             @Suppress("DEPRECATION")
             requireActivity().overridePendingTransition(R.anim.dialog_slide_up, android.R.anim.fade_out)
         }
+    }
+
+    companion object {
+        private const val REQUEST_CONTRATANTE = 7301
     }
 
     private fun navigateBack() {
