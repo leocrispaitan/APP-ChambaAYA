@@ -44,7 +44,16 @@ class WorkplaceRepository(
      * Lugar principal del contratante.
      *
      * Primero mira `users/{uid}.employer.workplaceId` (ruta rápida y barata);
-     * si está vacío, busca por `ownerUid` (migración / datos antiguos).
+     * si está vacío o el documento enlazado ya no existe, busca por `ownerUid`
+     * (migración / enlace roto).
+     *
+     * Cada paso está aislado: si la lectura del enlace falla (red, documento
+     * movido, id inválido), igual se intenta la búsqueda por dueño en vez de
+     * devolver `null` y dejar al usuario atascado en "Registra tu lugar".
+     *
+     * Si la búsqueda por dueño encuentra el lugar pero el enlace estaba roto o
+     * ausente, se re-enlaza `employer.workplaceId` como mejor esfuerzo para que
+     * la próxima lectura entre por la vía rápida.
      */
     suspend fun loadByOwner(uid: String): Result<Workplace?> =
         withContext(Dispatchers.IO) {
@@ -55,10 +64,14 @@ class WorkplaceRepository(
                 val linkedId = ((userSnap.get("employer") as? Map<*, *>)?.get("workplaceId") as? String)
                     .orEmpty().trim()
                 if (linkedId.isNotBlank()) {
-                    val snap = Tasks.await(
-                        firestore.collection(COLLECTION_WORKPLACES).document(linkedId).get()
-                    )
-                    if (snap.exists()) return@runCatching snap.toWorkplace()
+                    val porEnlace = runCatching {
+                        Tasks.await(
+                            firestore.collection(COLLECTION_WORKPLACES).document(linkedId).get()
+                        ).takeIf { it.exists() }?.toWorkplace()
+                    }.onFailure {
+                        android.util.Log.w(TAG, "loadByOwner: falló el enlace $linkedId, buscando por dueño", it)
+                    }.getOrNull()
+                    if (porEnlace != null) return@runCatching porEnlace
                 }
                 val query = Tasks.await(
                     firestore.collection(COLLECTION_WORKPLACES)
@@ -66,7 +79,14 @@ class WorkplaceRepository(
                         .limit(1)
                         .get()
                 )
-                query.documents.firstOrNull()?.toWorkplace()
+                val encontrado = query.documents.firstOrNull()?.toWorkplace()
+                if (encontrado != null && linkedId != encontrado.workplaceId) {
+                    runCatching { vincular(uid, encontrado.workplaceId) }
+                        .onFailure {
+                            android.util.Log.w(TAG, "loadByOwner: no se pudo re-enlazar ${encontrado.workplaceId}", it)
+                        }
+                }
+                encontrado
             }
         }
 
@@ -235,5 +255,6 @@ class WorkplaceRepository(
 
     companion object {
         const val COLLECTION_WORKPLACES = "workplaces"
+        private const val TAG = "WorkplaceRepository"
     }
 }

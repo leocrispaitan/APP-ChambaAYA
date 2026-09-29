@@ -1,298 +1,476 @@
 package com.proyecto.chambaya.ui.jobs
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.NestedScrollView
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
+import com.proyecto.chambaya.data.repository.PublicationInteractionRepository
+import com.proyecto.chambaya.data.repository.PublicationRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.InputStreamReader
 
+/**
+ * FASE 6 — Feed de chambas con datos reales de Firestore.
+ *
+ * Se mantiene el layout existente (header, buscador, banner, categorías,
+ * chips): solo se conecta la lógica:
+ *  - feed ACTIVE+PUBLIC desde publications
+ *  - búsqueda por texto en vivo
+ *  - filtros (categoría, distrito, pago, orden) en bottom sheet
+ *  - chips Todos / Recientes / Populares (+ categoría rápida)
+ *  - like / guardar / compartir / no me interesa / denunciar reales
+ *  - tap en tarjeta → detalle; tap en perfil → perfil público
+ *  - estados carga / vacío / error
+ */
 class FragmentoChambas : Fragment() {
 
     private var scrollView: NestedScrollView? = null
     private var recyclerView: RecyclerView? = null
-    private var jobCardAdapter: JobCardAdapter? = null
-    
+    private var adapter: PublicationAdapter? = null
     private var rvCategories: RecyclerView? = null
     private var categoriaAdapter: CategoriaAdapter? = null
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragmento_chambas, container, false)
-        
-        // Optimizar el NestedScrollView para máxima fluidez
-        scrollView = view.findViewById(R.id.scrollMain)
-        scrollView?.apply {
-            // LAYER_TYPE_NONE es el más eficiente para scroll
-            setLayerType(View.LAYER_TYPE_NONE, null)
-            
-            // Habilitar nested scrolling
-            isNestedScrollingEnabled = true
-            
-            // Desactivar over-scroll para eliminar efecto de rebote
-            overScrollMode = View.OVER_SCROLL_NEVER
-            
-            // Habilitar smooth scrolling
-            isSmoothScrollingEnabled = true
-            
-            // Desactivar fading edges que causan overhead
-            isVerticalFadingEdgeEnabled = false
-            isHorizontalFadingEdgeEnabled = false
-            
-            // Configurar scroll container
-            isScrollContainer = true
-            scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
-        }
-        
-        // Configurar RecyclerView con Adapter
-        setupRecyclerView(view)
-        
-        // Configurar RecyclerView de categorías
-        setupCategoriasRecyclerView(view)
-        
-        // Cargar datos de ejemplo
-        loadSampleData()
-        
-        // Cargar categorías desde JSON
-        loadCategoriasFromJson()
-        
-        return view
+    private var layoutLoading: View? = null
+    private var layoutEmpty: View? = null
+    private var layoutError: View? = null
+    private var tvErrorDetail: TextView? = null
+    private var tvEmptyTitle: TextView? = null
+    private var tvEmptySub: TextView? = null
+
+    private val pubRepo = PublicationRepository()
+    private val interRepo = PublicationInteractionRepository()
+
+    private var allItems: List<PublicationFeedItem> = emptyList()
+    private var filters = PublicationFilters()
+    private var searchJob: Job? = null
+    private var selectedCategory: String = ""
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        return inflater.inflate(R.layout.fragmento_chambas, container, false)
     }
 
-    private fun setupRecyclerView(view: View) {
-        recyclerView = view.findViewById(R.id.rvJobs)
-        
-        // Crear adapter con callbacks
-        jobCardAdapter = JobCardAdapter(
-            onJobClick = { jobCard ->
-                // Manejar click en la card
-                Toast.makeText(
-                    requireContext(),
-                    "Seleccionado: ${jobCard.titulo}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                // Aquí puedes navegar a los detalles del trabajo
-            },
-            onFavoriteClick = { jobCard ->
-                // Manejar click en favorito
-                val mensaje = if (jobCard.isFavorito) {
-                    "Agregado a favoritos"
-                } else {
-                    "Removido de favoritos"
-                }
-                Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show()
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        scrollView = view.findViewById(R.id.scrollMain)
+        scrollView?.apply {
+            setLayerType(View.LAYER_TYPE_NONE, null)
+            isNestedScrollingEnabled = true
+            overScrollMode = View.OVER_SCROLL_NEVER
+            isSmoothScrollingEnabled = true
+            isVerticalFadingEdgeEnabled = false
+            isHorizontalFadingEdgeEnabled = false
+        }
+
+        layoutLoading = view.findViewById(R.id.layoutFeedLoading)
+        layoutEmpty = view.findViewById(R.id.layoutFeedEmpty)
+        layoutError = view.findViewById(R.id.layoutFeedError)
+        tvErrorDetail = view.findViewById(R.id.tvFeedErrorDetail)
+        tvEmptyTitle = view.findViewById(R.id.tvFeedEmptyTitle)
+        tvEmptySub = view.findViewById(R.id.tvFeedEmptySub)
+
+        setupFeed(view)
+        setupCategorias(view)
+        setupSearch(view)
+        setupChips(view)
+        setupHeaderActions(view)
+
+        view.findViewById<Button>(R.id.btnFeedRetry)?.setOnClickListener { cargarFeed() }
+        view.findViewById<Button>(R.id.btnFeedEmptyAction)?.setOnClickListener {
+            if (filters.isEmpty() && filters.query.isBlank() && selectedCategory.isBlank()) cargarFeed()
+            else { limpiarFiltros(view); }
+        }
+
+        // Resultados de sheets hijos.
+        parentFragmentManager.setFragmentResultListener(PublicationOptionsSheet.REQUEST, viewLifecycleOwner) { _, bundle ->
+            val action = bundle.getString(PublicationOptionsSheet.EXTRA_ACTION).orEmpty()
+            val id = bundle.getString(PublicationOptionsSheet.EXTRA_ID).orEmpty()
+            manejarOpcion(action, id)
+        }
+        parentFragmentManager.setFragmentResultListener(FilterBottomSheet.REQUEST, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(FilterBottomSheet.EXTRA_CLEAR)) {
+                limpiarFiltros(view)
+            } else {
+                filters = filters.copy(
+                    category = bundle.getString(FilterBottomSheet.EXTRA_CAT).orEmpty(),
+                    district = bundle.getString(FilterBottomSheet.EXTRA_DIS).orEmpty(),
+                    minAmount = bundle.getDouble(FilterBottomSheet.EXTRA_MIN),
+                    sortNewestFirst = bundle.getBoolean(FilterBottomSheet.EXTRA_SORT, true)
+                )
+                aplicarFiltros()
             }
+        }
+        parentFragmentManager.setFragmentResultListener(JobDetailSheet.REQUEST_CHANGED, viewLifecycleOwner) { _, _ ->
+            cargarFeed(refreshInteractionsOnly = true)
+        }
+        parentFragmentManager.setFragmentResultListener(JobDetailSheet.REQUEST_OPEN_PROFILE, viewLifecycleOwner) { _, bundle ->
+            val uid = bundle.getString(JobDetailSheet.EXTRA_UID).orEmpty()
+            if (uid.isNotBlank()) PublicProfileSheet.newInstance(uid).show(parentFragmentManager, "profile")
+        }
+
+        loadCategoriasFromJson()
+        cargarFeed()
+    }
+
+    // ── Feed ────────────────────────────────────────────────
+
+    private fun setupFeed(view: View) {
+        recyclerView = view.findViewById(R.id.rvJobs)
+        adapter = PublicationAdapter(
+            onOpenDetail = { item ->
+                JobDetailSheet.newInstance(item.publication.publicationId)
+                    .show(parentFragmentManager, "detail")
+            },
+            onOpenProfile = { item ->
+                val uid = item.publication.publisher.uid.ifBlank { item.publication.ownerUid }
+                if (uid.isNotBlank()) PublicProfileSheet.newInstance(uid).show(parentFragmentManager, "profile")
+            },
+            onToggleLike = { item -> toggleLike(item) },
+            onToggleSave = { item -> toggleSave(item) },
+            onShare = { item -> compartir(item) },
+            onHide = { },
+            onReport = { }
         )
-        
         recyclerView?.apply {
-            adapter = jobCardAdapter
-            
-            // Deshabilitar nested scrolling en el RecyclerView para que el NestedScrollView controle todo
+            adapter = this@FragmentoChambas.adapter
             isNestedScrollingEnabled = false
-            
-            // Optimizaciones de rendimiento
             setHasFixedSize(true)
-            setItemViewCacheSize(20)
-            
-            // Hardware acceleration para el RecyclerView
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
-            
-            // Desactivar animaciones que causan lag
+            setItemViewCacheSize(10)
             itemAnimator = null
         }
     }
 
-    private fun setupCategoriasRecyclerView(view: View) {
-        rvCategories = view.findViewById(R.id.rvCategories)
-        
-        rvCategories?.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            
-            // Optimizaciones de rendimiento
-            setHasFixedSize(true)
-            isNestedScrollingEnabled = false
-            setItemViewCacheSize(10)
-        }
-    }
-    
-    private fun loadCategoriasFromJson() {
-        try {
-            // Leer el archivo JSON desde assets
-            val inputStream = requireContext().assets.open("api_oficios.json")
-            val reader = InputStreamReader(inputStream)
-            
-            // Parsear JSON usando Gson
-            val gson = Gson()
-            val categoriaListType = object : TypeToken<List<Categoria>>() {}.type
-            val categorias: List<Categoria> = gson.fromJson(reader, categoriaListType)
-            
-            reader.close()
-            
-            // Crear adapter y asignar al RecyclerView
-            categoriaAdapter = CategoriaAdapter(categorias) { categoria ->
-                // Manejar click en categoría
-                Toast.makeText(
-                    requireContext(),
-                    "Categoría seleccionada: ${categoria.categoria}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                // Aquí puedes filtrar los trabajos por categoría
+    private fun cargarFeed(refreshInteractionsOnly: Boolean = false) {
+        if (!refreshInteractionsOnly) pintarEstado(Estado.CARGANDO)
+        viewLifecycleOwner.lifecycleScope.launch {
+            val resultado = pubRepo.feed(40)
+            if (!isAdded) return@launch
+            resultado.onSuccess { pubs ->
+                val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+                val ids = pubs.map { it.publicationId }
+                val liked = interRepo.likedIds(ids, uid)
+                val saved = interRepo.savedIds(ids, uid)
+                val hidden = interRepo.hiddenIds(ids, uid)
+                allItems = pubs
+                    .filter { it.publicationId !in hidden }
+                    .map { p ->
+                        PublicationFeedItem(
+                            publication = p,
+                            liked = p.publicationId in liked,
+                            saved = p.publicationId in saved,
+                            likesCount = p.statistics.likes,
+                            savesCount = p.statistics.saves
+                        )
+                    }
+                aplicarFiltros()
+            }.onFailure { e ->
+                pintarEstado(Estado.ERROR, e.message)
             }
-            
-            rvCategories?.adapter = categoriaAdapter
-            
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(
-                requireContext(),
-                "Error al cargar categorías: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
         }
     }
 
-    private fun loadSampleData() {
-        // Datos de ejemplo con campos de estilo Instagram
-        val sampleJobs = listOf(
-            JobCard(
-                id = "1",
-                titulo = "Maestro Albañil",
-                categoria = "Construcción",
-                rating = 4.8f,
-                precio = "S/ 80 / día",
-                iconoCategoria = R.drawable.ic_cat_construccion,
-                colorFondo = "#1E3A5F",
-                empleador = "Carlos Quispe",
-                distrito = "Ayacucho Centro",
-                tiempoPublicado = "Hace 2h",
-                descripcion = "Se necesita maestro albañil con experiencia en construcción de viviendas. Obra en el centro de Ayacucho, trabajo inmediato.",
-                avatarEmpleador = R.drawable.avatar_michael
-            ),
-            JobCard(
-                id = "2",
-                titulo = "Limpieza de Hogar",
-                categoria = "Limpieza",
-                rating = 4.6f,
-                precio = "S/ 50 / día",
-                iconoCategoria = R.drawable.ic_cat_limpieza,
-                colorFondo = "#2D5A8E",
-                empleador = "María Flores",
-                distrito = "Carmen Alto",
-                tiempoPublicado = "Hace 5h",
-                descripcion = "Necesito persona responsable para limpieza profunda de departamento. Se paga al finalizar el día. Llevar implementos propios.",
-                avatarEmpleador = R.drawable.avatar_katty
-            ),
-            JobCard(
-                id = "3",
-                titulo = "Delivery Express",
-                categoria = "Delivery",
-                rating = 4.9f,
-                precio = "S/ 40 / día",
-                iconoCategoria = R.drawable.ic_cat_delivery,
-                colorFondo = "#1A6B4A",
-                empleador = "Restaurante El Inca",
-                distrito = "Jesús Nazareno",
-                tiempoPublicado = "Hace 1h",
-                descripcion = "Buscamos repartidores con moto propia para delivery de comida. Horario flexible de lunes a domingo. Pago diario.",
-                avatarEmpleador = R.drawable.avatar_jordan
-            ),
-            JobCard(
-                id = "4",
-                titulo = "Técnico Electricista",
-                categoria = "Técnico",
-                rating = 4.7f,
-                precio = "S/ 100 / día",
-                iconoCategoria = R.drawable.ic_cat_tecnico,
-                colorFondo = "#5B3D8F",
-                empleador = "Juan Mendoza",
-                distrito = "San Juan Bautista",
-                tiempoPublicado = "Hace 3h",
-                descripcion = "Instalación eléctrica residencial. Trabajo de 2 días. Requiere certificación y herramientas propias. Pago adelantado el 50%.",
-                avatarEmpleador = R.drawable.avatar_alex
-            ),
-            JobCard(
-                id = "5",
-                titulo = "Pintor Profesional",
-                categoria = "Construcción",
-                rating = 4.5f,
-                precio = "S/ 70 / día",
-                iconoCategoria = R.drawable.ic_cat_construccion,
-                colorFondo = "#7B3D2A",
-                empleador = "Constructora Andina",
-                distrito = "Ayacucho Centro",
-                tiempoPublicado = "Hace 8h",
-                descripcion = "Se requiere pintor con experiencia en pintura de interiores y exteriores. Proyecto de 1 semana con posibilidad de renovación.",
-                avatarEmpleador = R.drawable.avatar_samantha
-            ),
-            JobCard(
-                id = "6",
-                titulo = "Jardinería y Mantenimiento",
-                categoria = "Limpieza",
-                rating = 4.4f,
-                precio = "S/ 60 / día",
-                iconoCategoria = R.drawable.ic_cat_limpieza,
-                colorFondo = "#2D6B3A",
-                empleador = "Club Ayacucho",
-                distrito = "Magdalena",
-                tiempoPublicado = "Hace 6h",
-                descripcion = "Mantenimiento de jardines y áreas verdes. Trabajo fijo los fines de semana. Incluye almuerzo y materiales.",
-                avatarEmpleador = R.drawable.avatar_michael
-            ),
-            JobCard(
-                id = "7",
-                titulo = "Mensajería Rápida",
-                categoria = "Delivery",
-                rating = 4.8f,
-                precio = "S/ 35 / día",
-                iconoCategoria = R.drawable.ic_cat_delivery,
-                colorFondo = "#1E5A7A",
-                empleador = "Farmacias Unidas",
-                distrito = "Ayacucho Centro",
-                tiempoPublicado = "Hace 30min",
-                descripcion = "Mensajero para entrega de medicamentos a domicilio. Zona urbana solamente. Bicicleta o moto. Turno mañana o tarde.",
-                avatarEmpleador = R.drawable.avatar_jordan
-            ),
-            JobCard(
-                id = "8",
-                titulo = "Gasfitero / Plomero",
-                categoria = "Técnico",
-                rating = 4.6f,
-                precio = "S/ 90 / día",
-                iconoCategoria = R.drawable.ic_cat_tecnico,
-                colorFondo = "#3D2D6B",
-                empleador = "Roberto Huamán",
-                distrito = "Andrés Avelino Cáceres",
-                tiempoPublicado = "Hace 4h",
-                descripcion = "Instalación y reparación de tuberías en edificio nuevo. 3 días de trabajo. Herramientas a cargo del contratante. Pago diario.",
-                avatarEmpleador = R.drawable.avatar_alex
-            )
+    private fun aplicarFiltros() {
+        val efectivo = filters.copy(
+            category = filters.category.ifBlank { selectedCategory }
         )
-        
-        // Enviar datos al adapter
-        jobCardAdapter?.submitList(sampleJobs)
+        val filtrada = allItems.applyFilters(efectivo)
+        adapter?.submitList(filtrada)
+        if (filtrada.isEmpty()) {
+            val buscando = efectivo.query.isNotBlank() || !efectivo.isEmpty() || selectedCategory.isNotBlank()
+            pintarEstado(
+                Estado.VACIO,
+                if (buscando) "sin_resultados" else null
+            )
+        } else {
+            pintarEstado(Estado.LISTA)
+        }
+    }
+
+    private enum class Estado { CARGANDO, LISTA, VACIO, ERROR }
+
+    private fun pintarEstado(estado: Estado, detalle: String? = null) {
+        recyclerView?.visibility = if (estado == Estado.LISTA) View.VISIBLE else View.GONE
+        layoutLoading?.visibility = if (estado == Estado.CARGANDO) View.VISIBLE else View.GONE
+        layoutEmpty?.visibility = if (estado == Estado.VACIO) View.VISIBLE else View.GONE
+        layoutError?.visibility = if (estado == Estado.ERROR) View.VISIBLE else View.GONE
+        if (estado == Estado.VACIO) {
+            if (detalle == "sin_resultados") {
+                tvEmptyTitle?.text = "Sin resultados"
+                tvEmptySub?.text = "Prueba con otra palabra o ajusta los filtros."
+                view?.findViewById<Button>(R.id.btnFeedEmptyAction)?.text = "Limpiar filtros"
+            } else {
+                tvEmptyTitle?.text = "Aún no hay chambas aquí"
+                tvEmptySub?.text = "Cuando un contratante publique una chamba, la verás en este feed."
+                view?.findViewById<Button>(R.id.btnFeedEmptyAction)?.text = "Recargar"
+            }
+        }
+        if (estado == Estado.ERROR) {
+            tvErrorDetail?.text = detalle?.take(120) ?: "Revisa tu conexión e inténtalo de nuevo."
+        }
+    }
+
+    // ── Búsqueda ────────────────────────────────────────────
+
+    private fun setupSearch(view: View) {
+        val et = view.findViewById<EditText>(R.id.etSearch) ?: return
+        et.doAfterTextChanged { texto ->
+            searchJob?.cancel()
+            searchJob = viewLifecycleOwner.lifecycleScope.launch {
+                delay(350)
+                filters = filters.copy(query = texto?.toString().orEmpty())
+                aplicarFiltros()
+            }
+        }
+        et.setOnEditorActionListener { v, _, _ ->
+            filters = filters.copy(query = v.text?.toString().orEmpty())
+            aplicarFiltros()
+            true
+        }
+        view.findViewById<View>(R.id.btnFilter)?.setOnClickListener {
+            val cats = allItems.map { it.publication.category }.filter { it.isNotBlank() }.distinct().sorted()
+            val dis = allItems.map { it.publication.location.district }.filter { it.isNotBlank() }.distinct().sorted()
+            FilterBottomSheet.newInstance(cats, dis, filters).show(parentFragmentManager, "filters")
+        }
+    }
+
+    private fun setupChips(view: View) {
+        val chipAll = view.findViewById<TextView>(R.id.chipAll)
+        val chipNewest = view.findViewById<TextView>(R.id.chipNewest)
+        val chipPopular = view.findViewById<TextView>(R.id.chipPopular)
+        val chipConstruction = view.findViewById<TextView>(R.id.chipConstruction)
+        val chips = listOfNotNull(chipAll, chipNewest, chipPopular, chipConstruction)
+
+        fun activar(activo: TextView?) {
+            chips.forEach {
+                val on = it == activo
+                it.setBackgroundResource(if (on) R.drawable.bg_chip_active else R.drawable.bg_chip_inactive)
+                it.setTextColor(
+                    requireContext().getColor(if (on) R.color.white else R.color.text_primary)
+                )
+            }
+        }
+        chipAll?.setOnClickListener {
+            selectedCategory = ""
+            filters = filters.copy(sortNewestFirst = true)
+            activar(chipAll); aplicarFiltros()
+        }
+        chipNewest?.setOnClickListener {
+            selectedCategory = ""
+            filters = filters.copy(sortNewestFirst = true)
+            activar(chipNewest); aplicarFiltros()
+        }
+        chipPopular?.setOnClickListener {
+            filters = filters.copy(sortNewestFirst = false)
+            activar(chipPopular); aplicarFiltros()
+        }
+        chipConstruction?.setOnClickListener {
+            selectedCategory = if (selectedCategory == "Construcción") "" else "Construcción"
+            activar(if (selectedCategory.isBlank()) chipAll else chipConstruction)
+            aplicarFiltros()
+        }
+        view.findViewById<View>(R.id.tvSpecialSeeAll)?.setOnClickListener {
+            selectedCategory = ""; filters = PublicationFilters()
+            view.findViewById<EditText>(R.id.etSearch)?.setText("")
+            activar(chipAll); aplicarFiltros()
+        }
+        view.findViewById<View>(R.id.btnBannerCta)?.setOnClickListener {
+            scrollView?.smoothScrollTo(0, recyclerView?.top ?: 0)
+        }
+    }
+
+    private fun limpiarFiltros(view: View) {
+        filters = PublicationFilters()
+        selectedCategory = ""
+        view.findViewById<EditText>(R.id.etSearch)?.setText("")
+        aplicarFiltros()
+    }
+
+    private fun setupHeaderActions(view: View) {
+        view.findViewById<View>(R.id.btnNotifications)?.setOnClickListener {
+            Toast.makeText(requireContext(), "Las notificaciones llegan en la Fase 14.", Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById<View>(R.id.tvCategorySeeAll)?.setOnClickListener {
+            Toast.makeText(requireContext(), "Explora las categorías tocando cada tarjeta.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ── Categorías (se mantiene la fuente api_oficios.json) ──
+
+    private fun setupCategorias(view: View) {
+        rvCategories = view.findViewById(R.id.rvCategories)
+        rvCategories?.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            setHasFixedSize(true)
+            isNestedScrollingEnabled = false
+        }
+    }
+
+    private fun loadCategoriasFromJson() {
+        try {
+            val inputStream = requireContext().assets.open("api_oficios.json")
+            val reader = InputStreamReader(inputStream)
+            val gson = Gson()
+            val type = object : TypeToken<List<Categoria>>() {}.type
+            val categorias: List<Categoria> = gson.fromJson(reader, type)
+            reader.close()
+            categoriaAdapter = CategoriaAdapter(categorias) { categoria ->
+                // Toca la categoría → filtra el feed real por esa categoría.
+                selectedCategory = if (selectedCategory == categoria.categoria) "" else categoria.categoria
+                aplicarFiltros()
+                if (selectedCategory.isNotBlank()) {
+                    Toast.makeText(requireContext(), "Filtrando: $selectedCategory", Toast.LENGTH_SHORT).show()
+                }
+            }
+            rvCategories?.adapter = categoriaAdapter
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // ── Interacciones ───────────────────────────────────────
+
+    private fun toggleLike(item: PublicationFeedItem) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Inicia sesión para dar me gusta.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        // Optimista.
+        item.liked = !item.liked
+        item.likesCount += if (item.liked) 1 else -1
+        adapter?.notifyDataSetChanged()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val r = interRepo.toggleLike(item.publication.publicationId, uid)
+            if (r.isFailure) {
+                item.liked = !item.liked
+                item.likesCount += if (item.liked) 1 else -1
+                adapter?.notifyDataSetChanged()
+                Toast.makeText(requireContext(), "No se pudo registrar el me gusta.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun toggleSave(item: PublicationFeedItem) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Inicia sesión para guardar.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        item.saved = !item.saved
+        item.savesCount += if (item.saved) 1 else -1
+        adapter?.notifyDataSetChanged()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val r = interRepo.toggleSave(item.publication.publicationId, uid)
+            if (r.isSuccess) {
+                Toast.makeText(
+                    requireContext(),
+                    if (r.getOrDefault(false)) "Guardado en tu lista." else "Quitado de guardados.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                item.saved = !item.saved
+                item.savesCount += if (item.saved) 1 else -1
+                adapter?.notifyDataSetChanged()
+            }
+        }
+    }
+
+    private fun compartir(item: PublicationFeedItem) {
+        val p = item.publication
+        val texto = "📢 ${p.title}\n\n💰 S/ ${p.payment.amount} / ${p.payment.period}\n📍 ${p.location.district}\n\n${p.description.take(280)}\n\n🔗 Compartido desde ChambAYA"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Chamba: ${p.title}")
+            putExtra(Intent.EXTRA_TEXT, texto)
+        }
+        startActivity(Intent.createChooser(intent, "Compartir chamba"))
+        viewLifecycleOwner.lifecycleScope.launch { pubRepo.registerShare(p.publicationId) }
+    }
+
+    private fun manejarOpcion(action: String, publicationId: String) {
+        val item = allItems.firstOrNull { it.publication.publicationId == publicationId } ?: return
+        when (action) {
+            PublicationOptionsSheet.ACTION_SAVE -> toggleSave(item)
+            PublicationOptionsSheet.ACTION_SHARE -> compartir(item)
+            PublicationOptionsSheet.ACTION_WHY -> Toast.makeText(
+                requireContext(), "Ves esta chamba por tu ubicación (Ayacucho) y tus intereses.",
+                Toast.LENGTH_LONG
+            ).show()
+            PublicationOptionsSheet.ACTION_RATE -> Toast.makeText(
+                requireContext(), "Podrás calificar cuando completes un trabajo (Fase 9).",
+                Toast.LENGTH_SHORT
+            ).show()
+            PublicationOptionsSheet.ACTION_HIDE -> ocultar(item)
+            PublicationOptionsSheet.ACTION_REPORT -> mostrarDenuncia(item)
+        }
+    }
+
+    private fun ocultar(item: PublicationFeedItem) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        if (uid.isBlank()) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            interRepo.hide(item.publication.publicationId, uid)
+            allItems = allItems.filter { it.publication.publicationId != item.publication.publicationId }
+            aplicarFiltros()
+            Toast.makeText(requireContext(), "Verás menos chambas como esta.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun mostrarDenuncia(item: PublicationFeedItem) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        if (uid.isBlank()) {
+            Toast.makeText(requireContext(), "Inicia sesión para denunciar.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val motivos = arrayOf("Fraude o estafa", "Contenido inapropiado", "Información falsa", "Spam", "Otro")
+        AlertDialog.Builder(requireContext())
+            .setTitle("Denunciar publicación")
+            .setItems(motivos) { _, cual ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val r = interRepo.report(item.publication.publicationId, uid, motivos[cual])
+                    Toast.makeText(
+                        requireContext(),
+                        if (r.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar la denuncia.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     override fun onResume() {
         super.onResume()
-        BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.brand_color))
+        try {
+            BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.brand_color))
+        } catch (_: Exception) { }
     }
-    
+
     override fun onDestroyView() {
         super.onDestroyView()
+        searchJob?.cancel()
         scrollView = null
         recyclerView = null
-        jobCardAdapter = null
+        adapter = null
         rvCategories = null
         categoriaAdapter = null
     }

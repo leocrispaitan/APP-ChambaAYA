@@ -2,6 +2,7 @@
 <!-- Publicar: tres secciones (Publicar · Publicaciones · Solicitudes) con barra
      de pestañas de solo iconos, indicador animado y cambio por toque o deslizando. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootPublicar"
     android:layout_width="match_parent"
@@ -111,12 +112,36 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <include
+        <!-- FASE 5 · Mis publicaciones: lista + vacío -->
+        <FrameLayout
             android:id="@+id/panelPublicaciones"
-            layout="@layout/item_publicar_vacio"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone" />
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMisPublicaciones"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="8dp"
+                android:paddingBottom="24dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <ProgressBar
+                android:id="@+id/progressMis"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/emptyMis"
+                layout="@layout/item_publicar_vacio"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+        </FrameLayout>
 
         <include
             android:id="@+id/panelSolicitudes"

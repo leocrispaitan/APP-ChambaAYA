@@ -130,6 +130,24 @@ class CloudinaryUploader(
     }
 
     /**
+     * FASE 5 — Sube [uri] como foto de la publicación [publicationId] del usuario [uid].
+     *
+     * Carpeta: `chambaya/fotos-publicaciones/{uid}/{publicationId}/`.
+     * Máximo 3 fotos por publicación; la publicación también funciona sin fotos.
+     */
+    suspend fun uploadPublicationPhoto(
+        context: Context,
+        uid: String,
+        publicationId: String,
+        uri: Uri
+    ): PhotoUploadResult = withContext(Dispatchers.IO) {
+        if (uid.isBlank() || publicationId.isBlank()) {
+            return@withContext PhotoUploadResult.Rejected("No se pudo identificar la publicación.")
+        }
+        subir(context, carpetaDePublicacion(uid, publicationId), uri, "foto.jpg")
+    }
+
+    /**
      * Núcleo común de subida: comprime, arma el multipart y publica.
      *
      * [uploadProfilePhoto] y [uploadWorkplacePhoto] solo deciden la carpeta;
@@ -443,5 +461,12 @@ class CloudinaryUploader(
          */
         fun carpetaDeLugar(uid: String, workplaceId: String): String =
             "${ModuloImagen.LUGARES.raiz}/$uid/$workplaceId"
+
+        /**
+         * FASE 5 — Carpeta de fotos de la publicación:
+         * `chambaya/fotos-publicaciones/{uid}/{publicationId}`.
+         */
+        fun carpetaDePublicacion(uid: String, publicationId: String): String =
+            "${ModuloImagen.PUBLICACIONES.raiz}/$uid/$publicationId"
     }
 }
