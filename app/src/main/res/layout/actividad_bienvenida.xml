@@ -178,7 +178,7 @@
 
         <!-- Botón único principal de navegación Get Started / Empezar -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnNext"
+            android:id="@+id/btnGetStarted"
             android:layout_width="match_parent"
             android:layout_height="58dp"
             android:backgroundTint="@color/white"

@@ -35,7 +35,7 @@ class BienvenidaActivity : AppCompatActivity() {
     private lateinit var imgWelcomeIllustration: ImageView
     private lateinit var tvWelcomeTitle: TextView
     private lateinit var tvWelcomeSubtitle: TextView
-    private lateinit var btnNext: com.google.android.material.button.MaterialButton
+    private lateinit var btnGetStarted: com.google.android.material.button.MaterialButton
     private lateinit var btnSkip: TextView
     private lateinit var btnLanguage: ImageButton
     private lateinit var indicators: List<View>
@@ -76,7 +76,7 @@ class BienvenidaActivity : AppCompatActivity() {
         imgWelcomeIllustration = findViewById(R.id.imgWelcomeIllustration)
         tvWelcomeTitle = findViewById(R.id.tvWelcomeTitle)
         tvWelcomeSubtitle = findViewById(R.id.tvWelcomeSubtitle)
-        btnNext = findViewById(R.id.btnNext)
+        btnGetStarted = findViewById(R.id.btnGetStarted)
         btnSkip = findViewById(R.id.btnSkip)
         btnLanguage = findViewById(R.id.btnLanguage)
         btnLanguage.setOnClickListener { showLanguagePopup() }
@@ -92,9 +92,11 @@ class BienvenidaActivity : AppCompatActivity() {
             indicator.setOnClickListener { showSlide(index, restartProgress = true) }
         }
 
-        // Navegación con botón principal único
-        btnNext.setOnClickListener { goToNextSlide() }
-        btnSkip.setOnClickListener { openAccessOptions() }
+        // El botón Empezar/Get Started ingresa directamente a la app (MainActivity)
+        btnGetStarted.setOnClickListener { openMain() }
+
+        // El enlace secundario dirige directamente al inicio de sesión (LoginActivity)
+        btnSkip.setOnClickListener { openLogin() }
 
         // Soporte de deslizamiento táctil horizontal (Swipe gesture)
         val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
@@ -115,9 +117,13 @@ class BienvenidaActivity : AppCompatActivity() {
                     abs(velocityX) > swipeVelocityThreshold
                 ) {
                     if (diffX < 0) {
-                        goToNextSlide()
+                        // Deslizar a la izquierda: siguiente slide en bucle
+                        val nextIndex = (currentSlideIndex + 1) % getSlides().size
+                        showSlide(nextIndex, restartProgress = true)
                     } else {
-                        goToPreviousSlide()
+                        // Deslizar a la derecha: slide anterior
+                        val prevIndex = if (currentSlideIndex > 0) currentSlideIndex - 1 else getSlides().size - 1
+                        showSlide(prevIndex, restartProgress = true)
                     }
                     return true
                 }
@@ -155,25 +161,15 @@ class BienvenidaActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    private fun goToNextSlide() {
-        val nextIndex = currentSlideIndex + 1
-        if (nextIndex >= getSlides().size) {
-            openAccessOptions()
-        } else {
-            showSlide(nextIndex, restartProgress = true)
-        }
-    }
-
-    private fun goToPreviousSlide() {
-        if (currentSlideIndex > 0) {
-            showSlide(currentSlideIndex - 1, restartProgress = true)
-        }
-    }
-
-    private fun openAccessOptions() {
+    private fun openMain() {
         indicatorAnimator?.cancel()
-        startActivity(Intent(this, OpcionesAccesoActivity::class.java))
+        startActivity(Intent(this, MainActivity::class.java))
         finish()
+    }
+
+    private fun openLogin() {
+        indicatorAnimator?.cancel()
+        startActivity(Intent(this, LoginActivity::class.java))
     }
 
     private fun showSlide(index: Int, restartProgress: Boolean) {
@@ -277,12 +273,9 @@ class BienvenidaActivity : AppCompatActivity() {
 
                 override fun onAnimationEnd(animation: Animator) {
                     if (!wasCancelled) {
-                        val nextIndex = currentSlideIndex + 1
-                        if (nextIndex >= getSlides().size) {
-                            openAccessOptions()
-                        } else {
-                            showSlide(nextIndex, restartProgress = true)
-                        }
+                        // Al terminar el recorrido del indicador se mantiene en BienvenidaActivity ciclando los 3 slides
+                        val nextIndex = (currentSlideIndex + 1) % getSlides().size
+                        showSlide(nextIndex, restartProgress = true)
                     }
                 }
             })
@@ -366,7 +359,7 @@ class BienvenidaActivity : AppCompatActivity() {
 
     private fun updateLocalizedTexts() {
         btnLanguage.contentDescription = localizedString(R.string.action_change_language)
-        btnNext.text = localizedString(R.string.welcome_get_started)
+        btnGetStarted.text = localizedString(R.string.welcome_get_started)
         btnSkip.text = localizedString(R.string.welcome_account_prompt_login)
         updateCurrentSlideText()
     }

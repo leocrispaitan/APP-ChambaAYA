@@ -38,10 +38,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".OpcionesAccesoActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".LoginActivity"
             android:exported="false" />
 
