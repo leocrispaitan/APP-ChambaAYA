@@ -20,6 +20,7 @@
     <string name="lang_selected">Seleccionado</string>
     <string name="welcome_get_started">Empezar</string>
     <string name="welcome_account_prompt">¿Ya tienes cuenta? </string>
+    <string name="welcome_account_prompt_login">¿Ya tienes una cuenta? Iniciar sesión &gt;</string>
     <string name="access_options_title">Encuentra las mejores\nchambas en Ayacucho</string>
     <string name="access_btn_signup">Registrarse</string>
     <string name="access_btn_login">Iniciar Sesión</string>

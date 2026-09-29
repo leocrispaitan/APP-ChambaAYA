@@ -21,6 +21,7 @@
     <string name="welcome_next">Next</string>
     <string name="welcome_get_started">Get Started</string>
     <string name="welcome_account_prompt">Already have an account? </string>
+    <string name="welcome_account_prompt_login">Already have an account? Login &gt;</string>
     <string name="access_options_title">Find the best\njobs in Ayacucho</string>
     <string name="access_btn_signup">Sign Up</string>
     <string name="access_btn_login">Login</string>

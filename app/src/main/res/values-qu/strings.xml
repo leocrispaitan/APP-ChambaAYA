@@ -14,6 +14,7 @@
     <string name="welcome_next">Qatiy</string>
     <string name="welcome_get_started">Qallariy</string>
     <string name="welcome_account_prompt">¿Cuentaykiña kanchu? </string>
+    <string name="welcome_account_prompt_login">¿Cuentaykiña kanchu? Yaykuy &gt;</string>
     <string name="access_options_title">Aswan allin chambakunata\nAyacuchopi tariy</string>
     <string name="access_btn_signup">Registrakukuy</string>
     <string name="access_btn_login">Yaykuy</string>

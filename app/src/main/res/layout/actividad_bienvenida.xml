@@ -5,18 +5,41 @@
     android:id="@+id/welcomeRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_light"
-    android:paddingStart="32dp"
-    android:paddingEnd="32dp"
+    android:background="#050811"
     tools:context=".BienvenidaActivity">
 
+    <!-- Imagen de fondo a pantalla completa con scaleType centerCrop -->
+    <ImageView
+        android:id="@+id/imgWelcomeIllustration"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bienvenido_a_chambaya"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Difuminado superior (Top Scrim) para barra de estado y logo -->
+    <View
+        android:id="@+id/viewTopScrim"
+        android:layout_width="0dp"
+        android:layout_height="140dp"
+        android:background="@drawable/bg_welcome_top_scrim"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Barra de marca ChambAYA en la parte superior -->
     <LinearLayout
         android:id="@+id/brandGroup"
         android:layout_width="wrap_content"
         android:layout_height="48dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="44dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_marginTop="34dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -29,166 +52,162 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="10dp"
             android:fontFamily="sans-serif-black"
             android:includeFontPadding="false"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="6"
             android:text="@string/app_name"
-            android:textColor="@color/black"
-            android:textSize="30sp" />
+            android:textColor="@color/white"
+            android:textSize="28sp" />
     </LinearLayout>
 
+    <!-- Botón selector de idioma con estilo glassmorphism -->
     <ImageButton
         android:id="@+id/btnLanguage"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:background="@drawable/bg_welcome_language"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/bg_welcome_language_glass"
         android:contentDescription="@string/action_change_language"
         android:padding="12dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_language_globe"
         app:layout_constraintBottom_toBottomOf="@id/brandGroup"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/brandGroup" />
+        app:layout_constraintTop_toTopOf="@id/brandGroup"
+        app:tint="@color/white" />
 
-    <ImageView
-        android:id="@+id/imgWelcomeIllustration"
+    <!-- Difuminado inferior cinematográfico (Bottom Scrim) para contraste y legibilidad perfecta -->
+    <View
+        android:id="@+id/viewBottomScrim"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:contentDescription="@string/app_name"
-        android:layout_marginTop="40dp"
-        android:layout_marginBottom="32dp"
-        android:src="@drawable/welcome_illustration"
-        app:layout_constraintBottom_toTopOf="@id/tvWelcomeTitle"
-        app:layout_constraintDimensionRatio="0.80"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_default="percent"
-        app:layout_constraintHeight_percent="0.42"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/brandGroup"
-        app:layout_constraintWidth_percent="0.86" />
-
-    <TextView
-        android:id="@+id/tvWelcomeTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-black"
-        android:gravity="center"
-        android:includeFontPadding="false"
-        android:text="@string/welcome_slide_1_title"
-        android:textColor="@color/black"
-        android:textSize="28sp"
-        app:layout_constraintBottom_toTopOf="@id/tvWelcomeSubtitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imgWelcomeIllustration" />
-
-    <TextView
-        android:id="@+id/tvWelcomeSubtitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:fontFamily="sans-serif"
-        android:gravity="center"
-        android:lineSpacingExtra="4dp"
-        android:text="@string/welcome_slide_1_subtitle"
-        android:textColor="@color/text_secondary"
-        android:textSize="15sp"
-        app:layout_constraintBottom_toTopOf="@id/indicatorGroup"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvWelcomeTitle" />
-
-    <LinearLayout
-        android:id="@+id/indicatorGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="12dp"
-        android:layout_marginTop="28dp"
-        android:layout_marginBottom="40dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toTopOf="@id/navigationButtons"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvWelcomeSubtitle">
-
-        <View
-            android:id="@+id/indicatorOne"
-            android:layout_width="34dp"
-            android:layout_height="8dp"
-            android:background="@drawable/bg_indicator_active"
-            android:clickable="true"
-            android:focusable="true" />
-
-        <View
-            android:id="@+id/indicatorTwo"
-            android:layout_width="8dp"
-            android:layout_height="8dp"
-            android:layout_marginStart="12dp"
-            android:background="@drawable/bg_indicator_inactive"
-            android:clickable="true"
-            android:focusable="true" />
-
-        <View
-            android:id="@+id/indicatorThree"
-            android:layout_width="8dp"
-            android:layout_height="8dp"
-            android:layout_marginStart="12dp"
-            android:background="@drawable/bg_indicator_inactive"
-            android:clickable="true"
-            android:focusable="true" />
-
-        <View
-            android:id="@+id/indicatorFour"
-            android:layout_width="8dp"
-            android:layout_height="8dp"
-            android:layout_marginStart="12dp"
-            android:background="@drawable/bg_indicator_inactive"
-            android:clickable="true"
-            android:focusable="true" />
-    </LinearLayout>
-
-    <!-- Botones de navegación Skip y Next -->
-    <LinearLayout
-        android:id="@+id/navigationButtons"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="38dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:background="@drawable/bg_welcome_scrim"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/indicatorGroup">
+        app:layout_constraintHeight_percent="0.65"
+        app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- Contenedor inferior de contenido: Título, Subtítulo, Indicadores y Botón único -->
+    <LinearLayout
+        android:id="@+id/bottomContentGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="28dp"
+        android:paddingEnd="28dp"
+        android:paddingBottom="36dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Título principal con tipografía audaz y moderna -->
         <TextView
-            android:id="@+id/btnSkip"
-            android:layout_width="0dp"
-            android:layout_height="56dp"
-            android:layout_weight="1"
+            android:id="@+id/tvWelcomeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-black"
             android:gravity="center"
-            android:text="@string/welcome_skip"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp"
-            android:fontFamily="sans-serif-medium"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground" />
+            android:includeFontPadding="false"
+            android:lineSpacingMultiplier="1.12"
+            android:shadowColor="#99000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="8"
+            android:text="@string/welcome_slide_1_title"
+            android:textColor="@color/white"
+            android:textSize="32sp" />
 
+        <!-- Subtítulo refinado con espaciado limpio -->
+        <TextView
+            android:id="@+id/tvWelcomeSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="4"
+            android:text="@string/welcome_slide_1_subtitle"
+            android:textColor="#D1D5DB"
+            android:textSize="15sp" />
+
+        <!-- Indicadores (exactamente 3 indicadores: 1, 2, 3) -->
+        <LinearLayout
+            android:id="@+id/indicatorGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="12dp"
+            android:layout_marginTop="26dp"
+            android:layout_marginBottom="28dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/indicatorOne"
+                android:layout_width="32dp"
+                android:layout_height="6dp"
+                android:background="@drawable/bg_indicator_active"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/indicatorTwo"
+                android:layout_width="8dp"
+                android:layout_height="6dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_indicator_inactive"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:id="@+id/indicatorThree"
+                android:layout_width="8dp"
+                android:layout_height="6dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_indicator_inactive"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- Botón único principal de navegación Get Started / Empezar -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNext"
-            android:layout_width="0dp"
-            android:layout_height="56dp"
-            android:layout_weight="1"
-            android:layout_marginStart="16dp"
-            android:backgroundTint="@color/brand_color"
-            android:fontFamily="sans-serif-medium"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:backgroundTint="@color/white"
+            android:elevation="6dp"
+            android:fontFamily="sans-serif-black"
             android:insetTop="0dp"
             android:insetBottom="0dp"
-            android:text="@string/welcome_next"
+            android:text="@string/welcome_get_started"
             android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            app:cornerRadius="28dp" />
+            android:textColor="#111827"
+            android:textSize="17sp"
+            app:cornerRadius="29dp"
+            app:rippleColor="#26000000" />
+
+        <!-- Enlace secundario elegante para usuarios existentes -->
+        <TextView
+            android:id="@+id/btnSkip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:padding="6dp"
+            android:text="@string/welcome_account_prompt_login"
+            android:textColor="#9CA3AF"
+            android:textSize="14sp" />
 
     </LinearLayout>
 
