@@ -261,6 +261,25 @@ class PublicationRepository(
             }
         }
 
+    /** Varias publicaciones por id (guardados, historial). Sin índice compuesto. */
+    suspend fun getByIds(ids: List<String>): Result<List<Publication>> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val clean = ids.distinct().filter { it.isNotBlank() }
+                if (clean.isEmpty()) return@runCatching emptyList()
+                val out = mutableListOf<Publication>()
+                clean.chunked(30).forEach { chunk ->
+                    Tasks.await(
+                        firestore.collection(COLLECTION)
+                            .whereIn(com.google.firebase.firestore.FieldPath.documentId(), chunk)
+                            .get()
+                    ).documents.map { it.toPublication() }.forEach { out += it }
+                }
+                // Mismo orden de entrada.
+                out.sortedBy { clean.indexOf(it.publicationId) }
+            }
+        }
+
     /** Feed público: ACTIVE + PUBLIC, recientes primero. */
     suspend fun feed(limit: Long = 30): Result<List<Publication>> =
         withContext(Dispatchers.IO) {

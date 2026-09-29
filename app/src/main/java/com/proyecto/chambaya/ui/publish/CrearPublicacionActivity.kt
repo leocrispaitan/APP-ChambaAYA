@@ -99,13 +99,21 @@ class CrearPublicacionActivity : AppCompatActivity() {
             setOnClickListener { showDropDown() }
             tag = periodos
         }
-        // Categorías desde el catálogo de oficios.
+        // Categorías: primero el catálogo local (inmediato), luego se
+        // completan con las oficiales de Firestore (FASE 15, mejor esfuerzo).
         val cats = OficioCatalog.load(this).map { it.categoria }.distinct().take(14)
         val group = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupCategoria)
-        cats.forEach { cat ->
-            val chip = Chip(this).apply { text = cat; isCheckable = true; tag = cat }
-            chip.setOnCheckedChangeListener { _, checked -> if (checked) categoriaElegida = cat }
-            group?.addView(chip)
+        cats.forEach { cat -> agregarChipCategoria(group, cat) }
+        lifecycleScope.launch {
+            val oficiales = com.proyecto.chambaya.data.repository.CategoryRepository()
+                .list().getOrNull().orEmpty().map { it.name }.filter { it.isNotBlank() }
+            if (oficiales.isEmpty() || isFinishing) return@launch
+            val actuales = (0 until (group?.childCount ?: 0))
+                .map { (group?.getChildAt(it) as? Chip)?.tag as? String }
+                .toSet()
+            oficiales.filter { it !in actuales }.take(14).forEach { cat ->
+                if (!isFinishing) agregarChipCategoria(group, cat)
+            }
         }
         // Distritos frecuentes de Ayacucho.
         val distritos = listOf("Ayacucho", "Carmen Alto", "San Juan Bautista", "Jesús Nazareno", "Andrés Avelino Cáceres", "Magdalena", "Huanta", "Tambo")
@@ -113,6 +121,18 @@ class CrearPublicacionActivity : AppCompatActivity() {
             setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, distritos))
             setOnClickListener { showDropDown() }
         }
+    }
+
+    private fun agregarChipCategoria(
+        group: com.google.android.material.chip.ChipGroup?,
+        cat: String
+    ) {
+        if (group == null) return
+        val chip = Chip(this).apply { text = cat; isCheckable = true; tag = cat }
+        chip.setOnCheckedChangeListener { _, checked -> if (checked) categoriaElegida = cat }
+        // Al editar, marca la categoría guardada aunque llegue tarde de Firestore.
+        if (cat == categoriaElegida) chip.isChecked = true
+        group.addView(chip)
     }
 
     private fun periodoElegido(): String {

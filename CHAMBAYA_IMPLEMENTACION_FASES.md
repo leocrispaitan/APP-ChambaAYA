@@ -1241,7 +1241,7 @@ reportar comentario
 
 ------------------------------------------------------------------------
 
-# FASE 11 --- LIKES, GUARDADOS Y COMPARTIR
+# FASE 11 --- LIKES, GUARDADOS Y COMPARTIR DENUNCIAR , NO QUIERO , VER ESTO, CAMPORTIR, CALIFICAR PUBLICACION, NO ME INTERESA
 
 ## Likes
 

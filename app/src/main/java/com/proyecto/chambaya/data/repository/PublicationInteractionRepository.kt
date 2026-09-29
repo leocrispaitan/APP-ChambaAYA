@@ -105,6 +105,20 @@ class PublicationInteractionRepository(
             resultado
         }
 
+    /** Ids guardados por mí (para la bandeja de Guardados). */
+    suspend fun mySaves(uid: String, limit: Long = 100): Result<Set<String>> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                if (uid.isBlank()) return@runCatching emptySet()
+                Tasks.await(
+                    firestore.collection(COL_SAVES)
+                        .whereEqualTo("userUid", uid)
+                        .limit(limit)
+                        .get()
+                ).documents.mapNotNull { it.getString("publicationId") }.toSet()
+            }
+        }
+
     /** Alterna el guardado. Devuelve el estado final (true = guardado). */
     suspend fun toggleSave(publicationId: String, uid: String): Result<Boolean> =
         withContext(Dispatchers.IO) {

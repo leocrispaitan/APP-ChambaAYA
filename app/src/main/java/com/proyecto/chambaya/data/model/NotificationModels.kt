@@ -12,6 +12,10 @@ object NotificationType {
     const val APPLICATION_ACCEPTED = "APPLICATION_ACCEPTED"
     const val APPLICATION_REJECTED = "APPLICATION_REJECTED"
     const val JOB_COMPLETED = "JOB_COMPLETED"
+    const val NEW_MESSAGE = "NEW_MESSAGE"
+    const val NEW_RATING = "NEW_RATING"
+    const val NEW_COMMENT = "NEW_COMMENT"
+    const val NEW_LIKE = "NEW_LIKE"
 }
 
 data class AppNotification(

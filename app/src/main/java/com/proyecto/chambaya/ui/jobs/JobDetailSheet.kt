@@ -346,6 +346,17 @@ class JobDetailSheet : BottomSheetDialogFragment() {
                 btnSend.isEnabled = true
                 if (r.isSuccess) {
                     et.text?.clear()
+                    val dueño = currentPub?.ownerUid.orEmpty()
+                    if (dueño.isNotBlank() && dueño != uid) {
+                        com.proyecto.chambaya.data.repository.NotificationRepository().push(
+                            recipientUid = dueño,
+                            type = com.proyecto.chambaya.data.model.NotificationType.NEW_COMMENT,
+                            title = "Nuevo comentario",
+                            message = "Comentaron tu chamba “${currentPub?.title?.take(60).orEmpty()}”.",
+                            senderUid = uid,
+                            publicationId = publicationId
+                        )
+                    }
                     parentFragmentManager.setFragmentResult(REQUEST_CHANGED, bundleOf())
                 } else {
                     Toast.makeText(

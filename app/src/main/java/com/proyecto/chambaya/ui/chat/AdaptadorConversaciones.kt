@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.google.android.material.imageview.ShapeableImageView
 import com.proyecto.chambaya.R
 
@@ -24,7 +25,17 @@ class AdaptadorConversaciones(
         val tvUnreadBadge: TextView = itemView.findViewById(R.id.tvUnreadBadge)
 
         fun bind(item: ChatConversacion) {
-            ivAvatar.setImageResource(item.avatarResId)
+            if (item.photoUrl.isNotBlank()) {
+                ivAvatar.load(item.photoUrl) {
+                    crossfade(true)
+                    placeholder(R.drawable.ic_user_circle)
+                    error(R.drawable.ic_user_circle)
+                }
+            } else if (item.avatarResId != 0) {
+                ivAvatar.setImageResource(item.avatarResId)
+            } else {
+                ivAvatar.setImageResource(R.drawable.ic_user_circle)
+            }
             viewOnlineDot.visibility = if (item.estaEnLinea) View.VISIBLE else View.GONE
             tvContactName.text = item.nombre
             tvLastMessage.text = item.ultimoMensaje

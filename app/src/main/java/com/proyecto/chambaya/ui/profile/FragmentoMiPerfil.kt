@@ -33,6 +33,7 @@ import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.Workplace
 import com.proyecto.chambaya.data.repository.ProfileRepository
+import com.proyecto.chambaya.data.repository.RatingRepository
 import com.proyecto.chambaya.data.repository.WorkplaceRepository
 import com.proyecto.chambaya.data.repository.motivoFirestore
 import kotlinx.coroutines.launch
@@ -92,6 +93,10 @@ class FragmentoMiPerfil : Fragment() {
 
     private var iconLoader: ImageLoader? = null
 
+    private val ratingRepository = RatingRepository()
+    private var ratingsAdapter: RatingsAdapter? = null
+    private var resenasCargadasPara: String? = null
+
     // Recoge el resultado de EditarPerfilActivity (layout dialog_editar_perfil)
     private val editProfileLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -115,6 +120,7 @@ class FragmentoMiPerfil : Fragment() {
 
         setupTopBar(view)
         setupActionButtons(view)
+        setupActividad(view)
         setupTabNavigation(view)
         setupEmptyStateButtons(view)
         ocultarSeccionesDeFasesPosteriores(view)
@@ -942,6 +948,60 @@ class FragmentoMiPerfil : Fragment() {
                 listOf(tabSobreMi, tabFotos, tabResenas),
                 listOf(contentSobreMi, contentFotos, contentResenas)
             )
+            cargarResenas(root)
+        }
+    }
+
+    /**
+     * FASE 17/19 — Accesos de actividad: postulaciones, trabajos y guardados.
+     */
+    private fun setupActividad(root: View) {
+        root.findViewById<View>(R.id.btnActPostulaciones)?.setOnClickListener {
+            (activity as? MainActivity)?.irAPublicar(
+                com.proyecto.chambaya.ui.publish.FragmentoPublicar.SECCION_SOLICITUDES
+            )
+        }
+        root.findViewById<View>(R.id.btnActTrabajos)?.setOnClickListener {
+            val comoEmpleador = (perfil ?: ProfileCache.perfil)?.activeRole == UserRoles.CONTRATANTE
+            JobsSheet.newInstance(comoEmpleador).show(parentFragmentManager, "jobs")
+        }
+        root.findViewById<View>(R.id.btnActGuardados)?.setOnClickListener {
+            SavedSheet().show(parentFragmentManager, "saved")
+        }
+    }
+
+    /**
+     * FASE 19 — Reseñas recibidas en el tab Reseñas (antes vacío).
+     */
+    private fun cargarResenas(root: View) {
+        val uid = auth.currentUser?.uid ?: return
+        if (resenasCargadasPara == uid && ratingsAdapter?.itemCount != 0) return
+        val rv = root.findViewById<RecyclerView>(R.id.rvResenas) ?: return
+        val empty = root.findViewById<View>(R.id.layoutEmptyReviews) ?: return
+        if (rv.adapter == null) {
+            rv.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+            rv.isNestedScrollingEnabled = false
+            ratingsAdapter = RatingsAdapter()
+            rv.adapter = ratingsAdapter
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val lista = ratingRepository.receivedBy(uid, 30).getOrNull().orEmpty()
+            if (!isAdded) return@launch
+            resenasCargadasPara = uid
+            if (lista.isEmpty()) {
+                rv.visibility = View.GONE
+                empty.visibility = View.VISIBLE
+            } else {
+                empty.visibility = View.GONE
+                rv.visibility = View.VISIBLE
+                // Nombres y fotos de quienes calificaron.
+                val autores = mutableMapOf<String, com.proyecto.chambaya.data.model.PublicProfile>()
+                lista.map { it.fromUid }.distinct().forEach { id ->
+                    repository.loadPublicProfile(id).getOrNull()?.let { autores[id] = it }
+                }
+                if (!isAdded) return@launch
+                ratingsAdapter?.submitList(lista.map { RatingRow(it, autores[it.fromUid]) })
+            }
         }
     }
 

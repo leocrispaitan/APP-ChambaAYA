@@ -179,6 +179,15 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.selectedItemId = tabId
     }
 
+    /** Va a Publicar y abre directamente la sección pedida (FASE 17). */
+    fun irAPublicar(seccion: Int) {
+        bottomNavigation.selectedItemId = R.id.nav_publish
+        fragmentContainer.post {
+            (supportFragmentManager.findFragmentByTag(TAG_PUBLISH) as? FragmentoPublicar)
+                ?.mostrarSeccion(seccion)
+        }
+    }
+
     /** Oculta el bottom nav con animación suave (para pantallas de ajustes, etc.). */
     fun hideBottomNav() {
         if (bottomNavigation.visibility == View.GONE) return

@@ -682,14 +682,16 @@ service cloud.firestore {
       // Sin listados: permitiría enumerar todos los @usuario de la plataforma.
       allow list: if false;
 
-      // Solo se puede tomar un @usuario a nombre propio, y el documento no
-      // puede llevar campos extra.
+      // Solo se puede tomar un @usuario a nombre propio, con formato válido
+      // (FASE 16: antes se podía ocupar cualquier cadena) y sin campos extra.
       allow create: if request.auth != null
+        && isValidUsername(username)
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'username', 'updatedAt']);
 
       // No se puede robar ni reasignar el @usuario de otro.
       allow update: if request.auth != null
+        && isValidUsername(username)
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'username', 'updatedAt']);
@@ -1114,10 +1116,133 @@ service cloud.firestore {
     }
 
     // =============================================================
-    //  FASE 7 — Notificaciones básicas notifications/{notificationId}
-    //  (la bandeja completa con push es FASE 14)
+    //  FASE 12 — Bloqueos user_blocks/{blockerUid_blockedUid}
+    // =============================================================
+    //
+    // Id determinístico para que las reglas del chat puedan comprobar el
+    // bloqueo en ambas direcciones sin consultas adicionales.
+
+    match /user_blocks/{docId} {
+      allow get: if request.auth != null
+        && resource.data.get('blockerUid', '') == request.auth.uid;
+      // La app consulta mis bloqueos (blockerUid == yo).
+      allow list: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.get('blockerUid', '') == request.auth.uid
+        && request.resource.data.get('blockedUid', '') is string
+        && request.resource.data.get('blockedUid', '').size() > 0
+        && request.resource.data.get('blockedUid', '') != request.auth.uid
+        && docId == request.resource.data.get('blockerUid', '') + '_' + request.resource.data.get('blockedUid', '')
+        && request.resource.data.get('createdAt', null) != null;
+      allow update: if false;
+      allow delete: if request.auth != null
+        && resource.data.get('blockerUid', '') == request.auth.uid;
+    }
+
+    // =============================================================
+    //  FASE 12 — Denuncias de usuarios user_reports/{reportId}
     // =============================================================
 
+    match /user_reports/{reportId} {
+      allow get, list: if request.auth != null
+        && resource.data.get('reporterUid', '') == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.get('reporterUid', '') == request.auth.uid
+        && request.resource.data.get('reportedUid', '') is string
+        && request.resource.data.get('reportedUid', '').size() > 0
+        && request.resource.data.get('reportedUid', '') != request.auth.uid
+        && request.resource.data.get('reason', '') is string
+        && request.resource.data.get('reason', '').size() > 0
+        && request.resource.data.get('description', '') is string
+        && request.resource.data.get('description', '').size() <= 500
+        && request.resource.data.get('status', '') == 'PENDING'
+        && request.resource.data.get('createdAt', null) != null;
+      allow update, delete: if false;
+    }
+
+    // =============================================================
+    //  FASE 13 — Chat conversations/{conversationId} + messages
+    // =============================================================
+
+    function isParticipant(convData) {
+      return convData.get('participants', []).hasAny([request.auth.uid]);
+    }
+
+    function otherParticipant() {
+      let p = request.resource.data.get('participants', []);
+      return p[0] == request.auth.uid ? p[1] : p[0];
+    }
+
+    function notBlocked() {
+      return !exists(/databases/$(database)/documents/user_blocks/$(request.auth.uid + '_' + otherParticipant()))
+        && !exists(/databases/$(database)/documents/user_blocks/$(otherParticipant() + '_' + request.auth.uid));
+    }
+
+    function isValidConversationCreate() {
+      let d = request.resource.data;
+      let p = d.get('participants', []);
+      return d.get('conversationId', '') is string
+        && d.get('conversationId', '').size() > 0
+        && p is list && p.size() == 2
+        && p.hasOnly([request.auth.uid, otherParticipant()])
+        && otherParticipant() != request.auth.uid
+        && d.get('publicationId', '') is string
+        && d.get('lastMessage', '') is string
+        && d.get('lastMessage', '').size() <= 160
+        && d.get('lastMessageAt', null) != null
+        && d.get('createdAt', null) != null
+        && notBlocked();
+    }
+
+    match /conversations/{conversationId} {
+      allow get: if request.auth != null && isParticipant(resource.data);
+      // La app consulta whereArrayContains(participants, yo).
+      allow list: if request.auth != null;
+      allow create: if request.auth != null && isValidConversationCreate();
+      // Solo el avance del último mensaje (el texto vive en messages/).
+      allow update: if request.auth != null && isParticipant(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['lastMessage', 'lastMessageAt'])
+        && request.resource.data.get('lastMessage', '') is string
+        && request.resource.data.get('lastMessage', '').size() <= 160;
+      allow delete: if false;
+
+      // Mensajes: solo participantes (se verifica contra el documento padre).
+      match /messages/{messageId} {
+        allow get, list: if request.auth != null
+          && isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)).data);
+        allow create: if request.auth != null
+          && request.resource.data.get('senderUid', '') == request.auth.uid
+          && isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)).data)
+          && request.resource.data.get('type', '') == 'TEXT'
+          && request.resource.data.get('text', '') is string
+          && request.resource.data.get('text', '').size() >= 1
+          && request.resource.data.get('text', '').size() <= 1000
+          && request.resource.data.get('read', true) == false
+          && request.resource.data.get('createdAt', null) != null;
+        // Solo marcar como leído.
+        allow update: if request.auth != null
+          && resource.data.get('senderUid', '') != request.auth.uid
+          && isParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)).data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+          && request.resource.data.get('read', false) == true;
+        allow delete: if false;
+      }
+    }
+
+    // =============================================================
+    //  FASE 15 — Categorías categories/{categoryId}
+    // =============================================================
+    //
+    // Lectura abierta; la escritura es administrativa (seed con credenciales
+    // de proyecto), nunca desde la app.
+
+    match /categories/{categoryId} {
+      allow get, list: if request.auth != null;
+      allow create, update, delete: if false;
+    }
+
+    // FASE 7/14 — Notificaciones (la bandeja completa con push es FASE 14).
     match /notifications/{notificationId} {
       allow get: if request.auth != null
         && resource.data.get('recipientUid', '') == request.auth.uid;

@@ -27,12 +27,13 @@ data class MyAppRow(
  */
 class MyApplicationsAdapter(
     private val onPrimary: (MyAppRow) -> Unit = {},
+    private val onContact: (MyAppRow) -> Unit = {},
     private val onOpenDetail: (MyAppRow) -> Unit = {}
 ) : ListAdapter<MyAppRow, MyApplicationsAdapter.VH>(Diff()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.item_my_application, parent, false)
-        return VH(v, onPrimary, onOpenDetail)
+        return VH(v, onPrimary, onContact, onOpenDetail)
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) = holder.bind(getItem(position))
@@ -40,6 +41,7 @@ class MyApplicationsAdapter(
     class VH(
         view: View,
         private val onPrimary: (MyAppRow) -> Unit,
+        private val onContact: (MyAppRow) -> Unit,
         private val onOpenDetail: (MyAppRow) -> Unit
     ) : RecyclerView.ViewHolder(view) {
         private val tvStatus: TextView = view.findViewById(R.id.tvMyAppStatus)
@@ -85,7 +87,13 @@ class MyApplicationsAdapter(
             } else {
                 btnPrimary.visibility = View.GONE
             }
-            btnSecondary.setOnClickListener { onOpenDetail(item) }
+            // Con trabajo activo, el secundario contacta al contratante.
+            val chateable = job != null &&
+                (job.status == JobStatus.ACCEPTED || job.status == JobStatus.IN_PROGRESS)
+            btnSecondary.text = if (chateable) "Contactar" else "Ver chamba"
+            btnSecondary.setOnClickListener {
+                if (chateable) onContact(item) else onOpenDetail(item)
+            }
             itemView.setOnClickListener { onOpenDetail(item) }
         }
     }

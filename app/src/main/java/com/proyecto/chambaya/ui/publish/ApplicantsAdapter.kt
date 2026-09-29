@@ -39,7 +39,8 @@ class ApplicantsAdapter(
     private val onJobAction: (ApplicantRow) -> Unit = {},
     private val onRate: (ApplicantRow) -> Unit = {},
     private val onOpenDetail: (ApplicantRow) -> Unit = {},
-    private val onOpenProfile: (ApplicantRow) -> Unit = {}
+    private val onOpenProfile: (ApplicantRow) -> Unit = {},
+    private val onChat: (ApplicantRow) -> Unit = {}
 ) : ListAdapter<RequestItem, RecyclerView.ViewHolder>(Diff()) {
 
     companion object {
@@ -93,6 +94,7 @@ class ApplicantsAdapter(
         private val tvJobStatus: TextView = view.findViewById(R.id.tvApplicantJobStatus)
         private val btnJobAction: MaterialButton = view.findViewById(R.id.btnApplicantJobAction)
         private val btnRate: MaterialButton = view.findViewById(R.id.btnApplicantRate)
+        private val btnChat: MaterialButton = view.findViewById(R.id.btnApplicantChat)
 
         fun bind(item: ApplicantRow) {
             val app = item.app
@@ -147,6 +149,7 @@ class ApplicantsAdapter(
                 val puedeCalificar = job.status == JobStatus.COMPLETED && !item.ratedByMe
                 btnRate.visibility = if (puedeCalificar) View.VISIBLE else View.GONE
                 if (puedeCalificar) btnRate.setOnClickListener { onRate(item) }
+                btnChat.setOnClickListener { onChat(item) }
             } else {
                 layoutJob.visibility = View.GONE
             }

@@ -21,8 +21,13 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
+import com.proyecto.chambaya.data.model.JobStatus
+import com.proyecto.chambaya.data.repository.BlockRepository
+import com.proyecto.chambaya.data.repository.JobRepository
+import com.proyecto.chambaya.data.repository.NotificationRepository
 import com.proyecto.chambaya.data.repository.PublicationInteractionRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
+import com.proyecto.chambaya.data.repository.RatingRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -70,6 +75,7 @@ class FragmentoChambas : Fragment() {
     private var feedListener: com.google.firebase.firestore.ListenerRegistration? = null
     private val stateCache = mutableMapOf<String, Pair<Boolean, Boolean>>()
     private val hiddenCache = mutableSetOf<String>()
+    private val blockedCache = mutableSetOf<String>()
     private var statesLoaded = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -229,6 +235,8 @@ class FragmentoChambas : Fragment() {
                 val liked = interRepo.likedIds(ids, uid)
                 val saved = interRepo.savedIds(ids, uid)
                 hiddenCache.addAll(interRepo.hiddenIds(ids, uid))
+                // FASE 12 · excluye a bloqueados.
+                blockedCache.addAll(BlockRepository().myBlocks(uid).getOrNull().orEmpty())
                 pubs.forEach { stateCache[it.publicationId] = (it.publicationId in liked) to (it.publicationId in saved) }
                 statesLoaded = true
             } else if (uid.isNotBlank()) {
@@ -244,6 +252,10 @@ class FragmentoChambas : Fragment() {
             if (!isAdded) return@launch
             allItems = pubs
                 .filter { it.publicationId !in hiddenCache }
+                .filter { p ->
+                    val owner = p.publisher.uid.ifBlank { p.ownerUid }
+                    owner.isBlank() || owner !in blockedCache
+                }
                 .map { p ->
                     val (l, s) = stateCache[p.publicationId] ?: (false to false)
                     PublicationFeedItem(p, l, s, p.statistics.likes, p.statistics.saves)
@@ -379,6 +391,27 @@ class FragmentoChambas : Fragment() {
         view.findViewById<View>(R.id.tvCategorySeeAll)?.setOnClickListener {
             Toast.makeText(requireContext(), "Explora las categorías tocando cada tarjeta.", Toast.LENGTH_SHORT).show()
         }
+        actualizarBadge()
+    }
+
+    /** FASE 14 · Badge con no leídos (se refresca al volver a la tab). */
+    private fun actualizarBadge() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        val badge = view?.findViewById<TextView>(R.id.tvNotifBadge) ?: return
+        if (uid.isBlank()) {
+            badge.visibility = View.GONE
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val n = NotificationRepository().unreadCount(uid, 99)
+            if (!isAdded) return@launch
+            if (n > 0) {
+                badge.visibility = View.VISIBLE
+                badge.text = if (n > 99) "99+" else n.toString()
+            } else {
+                badge.visibility = View.GONE
+            }
+        }
     }
 
     // ── Categorías (se mantiene la fuente api_oficios.json) ──
@@ -483,16 +516,56 @@ class FragmentoChambas : Fragment() {
         when (action) {
             PublicationOptionsSheet.ACTION_SAVE -> toggleSave(item)
             PublicationOptionsSheet.ACTION_SHARE -> compartir(item)
-            PublicationOptionsSheet.ACTION_WHY -> Toast.makeText(
-                requireContext(), "Ves esta chamba por tu ubicación (Ayacucho) y tus intereses.",
-                Toast.LENGTH_LONG
-            ).show()
-            PublicationOptionsSheet.ACTION_RATE -> Toast.makeText(
-                requireContext(), "Podrás calificar cuando completes un trabajo (Fase 9).",
-                Toast.LENGTH_SHORT
-            ).show()
+            PublicationOptionsSheet.ACTION_WHY -> AlertDialog.Builder(requireContext())
+                .setTitle("Por qué ves esto")
+                .setMessage(
+                    "Ves esta chamba porque está activa en tu zona y coincide con las categorías que exploras.\n\n" +
+                        "• Publicada por ${item.publication.publisher.name.ifBlank { "un contratante verificado" }}\n" +
+                        "• ${item.publication.location.district.ifBlank { "Ayacucho" }}\n\n" +
+                        "Toca “No me interesa” si prefieres ver menos como esta."
+                )
+                .setPositiveButton("Entendido", null)
+                .show()
+            PublicationOptionsSheet.ACTION_RATE -> calificarPublicacion(item)
             PublicationOptionsSheet.ACTION_HIDE -> ocultar(item)
             PublicationOptionsSheet.ACTION_REPORT -> mostrarDenuncia(item)
+        }
+    }
+
+    /**
+     * FASE 11 — "Calificar publicación": si ya completé un trabajo con este
+     * contratante y falta mi calificación, la abre; si no, lo explica.
+     */
+    private fun calificarPublicacion(item: PublicationFeedItem) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        if (uid.isBlank()) {
+            Toast.makeText(requireContext(), "Inicia sesión para calificar.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val ownerUid = item.publication.publisher.uid.ifBlank { item.publication.ownerUid }
+        if (ownerUid.isBlank() || ownerUid == uid) {
+            Toast.makeText(requireContext(), "Tus propias chambas no se califican.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val jobs = JobRepository().listByWorker(uid).getOrNull().orEmpty()
+                .filter { it.employerUid == ownerUid && it.status == JobStatus.COMPLETED }
+            val job = jobs.firstOrNull()
+            if (!isAdded) return@launch
+            if (job == null) {
+                Toast.makeText(
+                    requireContext(),
+                    "Podrás calificar cuando completes un trabajo con este contratante.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            }
+            val ya = RatingRepository().existingFor(job.jobId, uid).getOrNull() != null
+            if (ya) {
+                Toast.makeText(requireContext(), "Ya calificaste ese trabajo. ¡Gracias!", Toast.LENGTH_SHORT).show()
+            } else {
+                RateSheet.newInstance(job.jobId).show(parentFragmentManager, "rate")
+            }
         }
     }
 
@@ -540,6 +613,7 @@ class FragmentoChambas : Fragment() {
         // Re-engancha el feed: lo publicado desde Publicar aparece sin
         // cerrar la app.
         if (view != null) attachFeed()
+        actualizarBadge()
     }
 
     override fun onPause() {
@@ -552,6 +626,7 @@ class FragmentoChambas : Fragment() {
         detachFeed()
         stateCache.clear()
         hiddenCache.clear()
+        blockedCache.clear()
         statesLoaded = false
         searchJob?.cancel()
         scrollView = null

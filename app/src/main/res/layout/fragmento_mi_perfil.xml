@@ -521,6 +521,64 @@
 
                 </LinearLayout>
 
+                <!-- FASE 17/19 · Mi actividad: postulaciones, trabajos y guardados -->
+                <HorizontalScrollView
+                    android:id="@+id/scrollActividad"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:paddingHorizontal="20dp"
+                    android:scrollbars="none"
+                    android:clipToPadding="false">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/btnActPostulaciones"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_chip_inactive"
+                            android:gravity="center"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Postulaciones"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/btnActTrabajos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_chip_inactive"
+                            android:gravity="center"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Mis trabajos"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/btnActGuardados"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_chip_inactive"
+                            android:gravity="center"
+                            android:paddingStart="18dp"
+                            android:paddingEnd="18dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Guardados"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+
                 <!-- Tab Selector Row (Sobre Mí | Fotos | Reseñas) -->
                 <LinearLayout
                     android:id="@+id/layoutTabSelector"
@@ -1337,6 +1395,17 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:visibility="gone">
+
+                    <!-- FASE 19 · Calificaciones recibidas -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvResenas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="20dp"
+                        android:layout_marginTop="12dp"
+                        android:nestedScrollingEnabled="false"
+                        android:clipToPadding="false"
+                        android:visibility="gone" />
 
                     <!-- Empty state cuando no hay reseñas (visible por defecto) -->
                     <LinearLayout

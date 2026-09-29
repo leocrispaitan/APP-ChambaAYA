@@ -44,6 +44,15 @@ class AdaptadorMensajes(
 
     override fun getItemCount(): Int = listaMensajes.size
 
+    /** Reemplaza toda la lista (tiempo real) manteniendo el scroll. */
+    fun actualizarMensajes(nueva: List<MensajeChat>) {
+        (listaMensajes as? MutableList<MensajeChat>)?.let {
+            it.clear()
+            it.addAll(nueva)
+            notifyDataSetChanged()
+        }
+    }
+
     fun agregarMensaje(mensaje: MensajeChat) {
         listaMensajes.add(mensaje)
         notifyItemInserted(listaMensajes.size - 1)

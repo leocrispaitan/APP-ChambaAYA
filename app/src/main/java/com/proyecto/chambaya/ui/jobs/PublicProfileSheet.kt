@@ -7,12 +7,16 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.JobStatus
+import com.proyecto.chambaya.data.repository.BlockRepository
+import com.proyecto.chambaya.data.repository.ChatRepository
 import com.proyecto.chambaya.data.repository.JobRepository
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
@@ -35,6 +39,9 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
     private val pubRepo = PublicationRepository()
     private val jobRepo = JobRepository()
     private val ratingRepo = RatingRepository()
+    private val chatRepo = ChatRepository()
+    private val blockRepo = BlockRepository()
+    private var loadedProfile: com.proyecto.chambaya.data.model.PublicProfile? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.bottom_sheet_public_profile, container, false)
@@ -58,6 +65,7 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                 }
                 return@launch
             }
+            loadedProfile = perfil
             val esEmpresa = perfil.employer.enabled
 
             // ── Identidad ──
@@ -125,13 +133,142 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                 if (ratings.isNotEmpty()) {
                     String.format("%.1f", ratings.map { it.rating }.average())
                 } else "—"
+
+            configurarAcciones(view, uid)
         }
+    }
+
+    /** Mensaje + bloquear/denunciar (FASE 12/13). Se oculta viéndose a sí mismo. */
+    private fun configurarAcciones(view: View, uid: String) {
+        val me = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        val btnMsg = view.findViewById<View>(R.id.btnPublicMessage)
+        val btnMore = view.findViewById<View>(R.id.btnPublicMore)
+        if (me.isBlank() || me == uid) {
+            btnMsg.visibility = View.GONE
+            btnMore.visibility = View.GONE
+            return
+        }
+        val publicationId = requireArguments().getString(ARG_PUB).orEmpty()
+        val publicationTitle = requireArguments().getString(ARG_PUB_TITLE).orEmpty()
+        btnMsg.setOnClickListener {
+            it.isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                val r = chatRepo.ensureConversation(me, uid, publicationId, publicationTitle)
+                if (!isAdded) return@launch
+                it.isEnabled = true
+                if (r.isSuccess) {
+                    val conv = r.getOrThrow()
+                    val intent = android.content.Intent(
+                        requireContext(),
+                        com.proyecto.chambaya.ui.chat.ActividadChatDetalle::class.java
+                    ).apply {
+                        putExtra(
+                            com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_CONV_ID,
+                            conv.conversationId
+                        )
+                        putExtra(
+                            com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_OTHER_UID,
+                            uid
+                        )
+                        putExtra(
+                            com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_NOMBRE,
+                            loadedProfile?.displayName()
+                        )
+                        putExtra(
+                            com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_FOTO,
+                            loadedProfile?.photoUrl.orEmpty()
+                        )
+                        putExtra(
+                            com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_PUB_TITULO,
+                            publicationTitle
+                        )
+                    }
+                    // La foto viaja por el perfil público en la apertura.
+                    dismiss()
+                    startActivity(intent)
+                } else {
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        r.exceptionOrNull()?.message ?: "No se pudo abrir el chat.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+        btnMore.setOnClickListener { anchor ->
+            val menu = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
+            menu.menu.add(0, 1, 0, "Bloquear")
+            menu.menu.add(0, 2, 0, "Denunciar")
+            menu.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    1 -> confirmarBloqueo(uid)
+                    2 -> denunciar(uid)
+                }
+                true
+            }
+            menu.show()
+        }
+    }
+
+    private fun confirmarBloqueo(uid: String) {
+        val me = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Bloquear usuario")
+            .setMessage("No verás sus chambas ni podrán escribirse.")
+            .setPositiveButton("Bloquear") { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val ya = blockRepo.isBlocked(me, uid)
+                    val r = if (ya) blockRepo.unblock(me, uid) else blockRepo.block(me, uid)
+                    if (!isAdded) return@launch
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        when {
+                            r.isFailure -> "No se pudo completar."
+                            ya -> "Usuario desbloqueado."
+                            else -> "Usuario bloqueado."
+                        },
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    if (r.isSuccess && !ya) dismiss()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun denunciar(uid: String) {
+        val me = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        if (me.isBlank()) return
+        val motivos = arrayOf("Spam", "Acoso", "Fraude o estafa", "Contenido inapropiado", "Otro")
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Denunciar usuario")
+            .setItems(motivos) { _, cual ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val r = blockRepo.reportUser(me, uid, motivos[cual])
+                    if (isAdded) {
+                        android.widget.Toast.makeText(
+                            requireContext(),
+                            if (r.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     companion object {
         private const val ARG_UID = "uid"
-        fun newInstance(uid: String) = PublicProfileSheet().apply {
-            arguments = bundleOf(ARG_UID to uid)
-        }
+        private const val ARG_PUB = "publicationId"
+        private const val ARG_PUB_TITLE = "publicationTitle"
+        fun newInstance(uid: String, publicationId: String = "", publicationTitle: String = "") =
+            PublicProfileSheet().apply {
+                arguments = androidx.core.os.bundleOf(
+                    ARG_UID to uid,
+                    ARG_PUB to publicationId,
+                    ARG_PUB_TITLE to publicationTitle
+                )
+            }
     }
 }

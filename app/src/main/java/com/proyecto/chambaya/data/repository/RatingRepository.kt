@@ -21,6 +21,7 @@ import kotlin.math.round
 class RatingRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
+    private val notifications = NotificationRepository(firestore)
 
     suspend fun existingFor(jobId: String, fromUid: String): Result<Rating?> =
         withContext(Dispatchers.IO) {
@@ -136,6 +137,15 @@ class RatingRepository(
                         "updatedAt" to FieldValue.serverTimestamp()
                     )
                 )
+            )
+            // Aviso al evaluado (FASE 14).
+            notifications.push(
+                recipientUid = toUid,
+                type = com.proyecto.chambaya.data.model.NotificationType.NEW_RATING,
+                title = "Nueva calificación",
+                message = "Recibiste $stars ${if (stars == 1) "estrella" else "estrellas"} por “${job.publicationTitle.take(60)}”.",
+                senderUid = fromUid,
+                publicationId = job.publicationId
             )
             Tasks.await(ref.get()).toRating()
         }

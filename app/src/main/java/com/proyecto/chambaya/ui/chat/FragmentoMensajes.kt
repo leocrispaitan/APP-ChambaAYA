@@ -15,10 +15,17 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
+import com.proyecto.chambaya.data.model.chatListTime
+import com.proyecto.chambaya.data.model.PublicProfile
+import com.proyecto.chambaya.data.repository.BlockRepository
+import com.proyecto.chambaya.data.repository.ChatRepository
+import com.proyecto.chambaya.data.repository.ProfileRepository
+import kotlinx.coroutines.launch
 
 class FragmentoMensajes : Fragment() {
 
@@ -33,6 +40,13 @@ class FragmentoMensajes : Fragment() {
     private lateinit var headerLayout: View
 
     private var currentFilter = AdaptadorConversaciones.TipoFiltro.TODOS
+
+    private val chatRepo = ChatRepository()
+    private val profileRepo = ProfileRepository()
+    private val blockRepo = BlockRepository()
+    private val perfilCache = mutableMapOf<String, PublicProfile>()
+    private var convListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var emptyView: TextView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -77,52 +91,7 @@ class FragmentoMensajes : Fragment() {
 
     private fun setupRecyclerView() {
         rvChats.layoutManager = LinearLayoutManager(requireContext())
-
-        // Mock data identical to the left screen of the image
-        val conversaciones = listOf(
-            ChatConversacion(
-                id = "1",
-                nombre = "Alex Thompson",
-                ultimoMensaje = "How's yesterday meet-up?",
-                hora = "12:27 PM",
-                noLeidos = 1,
-                avatarResId = R.drawable.avatar_alex,
-                estaEnLinea = true,
-                esFavorito = true
-            ),
-            ChatConversacion(
-                id = "2",
-                nombre = "Jordan Lee",
-                ultimoMensaje = "Looking forward to our projec...",
-                hora = "1:15 PM",
-                noLeidos = 2,
-                avatarResId = R.drawable.avatar_jordan,
-                estaEnLinea = false,
-                esFavorito = true
-            ),
-            ChatConversacion(
-                id = "3",
-                nombre = "Samantha Green",
-                ultimoMensaje = "Can we discuss the design fe...",
-                hora = "2:42 PM",
-                noLeidos = 3,
-                avatarResId = R.drawable.avatar_samantha,
-                estaEnLinea = false,
-                esFavorito = true
-            ),
-            ChatConversacion(
-                id = "4",
-                nombre = "Michael Brown",
-                ultimoMensaje = "Will you be attending the wor...",
-                hora = "3:05 PM",
-                noLeidos = 4,
-                avatarResId = R.drawable.avatar_michael,
-                estaEnLinea = false,
-                esFavorito = true
-            )
-        )
-
-        adapter = AdaptadorConversaciones(conversaciones) { chat ->
+        adapter = AdaptadorConversaciones(emptyList()) { chat ->
             abrirDetalleChat(chat)
         }
         rvChats.adapter = adapter
@@ -130,9 +99,11 @@ class FragmentoMensajes : Fragment() {
 
     private fun abrirDetalleChat(chat: ChatConversacion) {
         val intent = Intent(requireContext(), ActividadChatDetalle::class.java).apply {
+            putExtra(ActividadChatDetalle.EXTRA_CONV_ID, chat.id)
+            putExtra(ActividadChatDetalle.EXTRA_OTHER_UID, chat.otherUid)
             putExtra(ActividadChatDetalle.EXTRA_NOMBRE, chat.nombre)
-            putExtra(ActividadChatDetalle.EXTRA_AVATAR, chat.avatarResId)
-            putExtra(ActividadChatDetalle.EXTRA_ONLINE, chat.estaEnLinea)
+            putExtra(ActividadChatDetalle.EXTRA_FOTO, chat.photoUrl)
+            putExtra(ActividadChatDetalle.EXTRA_PUB_TITULO, chat.publicationTitle)
         }
         startActivity(intent)
     }
@@ -150,20 +121,15 @@ class FragmentoMensajes : Fragment() {
     }
 
     private fun setupFilterChips() {
+        // Solo Todos / No leídos tienen sentido con datos reales.
+        chipFavorites.visibility = View.GONE
+        chipAddFilter.visibility = View.GONE
         chipAll.setOnClickListener {
             seleccionarChip(AdaptadorConversaciones.TipoFiltro.TODOS)
         }
 
         chipUnread.setOnClickListener {
             seleccionarChip(AdaptadorConversaciones.TipoFiltro.NO_LEIDOS)
-        }
-
-        chipFavorites.setOnClickListener {
-            seleccionarChip(AdaptadorConversaciones.TipoFiltro.FAVORITOS)
-        }
-
-        chipAddFilter.setOnClickListener {
-            Toast.makeText(requireContext(), "Añadir filtro personalizado", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -182,25 +148,120 @@ class FragmentoMensajes : Fragment() {
         chipUnread.background = if (tipo == AdaptadorConversaciones.TipoFiltro.NO_LEIDOS) bgActive else bgInactive
         chipUnread.setTextColor(if (tipo == AdaptadorConversaciones.TipoFiltro.NO_LEIDOS) textActiveColor else textInactiveColor)
 
-        chipFavorites.background = if (tipo == AdaptadorConversaciones.TipoFiltro.FAVORITOS) bgActive else bgInactive
-        chipFavorites.setTextColor(if (tipo == AdaptadorConversaciones.TipoFiltro.FAVORITOS) textActiveColor else textInactiveColor)
-
         adapter.filtrarPorTipo(tipo)
+    }
+
+    // ── FASE 13 · Datos reales en tiempo real ─────────────────────
+
+    override fun onResume() {
+        super.onResume()
+        try {
+            BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.white))
+        } catch (_: Exception) { }
+        attachConversations()
+    }
+
+    override fun onPause() {
+        convListener?.remove()
+        convListener = null
+        super.onPause()
+    }
+
+    override fun onDestroyView() {
+        convListener?.remove()
+        convListener = null
+        perfilCache.clear()
+        emptyView = null
+        super.onDestroyView()
+    }
+
+    private fun attachConversations() {
+        val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        if (uid.isBlank() || convListener != null || !isAdded) return
+        convListener = chatRepo.listenMine(
+            uid,
+            onUpdate = { convs -> integrarConversaciones(uid, convs) },
+            onError = { mostrarVacio("No se pudieron cargar los chats.") }
+        )
+    }
+
+    private fun integrarConversaciones(uid: String, convs: List<com.proyecto.chambaya.data.model.Conversation>) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val bloques = blockRepo.myBlocks(uid).getOrNull().orEmpty()
+            val items = mutableListOf<ChatConversacion>()
+            for (conv in convs) {
+                val other = conv.otherUid(uid)
+                if (other.isBlank() || other in bloques) continue
+                var perfil = perfilCache[other]
+                if (perfil == null) {
+                    perfil = profileRepo.loadPublicProfile(other).getOrNull()
+                    if (perfil != null) perfilCache[other] = perfil
+                }
+                val unread = chatRepo.unreadIn(conv.conversationId, uid)
+                items += ChatConversacion(
+                    id = conv.conversationId,
+                    nombre = perfil?.displayName() ?: "Chat",
+                    ultimoMensaje = conv.lastMessage.ifBlank {
+                        conv.publicationTitle.takeIf { it.isNotBlank() }?.let { "Chamba: $it" }
+                            ?: "Inicia la conversación"
+                    },
+                    hora = chatListTime(conv.lastMessageAt),
+                    noLeidos = unread,
+                    photoUrl = perfil?.photoUrl.orEmpty(),
+                    otherUid = other,
+                    publicationId = conv.publicationId,
+                    publicationTitle = conv.publicationTitle
+                )
+            }
+            if (!isAdded) return@launch
+            adapter.actualizarLista(items)
+            adapter.filtrarPorTipo(currentFilter)
+            if (items.isEmpty()) mostrarVacio("Sin conversaciones.\nLos chats nacen de tus postulaciones y solicitudes.")
+            else ocultarVacio()
+        }
+    }
+
+    private fun mostrarVacio(texto: String) {
+        if (!isAdded) return
+        var tv = emptyView
+        if (tv == null) {
+            tv = TextView(requireContext()).apply {
+                gravity = android.view.Gravity.CENTER
+                setTextColor(requireContext().getColor(R.color.text_secondary))
+                textSize = 14f
+                setPadding(48, 48, 48, 48)
+            }
+            (rvChats.parent as? ViewGroup)?.addView(
+                tv,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+            emptyView = tv
+        }
+        tv.text = texto
+        tv.visibility = View.VISIBLE
+        rvChats.visibility = View.GONE
+    }
+
+    private fun ocultarVacio() {
+        emptyView?.visibility = View.GONE
+        if (::rvChats.isInitialized) rvChats.visibility = View.VISIBLE
     }
 
     private fun setupActions() {
         btnNewChat.setOnClickListener {
-            Toast.makeText(requireContext(), "Iniciar nueva conversación", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Los chats se inician desde tus postulaciones o solicitudes.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
     private fun dpToPx(dp: Int): Int {
         val density = resources.displayMetrics.density
         return (dp * density).toInt()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.white))
     }
 }

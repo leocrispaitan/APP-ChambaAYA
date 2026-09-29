@@ -532,10 +532,14 @@ class FragmentoPublicar : Fragment() {
             },
             onOpenProfile = { row ->
                 PublicProfileSheet.newInstance(row.app.workerUid).show(parentFragmentManager, "profile")
+            },
+            onChat = { row ->
+                abrirChat(row.app.workerUid, row.app.publicationId, row.app.publicationTitle)
             }
         )
         myAppsAdapter = MyApplicationsAdapter(
             onPrimary = { row -> accionMiPostulacion(row) },
+            onContact = { row -> abrirChat(row.app.employerUid, row.app.publicationId, row.app.publicationTitle) },
             onOpenDetail = { row ->
                 JobDetailSheet.newInstance(row.app.publicationId).show(parentFragmentManager, "detail")
             }
@@ -675,6 +679,42 @@ class FragmentoPublicar : Fragment() {
                 )
             }
         }
+    }
+
+    /** Abre (o crea) el chat 1:1 con el otro participante. */
+    private fun abrirChat(otherUid: String, publicationId: String, publicationTitle: String) {
+        val me = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        if (me.isBlank() || otherUid.isBlank() || me == otherUid) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val conv = com.proyecto.chambaya.data.repository.ChatRepository()
+                .ensureConversation(me, otherUid, publicationId, publicationTitle).getOrNull()
+            if (!isAdded) return@launch
+            if (conv == null) {
+                Toast.makeText(requireContext(), "No se pudo abrir el chat.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            var nombre = "Chat"
+            var foto = ""
+            profileCachePublic(otherUid)?.let {
+                nombre = it.displayName()
+                foto = it.photoUrl
+            }
+            val intent = android.content.Intent(
+                requireContext(),
+                com.proyecto.chambaya.ui.chat.ActividadChatDetalle::class.java
+            ).apply {
+                putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_CONV_ID, conv.conversationId)
+                putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_OTHER_UID, otherUid)
+                putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_NOMBRE, nombre)
+                putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_FOTO, foto)
+                putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_PUB_TITULO, publicationTitle)
+            }
+            startActivity(intent)
+        }
+    }
+
+    private suspend fun profileCachePublic(uid: String): com.proyecto.chambaya.data.model.PublicProfile? {
+        return perfilRepository.loadPublicProfile(uid).getOrNull()
     }
 
     private fun confirmarDecision(row: ApplicantRow, accept: Boolean) {
@@ -896,7 +936,12 @@ class FragmentoPublicar : Fragment() {
             }.start()
     }
 
-    private companion object {
+    /** Salta a una sección (para deep-links como Mis postulaciones). */
+    fun mostrarSeccion(seccion: Int) {
+        if (seccion in paneles.indices) seleccionar(seccion, animar = false)
+    }
+
+    companion object {
         const val KEY_SECCION = "publicar_seccion"
         const val SECCION_PUBLICAR = 0
         const val SECCION_PUBLICACIONES = 1

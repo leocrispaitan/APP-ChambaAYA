@@ -8,9 +8,13 @@ data class ChatConversacion(
     val ultimoMensaje: String,
     val hora: String,
     val noLeidos: Int = 0,
-    @param:DrawableRes val avatarResId: Int,
+    @param:DrawableRes val avatarResId: Int = 0,
+    val photoUrl: String = "",
     val estaEnLinea: Boolean = false,
-    val esFavorito: Boolean = false
+    val esFavorito: Boolean = false,
+    val otherUid: String = "",
+    val publicationId: String = "",
+    val publicationTitle: String = ""
 )
 
 data class MensajeChat(
