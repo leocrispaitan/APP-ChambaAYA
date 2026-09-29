@@ -127,6 +127,12 @@ class FragmentoChambas : Fragment() {
                 aplicarFiltros()
             }
         }
+        parentFragmentManager.setFragmentResultListener(NotificationsSheet.REQUEST_OPEN_PUB, viewLifecycleOwner) { _, bundle ->
+            val pid = bundle.getString(NotificationsSheet.EXTRA_PUB).orEmpty()
+            if (pid.isNotBlank()) {
+                JobDetailSheet.newInstance(pid).show(parentFragmentManager, "detail")
+            }
+        }
         parentFragmentManager.setFragmentResultListener(JobDetailSheet.REQUEST_OPEN_PROFILE, viewLifecycleOwner) { _, bundle ->
             val uid = bundle.getString(JobDetailSheet.EXTRA_UID).orEmpty()
             if (uid.isNotBlank()) PublicProfileSheet.newInstance(uid).show(parentFragmentManager, "profile")
@@ -364,7 +370,11 @@ class FragmentoChambas : Fragment() {
 
     private fun setupHeaderActions(view: View) {
         view.findViewById<View>(R.id.btnNotifications)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Las notificaciones llegan en la Fase 14.", Toast.LENGTH_SHORT).show()
+            if (FirebaseAuth.getInstance().currentUser?.uid.isNullOrBlank()) {
+                Toast.makeText(requireContext(), "Inicia sesión para ver avisos.", Toast.LENGTH_SHORT).show()
+            } else {
+                NotificationsSheet().show(parentFragmentManager, "notif")
+            }
         }
         view.findViewById<View>(R.id.tvCategorySeeAll)?.setOnClickListener {
             Toast.makeText(requireContext(), "Explora las categorías tocando cada tarjeta.", Toast.LENGTH_SHORT).show()

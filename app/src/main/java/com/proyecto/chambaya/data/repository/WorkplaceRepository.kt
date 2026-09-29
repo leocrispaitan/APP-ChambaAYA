@@ -198,6 +198,8 @@ class WorkplaceRepository(
                 )
             )
         )
+        // El perfil público muestra el lugar: se re-sincroniza (mejor esfuerzo).
+        runCatching { ProfileRepository(firestore).syncPublicProfile(uid) }
     }
 
     private suspend fun desvincularSiApunta(uid: String, workplaceId: String) {
@@ -214,6 +216,7 @@ class WorkplaceRepository(
                         )
                     )
                 )
+                runCatching { ProfileRepository(firestore).syncPublicProfile(uid) }
             }
         }
     }

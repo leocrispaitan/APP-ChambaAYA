@@ -19,26 +19,41 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.R
+import com.proyecto.chambaya.data.model.ApplicationStatus
+import com.proyecto.chambaya.data.model.JobStatus
+import com.proyecto.chambaya.data.model.Publication
+import com.proyecto.chambaya.data.model.PublicationStatus
+import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.precioTexto
 import com.proyecto.chambaya.data.model.publicationTimeAgo
+import com.proyecto.chambaya.data.repository.ApplicationRepository
+import com.proyecto.chambaya.data.repository.CommentRepository
+import com.proyecto.chambaya.data.repository.JobRepository
+import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.PublicationInteractionRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
 import com.proyecto.chambaya.ui.profile.ProfileCache
 import kotlinx.coroutines.launch
 
 /**
- * FASE 6 — Vista detallada de la chamba (BottomSheet).
+ * FASE 6-10 — Vista detallada de la chamba (BottomSheet).
  *
  * Muestra la publicación completa con jerarquía profesional y acciones según
  * el rol:
- *  - trabajador / visitante → Postularme (Fase 7: placeholder informativo),
- *    Guardar, Compartir
+ *  - trabajador → Postularme / estado de postulación, Guardar, Compartir,
+ *    Comentar
  *  - dueño contratante → Pausar / Reactivar / Finalizar
  */
 class JobDetailSheet : BottomSheetDialogFragment() {
 
     private val pubRepo = PublicationRepository()
     private val interRepo = PublicationInteractionRepository()
+    private val appRepo = ApplicationRepository()
+    private val jobRepo = JobRepository()
+    private val commentRepo = CommentRepository()
+
+    private var currentPub: Publication? = null
+    private var commentListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.bottom_sheet_job_detail, container, false)
@@ -48,6 +63,13 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         val publicationId = requireArguments().getString(ARG_ID).orEmpty()
         if (publicationId.isBlank()) { dismiss(); return }
+
+        // Tras postular/retirar se repinta el botón con el estado real.
+        parentFragmentManager.setFragmentResultListener(ApplySheet.REQUEST_APPLIED, viewLifecycleOwner) { _, b ->
+            if (b.getString(ApplySheet.EXTRA_ID) == publicationId) {
+                view.findViewById<MaterialButton>(R.id.btnDetailApply)?.let { pintarBotonPostular(it) }
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             val pub = pubRepo.getById(publicationId).getOrNull()
@@ -63,6 +85,7 @@ class JobDetailSheet : BottomSheetDialogFragment() {
 
     private suspend fun pintar(view: View, publicationId: String) {
         val pub = pubRepo.getById(publicationId).getOrNull() ?: return
+        currentPub = pub
         val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         val isOwner = uid.isNotBlank() && pub.ownerUid == uid
         var saved = if (uid.isBlank()) false else interRepo.isSaved(publicationId, uid)
@@ -201,15 +224,232 @@ class JobDetailSheet : BottomSheetDialogFragment() {
             val esTrabajador = ProfileCache.perfil?.roles?.contains("TRABAJADOR") != false
             btnApply.isEnabled = esTrabajador
             btnApply.alpha = if (esTrabajador) 1f else 0.5f
+            pintarBotonPostular(btnApply)
+        }
+
+        configurarComentarios(view, publicationId, uid)
+    }
+
+    /** FASE 7 — El botón refleja el estado real de mi postulación. */
+    private fun pintarBotonPostular(btnApply: MaterialButton) {
+        val pub = currentPub ?: return
+        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+        val esTrabajador = ProfileCache.perfil?.roles?.contains(UserRoles.TRABAJADOR) ?: true
+        if (uid.isBlank() || !esTrabajador) {
+            btnApply.isEnabled = false
+            btnApply.alpha = 0.5f
+            btnApply.text = "Postularme"
             btnApply.setOnClickListener {
-                // Fase 7: las postulaciones aún no existen; placeholder honesto.
-                Toast.makeText(
-                    requireContext(),
-                    "Las postulaciones llegan en la Fase 7. Guarda la chamba para no perderla.",
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(requireContext(), "Activa el modo trabajador para postularte.", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+        if (pub.status != PublicationStatus.ACTIVE) {
+            btnApply.isEnabled = false
+            btnApply.alpha = 0.5f
+            btnApply.text = "No disponible"
+            btnApply.setOnClickListener { }
+            return
+        }
+        btnApply.isEnabled = false
+        btnApply.alpha = 0.7f
+        btnApply.text = "Cargando…"
+        btnApply.setOnClickListener { }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val last = appRepo.lastFor(pub.publicationId, uid).getOrNull()
+            val job = jobRepo.findByPublicationAndWorker(pub.publicationId, uid).getOrNull()
+            if (!isAdded) return@launch
+            when {
+                last == null || ApplicationStatus.isFinal(last.status) -> {
+                    btnApply.isEnabled = true
+                    btnApply.alpha = 1f
+                    btnApply.text = "Postularme"
+                    btnApply.setOnClickListener {
+                        ApplySheet.newInstance(pub.publicationId).show(parentFragmentManager, "apply")
+                    }
+                }
+                last.status == ApplicationStatus.PENDING -> {
+                    btnApply.isEnabled = true
+                    btnApply.alpha = 1f
+                    btnApply.text = "Postulación enviada"
+                    btnApply.setOnClickListener {
+                        ApplySheet.newInstance(pub.publicationId).show(parentFragmentManager, "apply")
+                    }
+                }
+                last.status == ApplicationStatus.ACCEPTED -> {
+                    btnApply.isEnabled = false
+                    btnApply.alpha = 1f
+                    btnApply.text = when (job?.status) {
+                        JobStatus.IN_PROGRESS -> "Trabajo en curso"
+                        JobStatus.COMPLETED -> "Trabajo completado ✓"
+                        else -> "¡Fuiste seleccionado!"
+                    }
+                    btnApply.setOnClickListener { }
+                }
+                else -> {
+                    btnApply.isEnabled = true
+                    btnApply.alpha = 1f
+                    btnApply.text = "Postularme"
+                    btnApply.setOnClickListener {
+                        ApplySheet.newInstance(pub.publicationId).show(parentFragmentManager, "apply")
+                    }
+                }
             }
         }
+    }
+
+    /** FASE 10 — Comentarios en vivo + publicar + menú propio/ajeno. */
+    private fun configurarComentarios(view: View, publicationId: String, uid: String) {
+        val rv = view.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvComments)
+        val tvTitle = view.findViewById<TextView>(R.id.tvCommentsTitle)
+        val tvEmpty = view.findViewById<TextView>(R.id.tvCommentsEmpty)
+        val et = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etComment)
+        val btnSend = view.findViewById<MaterialButton>(R.id.btnSendComment)
+        val adapter = CommentAdapter { c, anchor -> menuComentario(c, anchor, publicationId, uid) }
+        rv.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+        rv.isNestedScrollingEnabled = false
+        rv.adapter = adapter
+        commentListener?.remove()
+        commentListener = commentRepo.listen(
+            publicationId, 50,
+            onUpdate = { list ->
+                if (!isAdded) return@listen
+                tvTitle.text = if (list.isEmpty()) "Comentarios" else "Comentarios (${list.size})"
+                tvEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                adapter.submitList(list)
+            },
+            onError = {
+                if (!isAdded) return@listen
+                tvEmpty.text = "No se pudieron cargar los comentarios."
+            }
+        )
+        btnSend.setOnClickListener {
+            val texto = et.text?.toString().orEmpty()
+            if (uid.isBlank()) {
+                Toast.makeText(requireContext(), "Inicia sesión para comentar.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if (texto.isBlank()) return@setOnClickListener
+            btnSend.isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                var perfil = ProfileCache.perfil
+                if (perfil == null) {
+                    perfil = ProfileRepository().loadProfile(uid).getOrNull()
+                    if (perfil != null) ProfileCache.perfil = perfil
+                }
+                if (perfil == null) {
+                    btnSend.isEnabled = true
+                    return@launch
+                }
+                val r = commentRepo.add(uid, publicationId, perfil, texto)
+                if (!isAdded) return@launch
+                btnSend.isEnabled = true
+                if (r.isSuccess) {
+                    et.text?.clear()
+                    parentFragmentManager.setFragmentResult(REQUEST_CHANGED, bundleOf())
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        r.exceptionOrNull()?.message ?: "No se pudo comentar.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun menuComentario(
+        c: com.proyecto.chambaya.data.model.PublicationComment,
+        anchor: View,
+        publicationId: String,
+        uid: String
+    ) {
+        val menu = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
+        if (c.authorUid == uid && uid.isNotBlank()) {
+            menu.menu.add(0, 1, 0, "Editar")
+            menu.menu.add(0, 2, 0, "Eliminar")
+        } else {
+            menu.menu.add(0, 3, 0, "Denunciar")
+        }
+        menu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> dialogEditarComentario(c)
+                2 -> androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setTitle("Eliminar comentario")
+                    .setMessage("Se quitará de la publicación.")
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            val r = commentRepo.delete(uid, c)
+                            if (isAdded && r.isSuccess) {
+                                parentFragmentManager.setFragmentResult(REQUEST_CHANGED, bundleOf())
+                            } else if (isAdded) {
+                                Toast.makeText(requireContext(), "No se pudo eliminar.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+                3 -> dialogDenunciarComentario(c, publicationId, uid)
+            }
+            true
+        }
+        menu.show()
+    }
+
+    private fun dialogEditarComentario(c: com.proyecto.chambaya.data.model.PublicationComment) {
+        val input = com.google.android.material.textfield.TextInputEditText(requireContext())
+        input.setText(c.text)
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Editar comentario")
+            .setView(input)
+            .setPositiveButton("Guardar") { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val r = commentRepo.edit(c.authorUid, c.commentId, input.text?.toString().orEmpty())
+                    if (isAdded && r.isFailure) {
+                        Toast.makeText(
+                            requireContext(),
+                            r.exceptionOrNull()?.message ?: "No se pudo editar.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun dialogDenunciarComentario(
+        c: com.proyecto.chambaya.data.model.PublicationComment,
+        publicationId: String,
+        uid: String
+    ) {
+        if (uid.isBlank()) {
+            Toast.makeText(requireContext(), "Inicia sesión para denunciar.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val motivos = arrayOf("Spam", "Contenido inapropiado", "Acoso", "Fraude", "Otro")
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Denunciar comentario")
+            .setItems(motivos) { _, cual ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val r = commentRepo.report(publicationId, c.commentId, uid, motivos[cual])
+                    if (isAdded) {
+                        Toast.makeText(
+                            requireContext(),
+                            if (r.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    override fun onDestroyView() {
+        commentListener?.remove()
+        commentListener = null
+        super.onDestroyView()
     }
 
     private fun compartir(titulo: String, desc: String, precio: String, distrito: String) {

@@ -3,6 +3,7 @@ package com.proyecto.chambaya.data.repository
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.proyecto.chambaya.data.model.Genders
 import com.proyecto.chambaya.data.model.OficioCatalog
 import com.proyecto.chambaya.data.model.PeruLocations
@@ -16,6 +17,8 @@ import com.proyecto.chambaya.data.model.ProfilePhotoSources
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.ValidatedIdentity
 import com.proyecto.chambaya.data.model.normalizarUsername
+import com.proyecto.chambaya.data.model.toPublicProfile
+import com.proyecto.chambaya.data.model.PublicProfile
 import com.proyecto.chambaya.data.model.toUserProfile
 import com.proyecto.chambaya.data.remote.CloudinaryUploader
 import com.proyecto.chambaya.data.remote.IdentityValidationResult
@@ -68,6 +71,71 @@ class ProfileRepository(
             Tasks.await(firestore.collection(COLLECTION_USERS).document(uid).get()).toUserProfile()
         }
     }
+
+    /**
+     * Lee el PERFIL PÚBLICO de cualquier usuario (`public_profiles/{uid}`).
+     *
+     * A diferencia de [loadProfile] (solo el dueño por reglas), este sí puede
+     * usarse para mostrar contratantes y trabajadores ajenos: el documento
+     * solo lleva datos públicos.
+     */
+    suspend fun loadPublicProfile(uid: String): Result<PublicProfile> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                if (uid.isBlank()) throw IllegalArgumentException("Usuario no válido.")
+                Tasks.await(firestore.collection(COLLECTION_PUBLIC).document(uid).get())
+                    .takeIf { it.exists() }?.toPublicProfile()
+                    ?: throw NoSuchElementException("Perfil no disponible.")
+            }
+        }
+
+    /**
+     * Replica los datos públicos de `users/{uid}` a `public_profiles/{uid}`.
+     *
+     * Se llama (mejor esfuerzo) al guardar perfil, activar roles y enlazar
+     * lugar. Si el documento público no existe, lo crea.
+     */
+    suspend fun syncPublicProfile(uid: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                if (uid.isBlank()) return@runCatching
+                val perfil = Tasks.await(
+                    firestore.collection(COLLECTION_USERS).document(uid).get()
+                ).toUserProfile()
+                Tasks.await(
+                    firestore.collection(COLLECTION_PUBLIC).document(uid)
+                        .set(perfil.toPublicDoc(), SetOptions.merge())
+                )
+                Unit
+            }
+        }
+
+    /** Documento público derivado del perfil privado (sin datos sensibles). */
+    private fun UserProfile.toPublicDoc(): Map<String, Any?> = mapOf(
+        "uid" to uid,
+        "fullName" to profile.fullName,
+        "username" to profile.username,
+        "photoUrl" to profile.profilePhotoUrl,
+        "bio" to profile.bio,
+        "district" to profile.district,
+        "province" to profile.province,
+        "identityVerified" to identity.identityVerified,
+        "worker" to mapOf(
+            "enabled" to worker.enabled,
+            "experienceYears" to worker.experienceYears,
+            "specialties" to worker.specialties,
+            "skills" to worker.skills
+        ),
+        "employer" to mapOf(
+            "enabled" to employer.enabled,
+            "employerType" to employer.employerType,
+            "businessName" to employer.businessName,
+            "commercialName" to employer.commercialName,
+            "sector" to employer.sector,
+            "workplaceId" to employer.workplaceId
+        ),
+        "updatedAt" to FieldValue.serverTimestamp()
+    )
 
     /**
      * Crea los bloques de la FASE 2 que todavía no existen.
@@ -182,6 +250,7 @@ class ProfileRepository(
                 cambios["updatedAt"] = FieldValue.serverTimestamp()
 
                 Tasks.await(ref.update(cambios))
+                runCatching { syncPublicProfile(uid) }
                 Tasks.await(ref.get()).toUserProfile()
             }
         }
@@ -306,6 +375,7 @@ class ProfileRepository(
                     )
                 )
             )
+            runCatching { syncPublicProfile(uid) }
             Tasks.await(ref.get()).toUserProfile()
         }
     }
@@ -389,6 +459,7 @@ class ProfileRepository(
                     cambios["worker.enabled"] = true
                 }
                 Tasks.await(ref.update(cambios))
+                runCatching { syncPublicProfile(uid) }
                 Tasks.await(ref.get()).toUserProfile()
             }
         }
@@ -572,6 +643,9 @@ class ProfileRepository(
             if (cambiaUsername) {
                 liberarUsername(anteriorNormalized, uid)
             }
+
+            // 5) Réplica pública (mejor esfuerzo, no bloquea el guardado).
+            runCatching { syncPublicProfile(uid) }
 
             Tasks.await(ref.get()).toUserProfile()
         }
@@ -763,6 +837,9 @@ class ProfileRepository(
 
         /** Reserva de unicidad de `@usuario`: `usernames/{usernameNormalized}`. */
         const val COLLECTION_USERNAMES = "usernames"
+
+        /** Perfil público visible para todos: `public_profiles/{uid}`. */
+        const val COLLECTION_PUBLIC = "public_profiles"
     }
 }
 

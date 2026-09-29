@@ -647,8 +647,11 @@ service cloud.firestore {
       //  1) Solo campos de auditoría (último ingreso), o
       //  2) completar el registro cuando aún no estaba VERIFIED, o
       //  3) migración única de cuentas creadas antes de la FASE 1, o
-      //  4) FASE 2: completar/editar el perfil (Mi Perfil).
-      allow update: if isOwner(uid)
+      //  4) FASE 2: completar/editar el perfil (Mi Perfil), o
+      //  5) FASE 5: pasos ±1 en contadores de publicaciones, o
+      //  6) FASE 9: agregado de reputación (lo escribe QUIEN CALIFICA,
+      //     no el dueño: por eso va fuera del isOwner).
+      allow update: if (isOwner(uid)
         && (onlyAuditFieldsChanged()
           || (!(resource.data.identity is map) && isCompleteRegistration())
           || (resource.data.registrationStatus != 'VERIFIED'
@@ -659,7 +662,8 @@ service cloud.firestore {
           || isAllowedEmployerUpdate(uid)
           || isAllowedActiveRoleSwitch()
           || isAllowedPublicationCounterUpdate()
-          || isAllowedProfileUpdate(uid));
+          || isAllowedProfileUpdate(uid)))
+        || (request.auth != null && isAllowedRatingUpdate());
 
       allow delete: if false;
     }
@@ -800,14 +804,17 @@ service cloud.firestore {
         && request.resource.data.get('updatedAt', null) != null;
 
       // El dueño edita contenido; el estado cambia por su propio campo.
-      // statistics/workersHired/publisher.ownerUid/createdAt son inmutables
-      // desde la app (los mueve la plataforma en Fase 7-8).
+      // statistics solo se mueve en pasos de ±1 (vistas, likes, guardados,
+      // comentarios, postulaciones: Fases 6-10) vía isAllowedStatisticsStep;
+      // workersHired/publisher/ownerUid/createdAt los mueve el dueño o la
+      // plataforma, nunca un tercero.
       allow update: if request.auth != null
-        && resource.data.get('ownerUid', '') == request.auth.uid
-        && request.resource.data.get('ownerUid', '') == resource.data.get('ownerUid', '')
-        && request.resource.data.get('publicationId', '') == resource.data.get('publicationId', '')
-        && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null)
-        && keepsPublicationCounters();
+        && ((resource.data.get('ownerUid', '') == request.auth.uid
+          && request.resource.data.get('ownerUid', '') == resource.data.get('ownerUid', '')
+          && request.resource.data.get('publicationId', '') == resource.data.get('publicationId', '')
+          && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null)
+          && keepsPublicationCounters())
+          || isAllowedStatisticsStep());
 
       allow delete: if request.auth != null
         && resource.data.get('ownerUid', '') == request.auth.uid;
@@ -862,6 +869,274 @@ service cloud.firestore {
         && request.resource.data.get('status', '') == 'PENDING';
       // El estado de moderación no lo toca el usuario normal.
       allow update, delete: if false;
+    }
+
+    // =============================================================
+    //  FASES 6-10 — Pasos ±1 en statistics de publications
+    // =============================================================
+    //
+    // Vistas, likes, guardados, comentarios y postulaciones los registran
+    // usuarios DISTINTOS del dueño (un like lo escribe quien lo da). Sin esta
+    // rama esos incrementos se denegarían siempre. Solo se admite mover esos
+    // contadores de uno en uno y no tocar nada más.
+
+    function statStepOk(before, after, key) {
+      return after.get(key, 0) == before.get(key, 0)
+        || after.get(key, 0) == before.get(key, 0) + 1
+        || after.get(key, 0) == before.get(key, 0) - 1;
+    }
+
+    function isAllowedStatisticsStep() {
+      let beforeS = resource.data.get('statistics', '');
+      let afterS = request.resource.data.get('statistics', '');
+      return request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statistics', 'updatedAt'])
+        && beforeS is map && afterS is map
+        && afterS.diff(beforeS).affectedKeys()
+          .hasOnly(['views', 'likes', 'comments', 'shares', 'saves', 'applications'])
+        && statStepOk(beforeS, afterS, 'views')
+        && statStepOk(beforeS, afterS, 'likes')
+        && statStepOk(beforeS, afterS, 'comments')
+        && statStepOk(beforeS, afterS, 'shares')
+        && statStepOk(beforeS, afterS, 'saves')
+        && statStepOk(beforeS, afterS, 'applications');
+    }
+
+    // =============================================================
+    //  FASE 7 — Postulaciones applications/{applicationId}
+    // =============================================================
+
+    function isValidApplicationCreate() {
+      let d = request.resource.data;
+      return d.get('applicationId', '') is string
+        && d.get('applicationId', '').size() > 0
+        && d.get('publicationId', '') is string
+        && d.get('publicationId', '').size() > 0
+        && d.get('workerUid', '') == request.auth.uid
+        && d.get('employerUid', '') is string
+        && d.get('employerUid', '').size() > 0
+        && d.get('employerUid', '') != request.auth.uid
+        && d.get('status', '') == 'PENDING'
+        && d.get('message', '') is string
+        && d.get('message', '').size() <= 500
+        && d.get('createdAt', null) != null
+        && d.get('updatedAt', null) != null;
+    }
+
+    // PENDING → WITHDRAWN (trabajador) o → ACCEPTED/REJECTED (contratante).
+    // Solo cambia status (+updatedAt); el resto es inmutable.
+    function isValidApplicationTransition() {
+      let from = resource.data.get('status', '');
+      let to = request.resource.data.get('status', '');
+      let byWorker = resource.data.get('workerUid', '') == request.auth.uid;
+      let byEmployer = resource.data.get('employerUid', '') == request.auth.uid;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && ((from == 'PENDING' && to == 'WITHDRAWN' && byWorker)
+          || (from == 'PENDING' && (to == 'ACCEPTED' || to == 'REJECTED') && byEmployer));
+    }
+
+    match /applications/{applicationId} {
+      allow get: if request.auth != null
+        && (resource.data.get('workerUid', '') == request.auth.uid
+          || resource.data.get('employerUid', '') == request.auth.uid);
+      // Sin listado masivo: la app consulta por workerUid/employerUid.
+      allow list: if request.auth != null;
+      allow create: if request.auth != null && isValidApplicationCreate();
+      allow update: if request.auth != null && isValidApplicationTransition();
+      allow delete: if false;
+    }
+
+    // =============================================================
+    //  FASE 8 — Trabajos jobs/{jobId}
+    // =============================================================
+
+    function isValidJobCreate() {
+      let d = request.resource.data;
+      return d.get('jobId', '') is string
+        && d.get('jobId', '').size() > 0
+        && d.get('employerUid', '') == request.auth.uid
+        && d.get('workerUid', '') is string
+        && d.get('workerUid', '') != request.auth.uid
+        && d.get('applicationId', '') is string
+        && d.get('publicationId', '') is string
+        && d.get('status', '') == 'ACCEPTED'
+        && d.get('agreedPayment', {}).get('amount', 0) is number
+        && d.get('agreedPayment', {}).get('amount', 0) > 0
+        && d.get('createdAt', null) != null
+        && d.get('updatedAt', null) != null;
+    }
+
+    function isValidJobTransition() {
+      let from = resource.data.get('status', '');
+      let to = request.resource.data.get('status', '');
+      let party = resource.data.get('workerUid', '') == request.auth.uid
+        || resource.data.get('employerUid', '') == request.auth.uid;
+      let okMove = (from == 'ACCEPTED' && (to == 'IN_PROGRESS' || to == 'CANCELLED'))
+        || (from == 'IN_PROGRESS' && (to == 'COMPLETED' || to == 'CANCELLED'));
+      return party && okMove
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'startedAt', 'completedAt', 'updatedAt'])
+        && request.resource.data.get('workerUid', '') == resource.data.get('workerUid', '')
+        && request.resource.data.get('employerUid', '') == resource.data.get('employerUid', '')
+        && request.resource.data.get('applicationId', '') == resource.data.get('applicationId', '')
+        && request.resource.data.get('publicationId', '') == resource.data.get('publicationId', '');
+    }
+
+    match /jobs/{jobId} {
+      allow get: if request.auth != null
+        && (resource.data.get('workerUid', '') == request.auth.uid
+          || resource.data.get('employerUid', '') == request.auth.uid);
+      // La app consulta por applicationId/publicationId+workerUid.
+      allow list: if request.auth != null;
+      allow create: if request.auth != null && isValidJobCreate();
+      allow update: if request.auth != null && isValidJobTransition();
+      allow delete: if false;
+    }
+
+    // =============================================================
+    //  FASE 9 — Calificaciones ratings/{ratingId}
+    // =============================================================
+
+    function isAllowedRatingUpdate() {
+      let touched = request.resource.data.diff(resource.data).affectedKeys();
+      let beforeW = resource.data.get('worker', '');
+      let afterW = request.resource.data.get('worker', '');
+      let beforeE = resource.data.get('employer', '');
+      let afterE = request.resource.data.get('employer', '');
+      let beforeS = resource.data.get('statistics', '');
+      let afterS = request.resource.data.get('statistics', '');
+      let workerStep = touched.hasOnly(['worker', 'statistics', 'updatedAt'])
+        && beforeW is map && afterW is map
+        && afterW.diff(beforeW).affectedKeys().hasOnly(['ratingAverage', 'ratingCount'])
+        && afterW.get('ratingCount', 0) == beforeW.get('ratingCount', 0) + 1
+        && afterW.get('ratingAverage', 0.0) is number
+        && afterW.get('ratingAverage', 0.0) >= 0.0
+        && afterW.get('ratingAverage', 0.0) <= 5.0;
+      let employerStep = touched.hasOnly(['employer', 'statistics', 'updatedAt'])
+        && beforeE is map && afterE is map
+        && afterE.diff(beforeE).affectedKeys().hasOnly(['ratingAverage', 'ratingCount'])
+        && afterE.get('ratingCount', 0) == beforeE.get('ratingCount', 0) + 1
+        && afterE.get('ratingAverage', 0.0) is number
+        && afterE.get('ratingAverage', 0.0) >= 0.0
+        && afterE.get('ratingAverage', 0.0) <= 5.0;
+      return request.auth != null
+        && beforeS is map && afterS is map
+        && afterS.diff(beforeS).affectedKeys().hasOnly(['receivedRatingsCount'])
+        && afterS.get('receivedRatingsCount', 0) == beforeS.get('receivedRatingsCount', 0) + 1
+        && (workerStep || employerStep);
+    }
+
+    match /ratings/{ratingId} {
+      allow get, list: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.get('fromUid', '') == request.auth.uid
+        && request.resource.data.get('toUid', '') is string
+        && request.resource.data.get('toUid', '').size() > 0
+        && request.resource.data.get('toUid', '') != request.auth.uid
+        && request.resource.data.get('jobId', '') is string
+        && request.resource.data.get('jobId', '').size() > 0
+        && request.resource.data.get('rating', 0) is number
+        && request.resource.data.get('rating', 0) >= 1
+        && request.resource.data.get('rating', 0) <= 5
+        && request.resource.data.get('comment', '') is string
+        && request.resource.data.get('comment', '').size() <= 500
+        && request.resource.data.get('createdAt', null) != null;
+      allow update, delete: if false;
+    }
+
+    // =============================================================
+    //  FASE 10 — Comentarios comments/{commentId}
+    // =============================================================
+
+    match /comments/{commentId} {
+      allow get: if request.auth != null
+        && (resource.data.get('status', '') == 'VISIBLE'
+          || resource.data.get('authorUid', '') == request.auth.uid);
+      allow list: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.get('authorUid', '') == request.auth.uid
+        && request.resource.data.get('publicationId', '') is string
+        && request.resource.data.get('publicationId', '').size() > 0
+        && request.resource.data.get('text', '') is string
+        && request.resource.data.get('text', '').size() >= 1
+        && request.resource.data.get('text', '').size() <= 500
+        && request.resource.data.get('status', '') == 'VISIBLE'
+        && request.resource.data.get('createdAt', null) != null;
+      allow update: if request.auth != null
+        && resource.data.get('authorUid', '') == request.auth.uid
+        && request.resource.data.get('authorUid', '') == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt']);
+      allow delete: if request.auth != null
+        && resource.data.get('authorUid', '') == request.auth.uid;
+    }
+
+    // =============================================================
+    //  FASE 6/7/17 — Perfiles públicos public_profiles/{uid}
+    // =============================================================
+    //
+    // Solo datos visibles para todos (nombre, @usuario, foto, bio, distrito,
+    // verificación y bloques worker/employer sin reputación). La app lo
+    // mantiene con syncPublicProfile al guardar perfil, activar roles y
+    // enlazar lugar. Los agregados (publicaciones, trabajos, promedios) se
+    // calculan en vivo, nunca se duplican aquí.
+
+    function isValidPublicProfile(uid) {
+      let d = request.resource.data;
+      let w = d.get('worker', '');
+      let e = d.get('employer', '');
+      return d.get('uid', '') == uid
+        && d.get('fullName', '') is string
+        && d.get('fullName', '').size() <= 120
+        && isValidUsername(d.get('username', ''))
+        && d.get('photoUrl', '') is string
+        && d.get('photoUrl', '').size() <= 500
+        && d.get('bio', '') is string
+        && d.get('bio', '').size() <= 500
+        && d.get('district', '') is string
+        && d.get('district', '').size() <= 80
+        && d.get('province', '') is string
+        && d.get('province', '').size() <= 80
+        && d.get('identityVerified', false) is bool
+        && w is map
+        && (w.get('specialties', []) is list && w.get('specialties', []).size() <= 3)
+        && (w.get('skills', []) is list && w.get('skills', []).size() <= 10)
+        && e is map
+        && e.get('businessName', '') is string
+        && e.get('businessName', '').size() <= 120
+        && (e.get('workplaceId', null) == null
+          || (e.get('workplaceId', '') is string && e.get('workplaceId', '').size() <= 80));
+    }
+
+    match /public_profiles/{uid} {
+      allow get, list: if request.auth != null;
+      allow create, update: if isOwner(uid) && isValidPublicProfile(uid);
+      allow delete: if false;
+    }
+
+    // =============================================================
+    //  FASE 7 — Notificaciones básicas notifications/{notificationId}
+    //  (la bandeja completa con push es FASE 14)
+    // =============================================================
+
+    match /notifications/{notificationId} {
+      allow get: if request.auth != null
+        && resource.data.get('recipientUid', '') == request.auth.uid;
+      // La app consulta por recipientUid.
+      allow list: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.get('senderUid', '') == request.auth.uid
+        && request.resource.data.get('recipientUid', '') is string
+        && request.resource.data.get('recipientUid', '').size() > 0
+        && request.resource.data.get('type', '') is string
+        && request.resource.data.get('title', '') is string
+        && request.resource.data.get('read', true) == false
+        && request.resource.data.get('createdAt', null) != null;
+      // El destinatario solo puede marcar como leída.
+      allow update: if request.auth != null
+        && resource.data.get('recipientUid', '') == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.get('read', false) == true;
+      allow delete: if false;
     }
   }
 }

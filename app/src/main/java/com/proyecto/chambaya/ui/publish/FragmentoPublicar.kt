@@ -31,14 +31,25 @@ import com.proyecto.chambaya.ActivarContratanteActivity
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.R
+import com.proyecto.chambaya.data.model.ApplicationStatus
+import com.proyecto.chambaya.data.model.Job
+import com.proyecto.chambaya.data.model.JobApplication
+import com.proyecto.chambaya.data.model.JobStatus
 import com.proyecto.chambaya.data.model.Publication
 import com.proyecto.chambaya.data.model.PublicationStatus
 import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.puedeContratarOPublicar
+import com.proyecto.chambaya.data.repository.ApplicationRepository
+import com.proyecto.chambaya.data.repository.JobRepository
+import com.proyecto.chambaya.data.repository.NotificationRepository
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
+import com.proyecto.chambaya.data.repository.RatingRepository
 import com.proyecto.chambaya.data.repository.WorkplaceRepository
+import com.proyecto.chambaya.ui.jobs.ApplySheet
 import com.proyecto.chambaya.ui.jobs.JobDetailSheet
+import com.proyecto.chambaya.ui.jobs.PublicProfileSheet
+import com.proyecto.chambaya.ui.jobs.RateSheet
 import com.proyecto.chambaya.ui.profile.ProfileCache
 import com.proyecto.chambaya.ui.workplace.EditarLugarActivity
 import kotlinx.coroutines.launch
@@ -70,6 +81,10 @@ class FragmentoPublicar : Fragment() {
     private val lugarRepository = WorkplaceRepository()
     private val perfilRepository = ProfileRepository()
     private val pubRepository = PublicationRepository()
+    private val appRepository = ApplicationRepository()
+    private val jobRepository = JobRepository()
+    private val ratingRepository = RatingRepository()
+    private val notificationRepository = NotificationRepository()
     private var esContratante = false
     private var tieneLugar = false
     private var bloqueadoPorCompletitud = false
@@ -82,6 +97,19 @@ class FragmentoPublicar : Fragment() {
     private var misAdapter: MisPublicacionesAdapter? = null
     private var misListener: com.google.firebase.firestore.ListenerRegistration? = null
     private var conteoSincronizado = false
+
+    // ── FASE 7/8/9 · Solicitudes ──────────────────────────────────
+    private var rvSolicitudes: RecyclerView? = null
+    private var progressSolicitudes: ProgressBar? = null
+    private var emptySolicitudes: View? = null
+    private var applicantsAdapter: ApplicantsAdapter? = null
+    private var myAppsAdapter: MyApplicationsAdapter? = null
+    private var reqFilter = 0 // 0 todas · 1 pendientes · 2 decididas
+    private var employerApps: List<JobApplication> = emptyList()
+    private var workerApps: List<JobApplication> = emptyList()
+    private var jobsCache: Map<String, Job> = emptyMap() // applicationId -> Job
+    private var ratedCache: Set<String> = emptySet() // jobIds ya calificados por mí
+    private var solicitudesLoading = false
 
     private val lugarLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -159,6 +187,9 @@ class FragmentoPublicar : Fragment() {
         parentFragmentManager.setFragmentResultListener(JobDetailSheet.REQUEST_CHANGED, viewLifecycleOwner) { _, _ ->
             cargarMisPublicaciones()
         }
+        parentFragmentManager.setFragmentResultListener(RateSheet.REQUEST_RATED, viewLifecycleOwner) { _, _ ->
+            cargarSolicitudes()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -188,6 +219,11 @@ class FragmentoPublicar : Fragment() {
         progressMis = null
         emptyMis = null
         misAdapter = null
+        rvSolicitudes = null
+        progressSolicitudes = null
+        emptySolicitudes = null
+        applicantsAdapter = null
+        myAppsAdapter = null
         super.onDestroyView()
     }
 
@@ -480,31 +516,271 @@ class FragmentoPublicar : Fragment() {
     // ── Solicitudes (Fase 7: placeholder honesto) ─────────────────
 
     private fun configurarSolicitudes(view: View) {
-        configurarPanel(
-            view.findViewById(R.id.panelSolicitudes),
-            R.string.solicitudes_vacio_titulo,
-            R.string.solicitudes_vacio_sub,
-            R.string.solicitudes_vacio_btn
-        ) { seleccionar(SECCION_PUBLICACIONES, animar = true) }
+        rvSolicitudes = view.findViewById(R.id.rvSolicitudes)
+        progressSolicitudes = view.findViewById(R.id.progressSolicitudes)
+        emptySolicitudes = view.findViewById(R.id.emptySolicitudes)
+
+        applicantsAdapter = ApplicantsAdapter(
+            onAccept = { row -> confirmarDecision(row, accept = true) },
+            onReject = { row -> confirmarDecision(row, accept = false) },
+            onJobAction = { row -> avanzarTrabajo(row) },
+            onRate = { row ->
+                row.job?.let { RateSheet.newInstance(it.jobId).show(parentFragmentManager, "rate") }
+            },
+            onOpenDetail = { row ->
+                JobDetailSheet.newInstance(row.app.publicationId).show(parentFragmentManager, "detail")
+            },
+            onOpenProfile = { row ->
+                PublicProfileSheet.newInstance(row.app.workerUid).show(parentFragmentManager, "profile")
+            }
+        )
+        myAppsAdapter = MyApplicationsAdapter(
+            onPrimary = { row -> accionMiPostulacion(row) },
+            onOpenDetail = { row ->
+                JobDetailSheet.newInstance(row.app.publicationId).show(parentFragmentManager, "detail")
+            }
+        )
+
+        val chipAll = view.findViewById<TextView>(R.id.chipReqAll)
+        val chipPending = view.findViewById<TextView>(R.id.chipReqPending)
+        val chipDecided = view.findViewById<TextView>(R.id.chipReqDecided)
+        fun activar(cual: Int) {
+            reqFilter = cual
+            listOf(chipAll, chipPending, chipDecided).forEachIndexed { i, chip ->
+                val on = i == cual
+                chip.setBackgroundResource(if (on) R.drawable.bg_chip_active else R.drawable.bg_chip_inactive)
+                chip.setTextColor(requireContext().getColor(if (on) R.color.white else R.color.text_primary))
+            }
+            pintarListaSolicitudes()
+        }
+        chipAll.setOnClickListener { activar(0) }
+        chipPending.setOnClickListener { activar(1) }
+        chipDecided.setOnClickListener { activar(2) }
+
+        emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.setOnClickListener {
+            if (esContratante) seleccionar(SECCION_PUBLICAR, animar = true)
+            else (activity as? com.proyecto.chambaya.MainActivity)?.navigateToTab(R.id.nav_jobs)
+        }
     }
 
+    /** Prepara la tab según el rol y carga sus solicitudes. */
     private fun pintarSolicitudes() {
-        val panel: View = try { requireView().findViewById(R.id.panelSolicitudes) } catch (_: Exception) { return }
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid.isNullOrBlank() || !isAdded) return
+        rvSolicitudes?.adapter = if (esContratante) applicantsAdapter else myAppsAdapter
+        cargarSolicitudes()
+    }
+
+    private fun filtrarApps(apps: List<JobApplication>): List<JobApplication> = when (reqFilter) {
+        1 -> apps.filter { it.status == ApplicationStatus.PENDING }
+        2 -> apps.filter { it.status != ApplicationStatus.PENDING }
+        else -> apps
+    }
+
+    private fun cargarSolicitudes() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        if (solicitudesLoading || !isAdded) return
+        solicitudesLoading = true
+        progressSolicitudes?.visibility = View.VISIBLE
+        rvSolicitudes?.visibility = View.GONE
+        emptySolicitudes?.visibility = View.GONE
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (esContratante) {
+                employerApps = appRepository.listByEmployer(uid).getOrNull().orEmpty()
+                val acceptedIds = employerApps
+                    .filter { it.status == ApplicationStatus.ACCEPTED }
+                    .map { it.applicationId }
+                jobsCache = if (acceptedIds.isEmpty()) emptyMap()
+                else jobRepository.findByApplicationIds(acceptedIds).getOrNull().orEmpty()
+                val completedIds = jobsCache.values
+                    .filter { it.status == JobStatus.COMPLETED }
+                    .map { it.jobId }
+                ratedCache = if (completedIds.isEmpty()) emptySet()
+                else ratingRepository.ratedJobIds(completedIds, uid).getOrNull().orEmpty()
+            } else {
+                workerApps = appRepository.listByWorker(uid).getOrNull().orEmpty()
+                val acceptedIds = workerApps
+                    .filter { it.status == ApplicationStatus.ACCEPTED }
+                    .map { it.applicationId }
+                jobsCache = if (acceptedIds.isEmpty()) emptyMap()
+                else jobRepository.findByApplicationIds(acceptedIds).getOrNull().orEmpty()
+                val completedIds = jobsCache.values
+                    .filter { it.status == JobStatus.COMPLETED }
+                    .map { it.jobId }
+                ratedCache = if (completedIds.isEmpty()) emptySet()
+                else ratingRepository.ratedJobIds(completedIds, uid).getOrNull().orEmpty()
+            }
+            if (!isAdded) {
+                solicitudesLoading = false
+                return@launch
+            }
+            solicitudesLoading = false
+            pintarListaSolicitudes()
+        }
+    }
+
+    private fun pintarListaSolicitudes() {
+        if (!isAdded) return
+        progressSolicitudes?.visibility = View.GONE
         if (esContratante) {
-            panel.findViewById<TextView>(R.id.tvVacioTitulo).text = "Solicitudes de tus chambas"
-            panel.findViewById<TextView>(R.id.tvVacioSubtitulo).text =
-                "Cuando un especialista se postule, verás aquí su perfil y podrás aceptar o rechazar. Disponible en la Fase 7."
-            panel.findViewById<MaterialButton>(R.id.btnVacioAccion).apply {
-                text = "Ver mis publicaciones"
-                setOnClickListener { seleccionar(SECCION_PUBLICACIONES, animar = true) }
+            val filtradas = filtrarApps(employerApps)
+            if (filtradas.isEmpty()) {
+                rvSolicitudes?.visibility = View.GONE
+                emptySolicitudes?.visibility = View.VISIBLE
+                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Solicitudes de tus chambas"
+                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
+                    "Cuando un especialista se postule, verás aquí su perfil y podrás aceptar o rechazar."
+                emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Publicar chamba"
+            } else {
+                emptySolicitudes?.visibility = View.GONE
+                rvSolicitudes?.visibility = View.VISIBLE
+                val items = mutableListOf<RequestItem>()
+                filtradas.groupBy { it.publicationTitle.ifBlank { "Chamba" } }
+                    .forEach { (titulo, apps) ->
+                        items += RequestItem.Header(
+                            titulo,
+                            apps.count { it.status == ApplicationStatus.PENDING },
+                            apps.size
+                        )
+                        apps.forEach { app ->
+                            val job = jobsCache[app.applicationId]
+                            items += RequestItem.Row(
+                                ApplicantRow(
+                                    app = app,
+                                    job = job,
+                                    ratedByMe = job?.jobId in ratedCache
+                                )
+                            )
+                        }
+                    }
+                applicantsAdapter?.submitList(items)
             }
         } else {
-            configurarPanel(
-                panel,
-                R.string.solicitudes_vacio_titulo,
-                R.string.solicitudes_vacio_sub,
-                R.string.solicitudes_vacio_btn
-            ) { seleccionar(SECCION_PUBLICACIONES, animar = true) }
+            val filtradas = filtrarApps(workerApps)
+            if (filtradas.isEmpty()) {
+                rvSolicitudes?.visibility = View.GONE
+                emptySolicitudes?.visibility = View.VISIBLE
+                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Tus postulaciones"
+                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
+                    "Cuando te postules a una chamba, seguirás aquí su estado: pendiente, aceptado o rechazado."
+                emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Explorar chambas"
+            } else {
+                emptySolicitudes?.visibility = View.GONE
+                rvSolicitudes?.visibility = View.VISIBLE
+                myAppsAdapter?.submitList(
+                    filtradas.map { app ->
+                        val job = jobsCache[app.applicationId]
+                        MyAppRow(app, job, job?.jobId in ratedCache)
+                    }
+                )
+            }
+        }
+    }
+
+    private fun confirmarDecision(row: ApplicantRow, accept: Boolean) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val nombre = row.app.worker.name.ifBlank { "este especialista" }
+        AlertDialog.Builder(requireContext())
+            .setTitle(if (accept) "Aceptar postulación" else "Rechazar postulación")
+            .setMessage(
+                if (accept) "¿Aceptar a $nombre? Se creará el trabajo y se le avisará."
+                else "¿Rechazar a $nombre? Se le avisará con respeto."
+            )
+            .setPositiveButton(if (accept) "Aceptar" else "Rechazar") { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val r = appRepository.decide(uid, row.app.applicationId, accept)
+                    if (!isAdded) return@launch
+                    if (r.isSuccess) {
+                        val msg = if (accept) {
+                            if (r.getOrNull()?.publicationFilled == true)
+                                "¡Contratado! Vacantes cubiertas: la chamba se finalizó."
+                            else "¡Contratado! Ya puedes coordinar el inicio."
+                        } else "Postulación rechazada."
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                        cargarSolicitudes()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            r.exceptionOrNull()?.message ?: "No se pudo decidir.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun avanzarTrabajo(row: ApplicantRow) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val job = row.job ?: return
+        val next = JobStatus.nextFrom(job.status).firstOrNull { it != JobStatus.CANCELLED } ?: return
+        val verbo = if (next == JobStatus.IN_PROGRESS) "iniciar" else "marcar como completado"
+        AlertDialog.Builder(requireContext())
+            .setTitle("Trabajo")
+            .setMessage("¿Deseas $verbo el trabajo de ${row.app.worker.name.ifBlank { "este especialista" }}?")
+            .setPositiveButton("Sí") { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val r = jobRepository.transition(uid, job.jobId, next)
+                    if (!isAdded) return@launch
+                    if (r.isSuccess) {
+                        if (next == JobStatus.COMPLETED) {
+                            notificationRepository.push(
+                                recipientUid = job.workerUid,
+                                type = com.proyecto.chambaya.data.model.NotificationType.JOB_COMPLETED,
+                                title = "Trabajo completado",
+                                message = "“${job.publicationTitle.take(60)}” se marcó como completado. ¡Califica tu experiencia!",
+                                senderUid = uid,
+                                publicationId = job.publicationId
+                            )
+                            Toast.makeText(requireContext(), "Completado. Ya pueden calificarse.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(requireContext(), "Trabajo en curso.", Toast.LENGTH_SHORT).show()
+                        }
+                        cargarSolicitudes()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            r.exceptionOrNull()?.message ?: "No se pudo actualizar.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun accionMiPostulacion(row: MyAppRow) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val app = row.app
+        val job = row.job
+        when {
+            app.status == ApplicationStatus.PENDING -> {
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Retirar postulación")
+                    .setMessage("¿Retirar tu postulación a “${app.publicationTitle.take(50)}”?")
+                    .setPositiveButton("Retirar") { _, _ ->
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            val r = appRepository.withdraw(uid, app.applicationId)
+                            if (!isAdded) return@launch
+                            Toast.makeText(
+                                requireContext(),
+                                if (r.isSuccess) "Postulación retirada." else "No se pudo retirar.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            cargarSolicitudes()
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+            job?.status == JobStatus.COMPLETED && !row.ratedByMe -> {
+                RateSheet.newInstance(job.jobId).show(parentFragmentManager, "rate")
+            }
+            else -> {
+                JobDetailSheet.newInstance(app.publicationId).show(parentFragmentManager, "detail")
+            }
         }
     }
 
@@ -537,6 +813,7 @@ class FragmentoPublicar : Fragment() {
         val anterior = seccionActual
         seccionActual = nueva
         aplicarEstado(animar, anterior)
+        if (nueva == SECCION_SOLICITUDES) cargarSolicitudes()
     }
 
     private fun aplicarEstado(animar: Boolean, anterior: Int = seccionActual) {
