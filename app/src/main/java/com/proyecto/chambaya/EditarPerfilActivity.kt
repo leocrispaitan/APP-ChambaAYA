@@ -143,6 +143,7 @@ class EditarPerfilActivity : AppCompatActivity() {
     private lateinit var layoutStep1: LinearLayout
     private lateinit var layoutStep2: LinearLayout
     private lateinit var layoutStep3: LinearLayout
+    private lateinit var layoutStep3Lugar: LinearLayout
     private lateinit var layoutStep4: LinearLayout
 
     // ==================== PASO 1: INFORMACIÓN BÁSICA ====================
@@ -181,6 +182,23 @@ class EditarPerfilActivity : AppCompatActivity() {
     private lateinit var etHabilidades: EditText
 
     private var modoContratante = false
+
+    // ==================== PASO 3 LUGAR (CONTRATANTE) ====================
+    private lateinit var ivLugarPasoIcono: ImageView
+    private lateinit var tvLugarPasoNombre: TextView
+    private lateinit var tvLugarPasoDetalle: TextView
+    private lateinit var btnLugarPasoAccion: MaterialButton
+
+    /** Lugar enlazado al perfil employer (paso 3 en modo contratante). */
+    private var lugarPaso: com.proyecto.chambaya.data.model.Workplace? = null
+    private val lugarRepository = com.proyecto.chambaya.data.repository.WorkplaceRepository()
+
+    /** Vuelve del editor del lugar: refresca su estado en el paso 3. */
+    private val lugarPasoLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) actualizarPasoLugar()
+    }
 
     // ==================== PASO 4: PRIVACIDAD ====================
     private lateinit var switchMostrarTelefono: SwitchCompat
@@ -480,6 +498,7 @@ class EditarPerfilActivity : AppCompatActivity() {
         layoutStep1 = findViewById(R.id.layoutStep1BasicInfo)
         layoutStep2 = findViewById(R.id.layoutStep2PersonalInfo)
         layoutStep3 = findViewById(R.id.layoutStep3WorkerInfo)
+        layoutStep3Lugar = findViewById(R.id.layoutStep3Lugar)
         layoutStep4 = findViewById(R.id.layoutStep4Privacy)
 
         // Paso 1
@@ -526,6 +545,12 @@ class EditarPerfilActivity : AppCompatActivity() {
         progressBarPerfil = findViewById(R.id.progressBarPerfil)
         tvPorcentajePerfil = findViewById(R.id.tvPorcentajePerfil)
 
+        ivLugarPasoIcono = findViewById(R.id.ivLugarPasoIcono)
+        tvLugarPasoNombre = findViewById(R.id.tvLugarPasoNombre)
+        tvLugarPasoDetalle = findViewById(R.id.tvLugarPasoDetalle)
+        btnLugarPasoAccion = findViewById(R.id.btnLugarPasoAccion)
+        btnLugarPasoAccion.setOnClickListener { abrirEditorLugarPaso() }
+
         // Navegación
         btnAtras = findViewById(R.id.btnAtrasStep)
         btnSiguiente = findViewById(R.id.btnSiguienteStep)
@@ -559,11 +584,12 @@ class EditarPerfilActivity : AppCompatActivity() {
         }
 
         // Navegación
+        // Navegación lineal 1→2→3→4 en ambos modos: en contratante el paso 3
+        // es "Mi lugar" (no se salta).
         btnAtras.setOnClickListener {
             if (currentStep > 1) {
                 ocultarTeclado()
-                val anterior = if (modoContratante && currentStep == 4) 2 else currentStep - 1
-                updateStep(anterior)
+                updateStep(currentStep - 1)
             }
         }
 
@@ -760,8 +786,9 @@ class EditarPerfilActivity : AppCompatActivity() {
      */
     private fun primerPasoIncompleto(perfil: UserProfile): Int {
         val faltan = perfil.completion().missing
-        return CAMPOS_POR_PASO.keys.sorted().firstOrNull { paso ->
-            faltan.any { it in CAMPOS_POR_PASO.getValue(paso) }
+        val mapa = camposPorPaso(perfil.activeRole == com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE)
+        return mapa.keys.sorted().firstOrNull { paso ->
+            faltan.any { it in mapa.getValue(paso) }
         } ?: PASOS_TOTAL
     }
 
@@ -932,7 +959,11 @@ class EditarPerfilActivity : AppCompatActivity() {
         // abrir en el 1 ("Editar perfil") dejaba el paso 3 del trabajador encima del
         // 1, porque esto corre DESPUÉS de `updateStep` y lo pisaba. Con ella, ambas
         // reglas coinciden y el orden deja de importar.
+        //
+        // En modo contratante el paso 3 es el panel del lugar, no el de experiencia.
         layoutStep3.isVisible = !modoContratante && currentStep == 3
+        layoutStep3Lugar.isVisible = modoContratante && currentStep == 3
+        if (modoContratante) actualizarPasoLugar()
 
         llenandoFormulario = false
 
@@ -942,6 +973,52 @@ class EditarPerfilActivity : AppCompatActivity() {
             getString(R.string.edit_perfil_username_neutro),
             COLOR_NEUTRO
         )
+    }
+
+    /**
+     * Lee el lugar enlazado y pinta el paso 3 de contratante.
+     *
+     * El paso no edita el lugar aquí: el formulario vive en
+     * `EditarLugarActivity` y al volver (`lugarPasoLauncher`) se refresca.
+     * El resumen del paso 4 también se recalcula, porque el porcentaje
+     * depende de que el lugar exista.
+     */
+    private fun actualizarPasoLugar() {
+        val actual = uid ?: return
+        lifecycleScope.launch {
+            val lugar = lugarRepository.loadByOwner(actual).getOrNull()
+            if (isFinishing || isDestroyed) return@launch
+            lugarPaso = lugar
+            if (lugar == null) {
+                tvLugarPasoNombre.setText(R.string.edit_perfil_lugar_pendiente)
+                tvLugarPasoDetalle.setText(R.string.edit_perfil_lugar_pendiente_sub)
+                ivLugarPasoIcono.setImageResource(
+                    com.proyecto.chambaya.ui.workplace.LugarIcons.local(null)
+                )
+                btnLugarPasoAccion.setText(R.string.edit_perfil_lugar_btn)
+            } else {
+                tvLugarPasoNombre.text = lugar.name
+                tvLugarPasoDetalle.text = listOf(
+                    lugar.typeLabel,
+                    lugar.locationLabel.ifBlank { lugar.address }
+                ).filter { it.isNotBlank() }.joinToString(" • ")
+                ivLugarPasoIcono.setImageResource(
+                    com.proyecto.chambaya.ui.workplace.LugarIcons.local(lugar.type)
+                )
+                btnLugarPasoAccion.setText(R.string.edit_perfil_lugar_btn_editar)
+            }
+            if (currentStep == 4) refrescarResumen()
+        }
+    }
+
+    private fun abrirEditorLugarPaso() {
+        val intent = Intent(this, com.proyecto.chambaya.ui.workplace.EditarLugarActivity::class.java)
+        lugarPaso?.workplaceId?.let {
+            intent.putExtra(
+                com.proyecto.chambaya.ui.workplace.EditarLugarActivity.EXTRA_WORKPLACE_ID, it
+            )
+        }
+        lugarPasoLauncher.launch(intent)
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1081,25 +1158,30 @@ class EditarPerfilActivity : AppCompatActivity() {
     // ═══════════════════════════════════════════════════════════════
 
     private fun updateStep(step: Int) {
-        currentStep = if (modoContratante && step == 3) 4 else step
+        currentStep = step.coerceIn(1, PASOS_TOTAL)
         val visibleStep = currentStep
 
-        // Actualizar título e indicador
+        // Actualizar título e indicador (paso 3 cambia según el modo).
         tvTitulo.setText(
             when (visibleStep) {
                 1 -> R.string.edit_perfil_titulo_paso1
                 2 -> R.string.edit_perfil_titulo_paso2
-                3 -> R.string.edit_perfil_titulo_paso3
+                3 -> if (modoContratante) R.string.edit_perfil_titulo_paso3_lugar
+                else R.string.edit_perfil_titulo_paso3
                 else -> R.string.edit_perfil_titulo_paso4
             }
         )
         tvStepIndicator.text = getString(R.string.edit_perfil_paso_de, visibleStep, PASOS_TOTAL)
 
-        // Mostrar/ocultar contenedores
+        // Mostrar/ocultar contenedores (paso 3: trabajador o lugar según modo).
         layoutStep1.isVisible = visibleStep == 1
         layoutStep2.isVisible = visibleStep == 2
-        layoutStep3.isVisible = visibleStep == 3
+        layoutStep3.isVisible = visibleStep == 3 && !modoContratante
+        layoutStep3Lugar.isVisible = visibleStep == 3 && modoContratante
         layoutStep4.isVisible = visibleStep == 4
+
+        // Al entrar al paso del lugar, traer su estado fresco.
+        if (visibleStep == 3 && modoContratante) actualizarPasoLugar()
 
         // Actualizar stepper visual
         updateStepperVisuals()
@@ -1188,9 +1270,14 @@ class EditarPerfilActivity : AppCompatActivity() {
         // sin @usuario válido o sin teléfono, Firestore rechazaría el guardado.
         if (currentStep == 1 && !validateStep1()) return
 
+        // En modo contratante el paso 3 exige el lugar registrado.
+        if (currentStep == 3 && modoContratante && lugarPaso == null) {
+            showToast(getString(R.string.edit_perfil_lugar_requerido))
+            return
+        }
+
         if (currentStep < PASOS_TOTAL) {
-            val siguiente = if (modoContratante && currentStep == 2) 4 else currentStep + 1
-            updateStep(siguiente)
+            updateStep(currentStep + 1)
         } else {
             finalizarActualizacionPerfil()
         }
@@ -1260,6 +1347,14 @@ class EditarPerfilActivity : AppCompatActivity() {
         val actual = uid
         if (actual == null) {
             showToast(getString(R.string.profile_error_sesion))
+            return
+        }
+
+        // En modo contratante el lugar es obligatorio para llegar al 100 %:
+        // sin sede no hay publicaciones confiables.
+        if (modoContratante && lugarPaso == null) {
+            updateStep(3)
+            showToast(getString(R.string.edit_perfil_lugar_requerido))
             return
         }
 
@@ -1825,6 +1920,15 @@ class EditarPerfilActivity : AppCompatActivity() {
                 "Años de experiencia", "Especialidades", "Habilidades"
             )
         )
+
+        /**
+         * Campos de cada paso según el modo: en contratante el paso 3 es
+         * "Mi lugar" (no experiencia), así que "Lugar o establecimiento"
+         * lleva ahí y "Completar perfil" aterriza donde toca.
+         */
+        fun camposPorPaso(esContratante: Boolean): Map<Int, Set<String>> =
+            if (!esContratante) CAMPOS_POR_PASO
+            else CAMPOS_POR_PASO + (3 to setOf("Lugar o establecimiento"))
 
         private val COLOR_ENTRADA = Color.parseColor("#111827")
         private val COLOR_NEUTRO = Color.parseColor("#9CA3AF")

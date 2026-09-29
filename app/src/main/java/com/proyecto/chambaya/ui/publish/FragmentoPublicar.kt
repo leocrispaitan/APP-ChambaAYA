@@ -16,29 +16,24 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.ActivarContratanteActivity
 import com.proyecto.chambaya.BarraEstadoUtils
+import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.UserRoles
-import com.proyecto.chambaya.data.model.Workplace
+import com.proyecto.chambaya.data.model.puedeContratarOPublicar
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.WorkplaceRepository
-import com.proyecto.chambaya.data.repository.motivoFirestore
 import com.proyecto.chambaya.ui.profile.ProfileCache
 import com.proyecto.chambaya.ui.workplace.EditarLugarActivity
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Pantalla "Publicar" con tres secciones al estilo Instagram:
@@ -47,11 +42,12 @@ import java.util.Locale
  * Se cambia de sección tocando un icono o deslizando el contenido. El indicador
  * se desplaza bajo la pestaña activa y el contenido entra/sale con un fundido.
  *
- * FASE 4 — la pestaña Publicar muestra el lugar del contratante:
- *  - sin lugar: CTA "Crear lugar" → [EditarLugarActivity];
- *  - con lugar: tarjeta con foto, nombre, tipo, dirección, fecha y
- *    botones Editar / Eliminar.
- * Las pestañas Publicaciones y Solicitudes siguen vacías (Fase 5).
+ * FASE 4 — la pestaña Publicar es solo puerta de entrada (el lugar vive en el
+ * perfil, no aquí):
+ *  - no contratante → estado vacío estándar;
+ *  - contratante bajo el 50 % → bloqueado hasta completar el perfil;
+ *  - contratante sin lugar → CTA "Registra tu lugar";
+ *  - contratante listo → CTA de publicación (contenido real en Fase 5).
  */
 
 /**
@@ -78,32 +74,20 @@ class FragmentoPublicar : Fragment() {
     private var colorInactivo = 0
     private var anchoBarraPrevio = -1
 
-    // ── FASE 4 · Lugar del contratante ──────────────────────────────
+    // ── FASE 4 · Estado de la puerta de publicación ───────────────
     private val lugarRepository = WorkplaceRepository()
     private val perfilRepository = ProfileRepository()
-    private var lugarActual: Workplace? = null
     private var esContratante = false
-    private var cargandoLugar = false
+    private var tieneLugar = false
+    private var bloqueadoPorCompletitud = false
+    private var cargandoEstado = false
 
     private lateinit var emptyLugar: View
-    private lateinit var cardLugar: View
-    private lateinit var ivLugarFoto: ImageView
-    private lateinit var ivLugarTipoIcono: ImageView
-    private lateinit var tvLugarNombre: TextView
-    private lateinit var tvLugarTipo: TextView
-    private lateinit var tvLugarDireccion: TextView
-    private lateinit var tvLugarFecha: TextView
-    private lateinit var tvLugarDescripcion: TextView
-    private lateinit var ivStatSectorIcono: ImageView
-    private lateinit var tvStatSectorValor: TextView
-    private lateinit var tvStatDistritoValor: TextView
-    private lateinit var tvStatGpsValor: TextView
-    private var iconosOficios: coil.ImageLoader? = null
 
     private val lugarLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) recargarLugar()
+        if (result.resultCode == Activity.RESULT_OK) recargarEstado()
     }
 
     override fun onCreateView(
@@ -148,7 +132,7 @@ class FragmentoPublicar : Fragment() {
             view.findViewById(R.id.panelSolicitudes)
         )
 
-        enlazarLugar(view)
+        enlazarVacio(view)
         configurarPaneles()
 
         tabs.forEachIndexed { indice, tab ->
@@ -178,195 +162,96 @@ class FragmentoPublicar : Fragment() {
     override fun onResume() {
         super.onResume()
         BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.white))
-        // Al volver del editor, el lugar puede haber cambiado.
-        if (::barraTabs.isInitialized) recargarLugar()
+        // Al volver del editor, el estado puede haber cambiado.
+        if (::barraTabs.isInitialized) recargarEstado()
     }
 
-    // ── FASE 4 · Lugar del contratante ──────────────────────────────
+    // ── FASE 4 · Puerta de publicación ────────────────────────────
 
-    private fun enlazarLugar(root: View) {
-        emptyLugar = root.findViewById(R.id.emptyLugar)
-        cardLugar = root.findViewById(R.id.cardLugar)
-        ivLugarFoto = root.findViewById(R.id.ivLugarFoto)
-        ivLugarTipoIcono = root.findViewById(R.id.ivLugarTipoIcono)
-        tvLugarNombre = root.findViewById(R.id.tvLugarNombre)
-        tvLugarTipo = root.findViewById(R.id.tvLugarTipo)
-        tvLugarDireccion = root.findViewById(R.id.tvLugarDireccion)
-        tvLugarFecha = root.findViewById(R.id.tvLugarFecha)
-        tvLugarDescripcion = root.findViewById(R.id.tvLugarDescripcion)
-        ivStatSectorIcono = root.findViewById(R.id.ivStatSectorIcono)
-        tvStatSectorValor = root.findViewById(R.id.tvStatSectorValor)
-        tvStatDistritoValor = root.findViewById(R.id.tvStatDistritoValor)
-        tvStatGpsValor = root.findViewById(R.id.tvStatGpsValor)
-        iconosOficios = com.proyecto.chambaya.ui.profile.OficioIcons.nuevoImageLoader(requireContext())
-        root.findViewById<View>(R.id.btnLugarEditar).setOnClickListener { abrirEditorLugar() }
-        root.findViewById<View>(R.id.btnLugarEditarTexto).setOnClickListener { abrirEditorLugar() }
-        root.findViewById<View>(R.id.btnLugarEliminar).setOnClickListener { confirmarEliminarLugar() }
+    private fun enlazarVacio(root: View) {
+        // panelPublicar ES el estado vacío (include directo de item_publicar_vacio).
+        emptyLugar = root.findViewById(R.id.panelPublicar)
     }
 
     /**
      * Pinta la pestaña Publicar según el estado real:
-     *  - no contratante → CTA para activar el modo;
-     *  - contratante sin lugar → CTA "Crear lugar";
-     *  - contratante con lugar → tarjeta con Editar / Eliminar.
+     *  - contratante bajo el 50 % → bloqueado hasta completar el perfil;
+     *  - contratante sin lugar → CTA "Registra tu lugar";
+     *  - resto → CTA estándar (el contenido llega en Fase 5).
      */
-    private fun recargarLugar() {
+    private fun recargarEstado() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        if (cargandoLugar) return
-        cargandoLugar = true
+        if (cargandoEstado) return
+        cargandoEstado = true
         viewLifecycleOwner.lifecycleScope.launch {
             val perfil = perfilRepository.loadProfile(uid).getOrNull()
             if (perfil != null) ProfileCache.perfil = perfil
             esContratante = perfil?.roles?.contains(UserRoles.CONTRATANTE) == true &&
                 perfil?.employer?.enabled == true
+            bloqueadoPorCompletitud = esContratante &&
+                perfil?.puedeContratarOPublicar() != true
+            val porcentaje = perfil?.completion()?.percent ?: 0
+            tieneLugar = if (esContratante && !bloqueadoPorCompletitud) {
+                lugarRepository.loadByOwner(uid).getOrNull() != null
+            } else false
             if (!isAdded) {
-                cargandoLugar = false
+                cargandoEstado = false
                 return@launch
             }
-            if (!esContratante) {
-                lugarActual = null
-                pintarSinLugar(
-                    titulo = getString(R.string.publicar_nueva_titulo),
-                    subtitulo = getString(R.string.lugar_error_solo_contratante),
-                    boton = getString(R.string.publicar_nueva_btn)
+            when {
+                bloqueadoPorCompletitud -> pintarEstadoVacio(
+                    titulo = getString(R.string.publicar_bloqueado_titulo),
+                    subtitulo = getString(R.string.publicar_bloqueado_sub, porcentaje),
+                    boton = getString(R.string.publicar_bloqueado_btn)
                 )
-                cargandoLugar = false
-                return@launch
-            }
-            val lugar = lugarRepository.loadByOwner(uid).getOrNull()
-            if (!isAdded) {
-                cargandoLugar = false
-                return@launch
-            }
-            lugarActual = lugar
-            if (lugar == null) {
-                pintarSinLugar(
+                esContratante && !tieneLugar -> pintarEstadoVacio(
                     titulo = getString(R.string.lugar_sin_lugar_titulo),
                     subtitulo = getString(R.string.lugar_sin_lugar_sub),
                     boton = getString(R.string.lugar_sin_lugar_btn)
                 )
-            } else {
-                pintarLugar(lugar)
+                else -> pintarEstadoVacio(
+                    titulo = getString(R.string.publicar_nueva_titulo),
+                    subtitulo = getString(R.string.publicar_nueva_sub),
+                    boton = getString(R.string.publicar_nueva_btn)
+                )
             }
-            cargandoLugar = false
+            cargandoEstado = false
         }
     }
 
-    private fun pintarSinLugar(titulo: String, subtitulo: String, boton: String) {
+    private fun pintarEstadoVacio(titulo: String, subtitulo: String, boton: String) {
         if (!isAdded) return
-        cardLugar.visibility = View.GONE
-        emptyLugar.visibility = View.VISIBLE
         emptyLugar.findViewById<TextView>(R.id.tvVacioTitulo).text = titulo
         emptyLugar.findViewById<TextView>(R.id.tvVacioSubtitulo).text = subtitulo
         emptyLugar.findViewById<MaterialButton>(R.id.btnVacioAccion).apply {
             text = boton
-            setOnClickListener { abrirEditorLugar() }
+            setOnClickListener { abrirAccionPrincipal() }
         }
     }
 
-    private fun pintarLugar(lugar: Workplace) {
-        if (!isAdded) return
-        emptyLugar.visibility = View.GONE
-        cardLugar.visibility = View.VISIBLE
-        tvLugarNombre.text = lugar.name
-        // Pastilla lima: icono + etiqueta del tipo.
-        ivLugarTipoIcono.setImageResource(
-            com.proyecto.chambaya.ui.workplace.LugarIcons.local(lugar.type)
-        )
-        tvLugarTipo.text = lugar.typeLabel
-        // Tarjeta 1 · Sector con icono del catálogo de oficios (SVG) o respaldo local.
-        tvStatSectorValor.text = lugar.sector.ifBlank { "—" }
-        if (lugar.sector.isNotBlank()) {
-            com.proyecto.chambaya.ui.profile.OficioIcons.cargar(
-                ivStatSectorIcono, lugar.sector, iconosOficios
+    /** Un solo CTA que se adapta al estado: completar, registrar o publicar. */
+    private fun abrirAccionPrincipal() {
+        if (bloqueadoPorCompletitud) {
+            startActivity(
+                Intent(requireContext(), EditarPerfilActivity::class.java)
+                    .putExtra(
+                        EditarPerfilActivity.EXTRA_START_STEP,
+                        EditarPerfilActivity.PASO_INICIO_COMPLETAR
+                    )
             )
-        } else {
-            ivStatSectorIcono.setImageResource(R.drawable.ic_profile_wrench)
-        }
-        // Tarjeta 2 · Distrito (o provincia como respaldo).
-        tvStatDistritoValor.text = lugar.district.ifBlank { lugar.province.ifBlank { "—" } }
-        // Tarjeta 3 · GPS fijado o no.
-        tvStatGpsValor.text = if (lugar.location.hasCoords) {
-            getString(R.string.lugar_gps_fijado)
-        } else {
-            getString(R.string.lugar_gps_corto_sin_fijar)
-        }
-        tvLugarDescripcion.text = lugar.description.ifBlank {
-            getString(R.string.lugar_sin_descripcion)
-        }
-        val direccion = buildString {
-            if (lugar.address.isNotBlank()) append(lugar.address)
-            if (lugar.locationLabel.isNotBlank()) {
-                if (isNotEmpty()) append("\n")
-                append(lugar.locationLabel)
-            }
-            if (lugar.location.hasCoords) {
-                if (isNotEmpty()) append("\n")
-                append(lugar.location.shortLabel)
-            }
-            if (isEmpty()) append(lugar.address.ifBlank { lugar.locationLabel })
-        }
-        tvLugarDireccion.text = direccion.toString()
-        tvLugarFecha.text = if (lugar.createdAtMillis > 0) {
-            val formato = SimpleDateFormat("d MMM yyyy, HH:mm", Locale.forLanguageTag("es-PE"))
-            getString(R.string.lugar_publicado_el, formato.format(Date(lugar.createdAtMillis)))
-        } else ""
-        if (lugar.hasPhoto) {
-            ivLugarFoto.load(lugar.photoUrl) {
-                placeholder(R.drawable.ic_profile_photos)
-                error(R.drawable.ic_profile_photos)
-                crossfade(true)
-            }
-        } else {
-            ivLugarFoto.setImageResource(R.drawable.ic_profile_photos)
-        }
-    }
-
-    private fun abrirEditorLugar() {
-        if (!esContratante) {
-            // Trabajador sin modo contratante: ofrecer activarlo.
-            startActivity(Intent(requireContext(), ActivarContratanteActivity::class.java))
             return
         }
-        val intent = Intent(requireContext(), EditarLugarActivity::class.java)
-        lugarActual?.workplaceId?.let {
-            intent.putExtra(EditarLugarActivity.EXTRA_WORKPLACE_ID, it)
+        if (esContratante && !tieneLugar) {
+            lugarLauncher.launch(Intent(requireContext(), EditarLugarActivity::class.java))
+            return
         }
-        lugarLauncher.launch(intent)
-    }
-
-    private fun confirmarEliminarLugar() {
-        val lugar = lugarActual ?: return
-        AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
-            .setTitle(R.string.lugar_eliminar_titulo)
-            .setMessage(getString(R.string.lugar_eliminar_mensaje, lugar.name))
-            .setPositiveButton(R.string.lugar_btn_eliminar) { _, _ -> eliminarLugar() }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun eliminarLugar() {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val lugar = lugarActual ?: return
-        viewLifecycleOwner.lifecycleScope.launch {
-            lugarRepository.delete(uid, lugar.workplaceId)
-                .onSuccess {
-                    runCatching {
-                        perfilRepository.loadProfile(uid).getOrNull()?.let {
-                            ProfileCache.perfil = it
-                        }
-                    }
-                    Toast.makeText(requireContext(), R.string.lugar_eliminado, Toast.LENGTH_SHORT).show()
-                    recargarLugar()
-                }
-                .onFailure {
-                    Toast.makeText(
-                        requireContext(),
-                        getString(R.string.lugar_error_guardar, motivoFirestore(it)),
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+        if (esContratante) {
+            // Contenido real en Fase 5.
+            Toast.makeText(requireContext(), R.string.auth_wip_message, Toast.LENGTH_SHORT).show()
+            return
         }
+        // Trabajador: la publicación de ofertas es de contratantes.
+        startActivity(Intent(requireContext(), ActivarContratanteActivity::class.java))
     }
 
     // ── Contenido de cada sección ────────────────────────────────────────────
@@ -374,11 +259,11 @@ class FragmentoPublicar : Fragment() {
     private fun configurarPaneles() {
         configurarPanel(
             paneles[SECCION_PUBLICAR],
-            R.string.lugar_sin_lugar_titulo,
-            R.string.lugar_sin_lugar_sub,
-            R.string.lugar_sin_lugar_btn
+            R.string.publicar_nueva_titulo,
+            R.string.publicar_nueva_sub,
+            R.string.publicar_nueva_btn
         ) {
-            abrirEditorLugar()
+            abrirAccionPrincipal()
         }
         configurarPanel(
             paneles[SECCION_PUBLICACIONES],

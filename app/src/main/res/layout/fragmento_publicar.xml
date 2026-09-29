@@ -99,32 +99,17 @@
             android:background="@color/profile_tab_active" />
     </FrameLayout>
 
-    <!-- Contenido de cada sección.
-         panelPublicar es un contenedor con dos estados (FASE 4):
-         - emptyLugar: CTA "Crear lugar" cuando el contratante aún no tiene.
-         - cardLugar: resumen del lugar existente con Editar / Eliminar. -->
     <com.proyecto.chambaya.ui.publish.ContenedorDeslizable
         android:id="@+id/contenedorSecciones"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <FrameLayout
+        <include
             android:id="@+id/panelPublicar"
+            layout="@layout/item_publicar_vacio"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <include
-                android:id="@+id/emptyLugar"
-                layout="@layout/item_publicar_vacio"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
-            <include
-                layout="@layout/item_lugar_resumen"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-        </FrameLayout>
+            android:layout_height="match_parent" />
 
         <include
             android:id="@+id/panelPublicaciones"

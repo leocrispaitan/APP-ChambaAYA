@@ -18,19 +18,22 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import coil.ImageLoader
+import coil.load
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.MainActivity
 import com.proyecto.chambaya.R
-import com.proyecto.chambaya.data.model.ProfileBlock
 import com.proyecto.chambaya.data.model.StatisticsBlock
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.UserRoles
-import com.proyecto.chambaya.data.model.WorkerBlock
+import com.proyecto.chambaya.data.model.Workplace
 import com.proyecto.chambaya.data.repository.ProfileRepository
+import com.proyecto.chambaya.data.repository.WorkplaceRepository
 import com.proyecto.chambaya.data.repository.motivoFirestore
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -68,6 +71,18 @@ class FragmentoMiPerfil : Fragment() {
      * en vez de esperar una nueva consulta.
      */
     private var perfil: UserProfile? = ProfileCache.perfil
+
+    /**
+     * Lugar del establecimiento en vista empresa (concepto Facebook: la
+     * "página" del negocio frente al perfil personal).
+     *
+     * Solo se carga en modo contratante; en modo trabajador siempre es nulo
+     * y el perfil pinta datos personales. Hoy el propietario ve ambas vistas
+     * cambiando de modo; en la FASE 17 (perfil público) este mismo campo
+     * decide qué ve un visitante (datos del negocio, nunca gestión).
+     */
+    private var lugar: Workplace? = null
+    private val lugarRepository = WorkplaceRepository()
 
     /** Evita dos escrituras de inicialización simultáneas. */
     private var cargando = false
@@ -196,7 +211,7 @@ class FragmentoMiPerfil : Fragment() {
 
             perfil = datos
             ProfileCache.perfil = datos
-            pintar(root, datos)
+            pintarPerfil(root, datos)
 
             // Solo si faltan (las cuentas de la FASE 1 no los tienen) y solo
             // una vez por instancia del fragmento: si las Rules todavía no
@@ -221,9 +236,7 @@ class FragmentoMiPerfil : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repository.ensureProfileInitialized(uid)
                 .onSuccess { datos ->
-                    perfil = datos
-                    ProfileCache.perfil = datos
-                    view?.let { pintar(it, datos) }
+                    view?.let { pintarPerfil(it, datos) }
                 }
                 .onFailure { error ->
                     val motivo = motivoCorto(error)
@@ -243,17 +256,48 @@ class FragmentoMiPerfil : Fragment() {
     //  PINTADO
     // ─────────────────────────────────────────────────────────────
 
+    /**
+     * Pinta el perfil y, en vista empresa, reparte el establecimiento en sus
+     * secciones (concepto Facebook: perfil personal vs página del negocio).
+     *
+     * Se pinta dos veces a propósito: primero lo personal (inmediato, también
+     * sirve de respaldo si aún no hay lugar) y luego lo del negocio al llegar
+     * de Firestore.
+     */
+    private fun pintarPerfil(root: View, datos: UserProfile) {
+        perfil = datos
+        ProfileCache.perfil = datos
+        lugar = null
+        pintar(root, datos)
+
+        if (datos.activeRole == UserRoles.CONTRATANTE) {
+            val uid = datos.uid
+            viewLifecycleOwner.lifecycleScope.launch {
+                val sitio = lugarRepository.loadByOwner(uid).getOrNull()
+                if (!isAdded) return@launch
+                lugar = sitio
+                view?.let { pintar(it, perfil ?: datos) }
+            }
+        }
+    }
+
     private fun pintar(root: View, datos: UserProfile) {
+        val empresa = esVistaEmpresa(datos)
         pintarCabecera(root, datos)
         pintarEstadisticas(root, datos)
-        pintarBiografia(root, datos.profile.bio)
+        pintarBiografia(root, datos)
         pintarEspecialidades(root, datos.worker.specialties)
-        pintarUbicacionYExperiencia(root, datos.profile, datos.worker)
+        pintarUbicacionYExperiencia(root, datos)
         pintarModoContratante(root, datos)
+        pintarFotosTab(root, datos)
         pintarContacto(root, datos)
         pintarIdentidad(root, datos)
         pintarBannerCompletitud(root, datos)
     }
+
+    /** `true` en vista empresa: el contenido se adapta al establecimiento. */
+    private fun esVistaEmpresa(datos: UserProfile): Boolean =
+        datos.activeRole == UserRoles.CONTRATANTE
 
     /**
      * Banner de completitud: un SOLO componente con dos estados, no dos pantallas.
@@ -307,9 +351,13 @@ class FragmentoMiPerfil : Fragment() {
         val perfil = datos.profile
         val completitud = datos.completion()
         val identidadVerificada = datos.identity.identityVerified
+        val sitio = lugar.takeIf { esVistaEmpresa(datos) }
 
         val tvNombre = root.findViewById<TextView>(R.id.tvProfileName)
-        tvNombre.text = perfil.fullName.ifBlank { getString(R.string.profile_sin_nombre) }
+        // Vista empresa: la identidad principal es el establecimiento
+        // ("Restaurante El Pibe", no "Juan Pérez").
+        tvNombre.text = sitio?.name?.takeIf { it.isNotBlank() }
+            ?: perfil.fullName.ifBlank { getString(R.string.profile_sin_nombre) }
         // El marquee solo se activa si el texto no cabe: con isSelected = true
         // y ellipsize = "marquee", el sistema lo desplaza automáticamente.
         tvNombre.isSelected = true
@@ -321,13 +369,15 @@ class FragmentoMiPerfil : Fragment() {
                 getString(R.string.profile_sin_username)
             }
 
-        // Sin foto (cuenta creada con correo y contraseña) se dibujan las
-        // iniciales del nombre. La semilla del color es el `@usuario` y, si
-        // todavía no hay, el `uid`: así el color no cambia al pedir el nombre.
+        // Avatar: en vista empresa es la foto del establecimiento (y sus
+        // iniciales si aún no hay); en personal, la del usuario.
+        // La semilla del color es el `@usuario` y, si todavía no hay, el `uid`.
+        val fotoUrl = sitio?.photoUrl.orEmpty().ifBlank { perfil.profilePhotoUrl }
+        val nombreAvatar = sitio?.name?.takeIf { it.isNotBlank() } ?: perfil.fullName
         OficioIcons.cargarAvatar(
             root.findViewById(R.id.ivProfileAvatar),
-            perfil.profilePhotoUrl,
-            perfil.fullName,
+            fotoUrl,
+            nombreAvatar,
             perfil.username.ifBlank { datos.uid }
         )
 
@@ -401,7 +451,9 @@ class FragmentoMiPerfil : Fragment() {
     private fun pintarModoContratante(root: View, datos: UserProfile) {
         val contratante = datos.activeRole == com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE
         root.findViewById<View>(R.id.cardSkills).isVisible = !contratante
-        root.findViewById<View>(R.id.cardInfoRow).isVisible = !contratante
+        // cardInfoRow se reutiliza en vista empresa (Distrito + Sector del
+        // negocio); por eso ya no se oculta: la repinta pintarUbicacionYExperiencia.
+        root.findViewById<View>(R.id.cardInfoRow).isVisible = true
         root.findViewById<View>(R.id.cardExperience).isVisible = !contratante
 
         root.findViewById<TextView>(R.id.tvHeaderTitle).text =
@@ -423,7 +475,13 @@ class FragmentoMiPerfil : Fragment() {
         }
     }
 
-    private fun pintarBiografia(root: View, bio: String) {
+    /**
+     * "Sobre mí" en personal, descripción del establecimiento en empresa.
+     * Sin lugar (o sin descripción) se respeta la bio personal como respaldo.
+     */
+    private fun pintarBiografia(root: View, datos: UserProfile) {
+        val sitio = lugar.takeIf { esVistaEmpresa(datos) }
+        val bio = sitio?.description?.takeIf { it.isNotBlank() } ?: datos.profile.bio
         val tv = root.findViewById<TextView>(R.id.tvBiografia)
         val vacio = root.findViewById<TextView>(R.id.tvSinBiografia)
         val tieneBio = bio.isNotBlank()
@@ -502,18 +560,84 @@ class FragmentoMiPerfil : Fragment() {
         if (sobrantes > 0) mas.text = getString(R.string.profile_mas_especialidades, sobrantes)
     }
 
-    private fun pintarUbicacionYExperiencia(
-        root: View,
-        perfil: ProfileBlock,
-        worker: WorkerBlock
-    ) {
+    /**
+     * Distrito + experiencia en personal; distrito + sector del negocio en
+     * empresa (la fila se reutiliza, no se duplica).
+     */
+    private fun pintarUbicacionYExperiencia(root: View, datos: UserProfile) {
+        val perfil = datos.profile
+        val worker = datos.worker
+        val sitio = lugar.takeIf { esVistaEmpresa(datos) }
+        if (sitio != null) {
+            root.findViewById<TextView>(R.id.tvDistritoLabel)
+                .setText(R.string.profile_district_label)
+            root.findViewById<TextView>(R.id.tvDistrito).text =
+                sitio.locationLabel.ifBlank { getString(R.string.profile_sin_distrito) }
+            root.findViewById<TextView>(R.id.tvExperienciaLabel)
+                .setText(R.string.profile_sector_label)
+            root.findViewById<TextView>(R.id.tvExperiencia).text =
+                sitio.sector.ifBlank {
+                    datos.employer.sector.ifBlank { getString(R.string.profile_sin_sector) }
+                }
+            return
+        }
+        root.findViewById<TextView>(R.id.tvDistritoLabel)
+            .setText(R.string.profile_district_label)
         root.findViewById<TextView>(R.id.tvDistrito).text =
             perfil.locationLabel.ifBlank { getString(R.string.profile_sin_distrito) }
-
+        root.findViewById<TextView>(R.id.tvExperienciaLabel)
+            .setText(R.string.profile_experience_label)
         root.findViewById<TextView>(R.id.tvExperiencia).text =
             getString(R.string.profile_anios_experiencia, worker.experienceYears)
     }
 
+    /**
+     * Tab Fotos: en vista empresa con foto del establecimiento se muestra en
+     * la galería 3x3 (es la "foto de la página"); sin fotos, el vacío actual.
+     */
+    private fun pintarFotosTab(root: View, datos: UserProfile) {
+        val galeria = root.findViewById<RecyclerView>(R.id.rvPhotoGallery)
+        val vacio = root.findViewById<View>(R.id.layoutEmptyPhotos)
+        val fotoNegocio = lugar.takeIf { esVistaEmpresa(datos) }?.photoUrl.orEmpty()
+
+        if (fotoNegocio.isNotBlank()) {
+            vacio.isVisible = false
+            galeria.isVisible = true
+            if (galeria.layoutManager == null) {
+                galeria.layoutManager = GridLayoutManager(requireContext(), 3)
+            }
+            galeria.adapter = GaleriaFotosAdapter(listOf(fotoNegocio))
+        } else {
+            galeria.isVisible = false
+            vacio.isVisible = true
+        }
+    }
+
+    /** Galería mínima de una pantalla: N fotos a 3 columnas con Coil. */
+    private inner class GaleriaFotosAdapter(
+        private val fotos: List<String>
+    ) : RecyclerView.Adapter<GaleriaFotosAdapter.Holder>() {
+
+        inner class Holder(val vista: View) : RecyclerView.ViewHolder(vista) {
+            val imagen: ImageView = vista.findViewById(R.id.ivPhoto)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, tipo: Int): Holder {
+            val vista = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_photo_grid, parent, false)
+            return Holder(vista)
+        }
+
+        override fun getItemCount(): Int = fotos.size
+
+        override fun onBindViewHolder(holder: Holder, posicion: Int) {
+            holder.imagen.load(fotos[posicion]) {
+                placeholder(R.drawable.ic_profile_photos)
+                error(R.drawable.ic_profile_photos)
+                crossfade(true)
+            }
+        }
+    }
     /**
      * Teléfono y correo solo se muestran si el usuario lo permitió en el paso 4
      * del wizard. El documento nunca se muestra: es de la FASE 1 y va enmascarado.
@@ -636,13 +760,15 @@ class FragmentoMiPerfil : Fragment() {
 
         val faltan = completion.missing
         val esContratante = datos.activeRole == UserRoles.CONTRATANTE
-        val paso = EditarPerfilActivity.CAMPOS_POR_PASO.keys.sorted()
-            .firstOrNull { p -> faltan.any { it in EditarPerfilActivity.CAMPOS_POR_PASO.getValue(p) } }
+        val mapaPasos = EditarPerfilActivity.camposPorPaso(esContratante)
+        val paso = mapaPasos.keys.sorted()
+            .firstOrNull { p -> faltan.any { it in mapaPasos.getValue(p) } }
         val tituloPaso = paso?.let { nombreDePaso(it, esContratante) }
 
-        // En CONTRATANTE, lo pendiente pertenece al bloque `employer`, que no está
-        // en este asistente: se dice dónde está en vez de prometer un paso que no
-        // contiene esos campos.
+        // En CONTRATANTE, lo pendiente del bloque `employer` (tipo, identidad,
+        // nombre comercial) no está en este asistente: se dice dónde está en
+        // vez de prometer un paso que no contiene esos campos. El lugar SÍ
+        // está (paso 3), así que ya no cae aquí.
         if (paso == null && esContratante) {
             mostrarDialogoFaltaContratante(faltan)
             return
@@ -651,7 +777,7 @@ class FragmentoMiPerfil : Fragment() {
         val destino = paso ?: 4
         val camposDelPaso = when (paso) {
             null -> faltan
-            else -> faltan.filter { it in EditarPerfilActivity.CAMPOS_POR_PASO.getValue(paso) }
+            else -> faltan.filter { it in mapaPasos.getValue(paso) }
         }
         // Lo que queda para después no se oculta: el mensaje dice dónde empieza el
         // usuario y cuánto le falta en total, no solo lo de esta fase.
@@ -688,7 +814,7 @@ class FragmentoMiPerfil : Fragment() {
     private fun nombreDePaso(paso: Int, esContratante: Boolean): String = when (paso) {
         1 -> "Fase 1 · Información básica"
         2 -> "Fase 2 · Información personal"
-        3 -> "Fase 3 · Experiencia profesional"
+        3 -> if (esContratante) "Fase 3 · Mi lugar" else "Fase 3 · Experiencia profesional"
         else -> if (esContratante) {
             "Fase 4 · Datos de contratante"
         } else {
@@ -740,10 +866,18 @@ class FragmentoMiPerfil : Fragment() {
             .commit()
     }
 
-    /** Intento de compartir: el `@usuario` es el identificador público del perfil. */
+    /** Intento de compartir: en empresa se comparte el negocio, no la persona. */
     private fun compartirPerfil() {
-        val usuario = perfil?.profile?.username.orEmpty()
-        val nombre = perfil?.profile?.fullName.orEmpty()
+        val datos = perfil
+        val esEmpresa = datos?.let { esVistaEmpresa(it) } == true
+        val usuario = datos?.profile?.username.orEmpty()
+        val nombre = if (esEmpresa) {
+            lugar?.name?.takeIf { it.isNotBlank() }
+                ?: datos?.employer?.businessName
+                ?: datos?.profile?.fullName.orEmpty()
+        } else {
+            datos?.profile?.fullName.orEmpty()
+        }
 
         val enviar = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"

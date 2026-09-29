@@ -262,6 +262,8 @@
     <string name="profile_skill_helper">Ayudante general</string>
 
     <string name="profile_district_label">Distrito</string>
+    <string name="profile_sector_label">Sector</string>
+    <string name="profile_sin_sector">Sin sector</string>
     <!-- <string name="profile_district_value">Carmen Alto</string> ya no se usa: tvDistrito lo pinta pintarUbicacionYExperiencia() -->
     <string name="profile_experience_label">Experiencia</string>
     <!-- <string name="profile_experience_value">4 años</string> ya no se usa: tvExperiencia lo pinta pintarUbicacionYExperiencia() -->
@@ -376,6 +378,19 @@
     <string name="edit_perfil_titulo_paso1">Completa tu Perfil</string>
     <string name="edit_perfil_titulo_paso2">Información Personal</string>
     <string name="edit_perfil_titulo_paso3">Experiencia Profesional</string>
+    <string name="edit_perfil_titulo_paso3_lugar">Mi lugar</string>
+    <string name="edit_perfil_sub_paso3_lugar">Registra tu establecimiento: será la sede de tus publicaciones.</string>
+    <string name="edit_perfil_lugar_pendiente">Aún no registras tu lugar</string>
+    <string name="edit_perfil_lugar_pendiente_sub">Sin sede no podrás publicar chambas.</string>
+    <string name="edit_perfil_lugar_btn">Registrar mi lugar</string>
+    <string name="edit_perfil_lugar_btn_editar">Editar mi lugar</string>
+    <string name="edit_perfil_lugar_nota">Obligatorio en modo contratante para llegar al 100 %.</string>
+    <string name="edit_perfil_lugar_requerido">Registra tu lugar para continuar</string>
+
+    <!-- Compuerta de publicación (no trabajador bajo el 50 %) -->
+    <string name="publicar_bloqueado_titulo">Completa tu perfil para publicar</string>
+    <string name="publicar_bloqueado_sub">Tu perfil de contratante está al %1$d%%. Supera el 50 %% para contratar y publicar chambas.</string>
+    <string name="publicar_bloqueado_btn">Completar perfil</string>
     <string name="edit_perfil_titulo_paso4">Privacidad y Confirmación</string>
     <string name="edit_perfil_paso_de">Paso %1$d de %2$d</string>
     <string name="edit_perfil_btn_siguiente">Siguiente</string>

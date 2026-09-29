@@ -153,4 +153,19 @@
     <string name="lugar_exito_titulo">Place saved!</string>
     <string name="lugar_exito_sub">Your new place was added successfully.</string>
     <string name="lugar_exito_btn">Done</string>
+
+    <!-- Wizard: contractor place step -->
+    <string name="edit_perfil_titulo_paso3_lugar">My place</string>
+    <string name="edit_perfil_sub_paso3_lugar">Register your business: it will be the site of your posts.</string>
+    <string name="edit_perfil_lugar_pendiente">You haven\'t registered your place yet</string>
+    <string name="edit_perfil_lugar_pendiente_sub">Without a site you cannot post jobs.</string>
+    <string name="edit_perfil_lugar_btn">Register my place</string>
+    <string name="edit_perfil_lugar_btn_editar">Edit my place</string>
+    <string name="edit_perfil_lugar_nota">Required in contractor mode to reach 100%.</string>
+    <string name="edit_perfil_lugar_requerido">Register your place to continue</string>
+
+    <!-- Publish gate -->
+    <string name="publicar_bloqueado_titulo">Complete your profile to post</string>
+    <string name="publicar_bloqueado_sub">Your contractor profile is at %1$d%%. Reach over 50%% to hire and post jobs.</string>
+    <string name="publicar_bloqueado_btn">Complete profile</string>
 </resources>

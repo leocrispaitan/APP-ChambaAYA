@@ -330,7 +330,10 @@ data class ProfileCompletion(
         private val EMPLOYER_CHECKS: List<Pair<String, (UserProfile) -> Boolean>> = listOf(
             "Tipo de contratante" to { it.employer.employerType.isNotBlank() },
             "Identidad del contratante" to { it.employer.documentType.isNotBlank() && it.employer.documentNumber.isNotBlank() },
-            "Nombre comercial o negocio" to { it.employer.businessName.isNotBlank() }
+            "Nombre comercial o negocio" to { it.employer.businessName.isNotBlank() },
+            // FASE 4 — el establecimiento es obligatorio para contratar/publicar:
+            // sin lugar no hay sede para las chambas.
+            "Lugar o establecimiento" to { !it.employer.workplaceId.isNullOrBlank() }
         )
 
         fun checksFor(profile: UserProfile): List<Pair<String, (UserProfile) -> Boolean>> =
@@ -349,6 +352,20 @@ data class ProfileCompletion(
         fun empty(): ProfileCompletion = ProfileCompletion(0, COMMON_CHECKS.map { it.first } + WORKER_CHECKS.map { it.first })
     }
 }
+
+/**
+ * Compuerta de contratación y publicación.
+ *
+ * El trabajador publica/postula con su perfil tal cual. Quien NO está en rol
+ * trabajador (contratante, empresa, negocio, independiente…) solo puede
+ * contratar o publicar si su perfil supera el [UMBRAL_CONTRATAR_PUBLICAR]:
+ * sin datos mínimos no hay ofertas confiables.
+ */
+const val UMBRAL_CONTRATAR_PUBLICAR = 50
+
+fun UserProfile.puedeContratarOPublicar(): Boolean =
+    if (activeRole == UserRoles.TRABAJADOR) true
+    else completion().percent > UMBRAL_CONTRATAR_PUBLICAR
 
 /**
  * Datos que envía `EditarPerfilActivity` al finalizar los 4 pasos.
