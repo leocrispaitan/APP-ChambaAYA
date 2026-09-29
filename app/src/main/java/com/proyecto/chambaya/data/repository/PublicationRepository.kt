@@ -41,6 +41,7 @@ class PublicationRepository(
         perfil: UserProfile,
         workplaceId: String = "",
         workplaceName: String = "",
+        workplacePhotoUrl: String = "",
         images: List<PublicationImage> = emptyList()
     ): Result<Publication> = withContext(Dispatchers.IO) {
         runCatching {
@@ -49,6 +50,15 @@ class PublicationRepository(
             require(uid.isNotBlank()) { "Sesión no válida." }
             require(publicationId.isNotBlank()) { "Identificador no válido." }
             require(images.size <= 3) { "Máximo 3 fotos por publicación." }
+
+            // FASE 5.2 — Identidad del publicador: la ENTIDAD (lugar/negocio)
+            // cuando existe; el nombre personal solo como respaldo si el
+            // contratante aún no registró su entidad.
+            val nombreEntidad = workplaceName.trim()
+            val nombrePublicador = nombreEntidad.ifBlank {
+                perfil.employer.businessName.ifBlank { perfil.profile.fullName }
+            }
+            val fotoPublicador = workplacePhotoUrl.ifBlank { perfil.profile.profilePhotoUrl }
 
             val ref = firestore.collection(COLLECTION).document(publicationId)
             val now = FieldValue.serverTimestamp()
@@ -90,9 +100,9 @@ class PublicationRepository(
                 "images" to images.map { mapOf("url" to it.url, "publicId" to it.publicId) },
                 "publisher" to mapOf(
                     "uid" to uid,
-                    "name" to perfil.profile.fullName.ifBlank { perfil.employer.businessName },
+                    "name" to nombrePublicador,
                     "username" to perfil.profile.username,
-                    "photoUrl" to perfil.profile.profilePhotoUrl,
+                    "photoUrl" to fotoPublicador,
                     "verified" to perfil.identity.identityVerified,
                     "employerType" to perfil.employer.employerType,
                     "sector" to perfil.employer.sector
@@ -186,10 +196,61 @@ class PublicationRepository(
                 if (actual.exists()) {
                     require(actual.getString("ownerUid") == uid) { "Esa publicación no te pertenece." }
                     Tasks.await(ref.delete())
+                    // Contadores denormalizados (mejor esfuerzo; la rama
+                    // isAllowedPublicationCounterUpdate los autoriza en ±1).
+                    runCatching {
+                        Tasks.await(
+                            firestore.collection(ProfileRepository.COLLECTION_USERS).document(uid)
+                                .update(
+                                    mapOf(
+                                        "employer.publishedCount" to FieldValue.increment(-1),
+                                        "statistics.publicationsCount" to FieldValue.increment(-1),
+                                        "updatedAt" to FieldValue.serverTimestamp()
+                                    )
+                                )
+                        )
+                    }
                 }
                 // Las fotos de Cloudinary se dejan: su borrado exige firma (backend).
             }
         }
+
+    /**
+     * Repara los contadores denormalizados comparando con el total real.
+     *
+     * Las publicaciones creadas cuando las reglas aún no permitían el ±1
+     * quedaron con `publishedCount = 0`. Esta función avanza paso a paso
+     * (±1 por escritura, lo único que autoriza la regla) hasta igualar
+     * [actual]. Se llama una vez por sesión desde Mis publicaciones.
+     */
+    suspend fun syncPublishedCount(uid: String, actual: Int) {
+        if (uid.isBlank() || actual < 0) return
+        withContext(Dispatchers.IO) {
+            val ref = firestore.collection(ProfileRepository.COLLECTION_USERS).document(uid)
+            repeat(12) {
+                val snap = runCatching { Tasks.await(ref.get()) }.getOrNull()
+                    ?: return@withContext
+                val emp = snap.get("employer") as? Map<*, *> ?: return@withContext
+                // Sin mapa statistics la rama de contadores no aplica.
+                if (snap.get("statistics") !is Map<*, *>) return@withContext
+                val cur = (emp["publishedCount"] as? Number)?.toInt() ?: return@withContext
+                if (cur == actual) return@withContext
+                val delta = if (actual > cur) 1L else -1L
+                val ok = runCatching {
+                    Tasks.await(
+                        ref.update(
+                            mapOf(
+                                "employer.publishedCount" to FieldValue.increment(delta),
+                                "statistics.publicationsCount" to FieldValue.increment(delta),
+                                "updatedAt" to FieldValue.serverTimestamp()
+                            )
+                        )
+                    )
+                }.isSuccess
+                if (!ok) return@withContext
+            }
+        }
+    }
 
     suspend fun getById(publicationId: String): Result<Publication?> =
         withContext(Dispatchers.IO) {
@@ -230,6 +291,51 @@ class PublicationRepository(
                 snap.documents.map { it.toPublication() }
             }
         }
+
+    /** Feed en TIEMPO REAL: avisa cada vez que una publicación cambia.
+     *
+     * El Fragment lo engancha en `onResume` y lo suelta en `onPause`: así lo
+     * que se publica desde `fragmento_publicar` aparece en `fragmento_chambas`
+     * sin cerrar la app. Devuelve el registro para poder cancelarlo.
+     */
+    fun listenFeed(
+        limit: Long = 40,
+        onUpdate: (List<Publication>) -> Unit,
+        onError: (Exception) -> Unit
+    ): com.google.firebase.firestore.ListenerRegistration {
+        return firestore.collection(COLLECTION)
+            .whereEqualTo("status", PublicationStatus.ACTIVE)
+            .whereEqualTo("visibility", PublicationVisibility.PUBLIC)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(limit)
+            .addSnapshotListener { snap, e ->
+                if (e != null) { onError(e); return@addSnapshotListener }
+                if (snap == null) return@addSnapshotListener
+                runCatching { snap.documents.map { it.toPublication() } }
+                    .onSuccess(onUpdate)
+                    .onFailure { onError(it as? Exception ?: Exception(it)) }
+            }
+    }
+
+    /** "Mis publicaciones" en TIEMPO REAL (todos los estados del dueño). */
+    fun listenByOwner(
+        uid: String,
+        limit: Long = 50,
+        onUpdate: (List<Publication>) -> Unit,
+        onError: (Exception) -> Unit
+    ): com.google.firebase.firestore.ListenerRegistration {
+        return firestore.collection(COLLECTION)
+            .whereEqualTo("ownerUid", uid)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(limit)
+            .addSnapshotListener { snap, e ->
+                if (e != null) { onError(e); return@addSnapshotListener }
+                if (snap == null) return@addSnapshotListener
+                runCatching { snap.documents.map { it.toPublication() } }
+                    .onSuccess(onUpdate)
+                    .onFailure { onError(it as? Exception ?: Exception(it)) }
+            }
+    }
 
     /** Suma una vista (mejor esfuerzo, sin bloquear la UI). */
     suspend fun registerView(publicationId: String) {

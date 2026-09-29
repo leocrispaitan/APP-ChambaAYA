@@ -240,9 +240,19 @@ class CrearPublicacionActivity : AppCompatActivity() {
                     perfil = perfil,
                     workplaceId = lugar?.workplaceId.orEmpty(),
                     workplaceName = lugar?.name.orEmpty(),
+                    workplacePhotoUrl = lugar?.photoUrl.orEmpty(),
                     images = imagenes
                 )
                 if (r.isFailure) throw r.exceptionOrNull() ?: Exception("No se pudo publicar.")
+                // Caché en caliente: el servidor ya sumó +1 a los contadores.
+                ProfileCache.perfil = perfil.copy(
+                    employer = perfil.employer.copy(
+                        publishedCount = perfil.employer.publishedCount + 1
+                    ),
+                    statistics = perfil.statistics.copy(
+                        publicationsCount = perfil.statistics.publicationsCount + 1
+                    )
+                )
                 Toast.makeText(this@CrearPublicacionActivity, "¡Chamba publicada!", Toast.LENGTH_SHORT).show()
                 setResult(Activity.RESULT_OK)
                 finish()

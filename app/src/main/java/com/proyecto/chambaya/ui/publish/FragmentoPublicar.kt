@@ -80,6 +80,8 @@ class FragmentoPublicar : Fragment() {
     private var progressMis: ProgressBar? = null
     private var emptyMis: View? = null
     private var misAdapter: MisPublicacionesAdapter? = null
+    private var misListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var conteoSincronizado = false
 
     private val lugarLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -167,10 +169,26 @@ class FragmentoPublicar : Fragment() {
     override fun onResume() {
         super.onResume()
         BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.white))
+        // Solo recarga el estado: al terminar, él mismo engancha
+        // Mis publicaciones (ver recargarEstado).
         if (::barraTabs.isInitialized) {
             recargarEstado()
-            cargarMisPublicaciones()
         }
+    }
+
+    override fun onPause() {
+        detachMis()
+        super.onPause()
+    }
+
+    override fun onDestroyView() {
+        detachMis()
+        conteoSincronizado = false
+        rvMis = null
+        progressMis = null
+        emptyMis = null
+        misAdapter = null
+        super.onDestroyView()
     }
 
     // ── FASE 4 · Puerta de publicación ────────────────────────────
@@ -225,6 +243,11 @@ class FragmentoPublicar : Fragment() {
             // Solicitudes: texto honesto según rol.
             pintarSolicitudes()
             cargandoEstado = false
+            // Mis publicaciones se engancha AQUÍ (con los flags ya resueltos),
+            // no en onResume: en arranque en frío onResume corre antes de que
+            // termine esta carga y `esContratante` aún es false, lo que dejaba
+            // la tab en blanco hasta navegar y volver.
+            cargarMisPublicaciones()
         }
     }
 
@@ -272,6 +295,9 @@ class FragmentoPublicar : Fragment() {
             onMenu = { pub, anchor -> mostrarMenu(pub, anchor) }
         )
         rvMis?.adapter = misAdapter
+        // Oculto hasta el primer snapshot: evita el flash de lista vacía en
+        // arranque en frío.
+        rvMis?.visibility = View.GONE
         emptyMis?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.apply {
             text = getString(R.string.publicaciones_vacio_btn)
             setOnClickListener { abrirAccionPrincipal() }
@@ -281,29 +307,66 @@ class FragmentoPublicar : Fragment() {
     private fun cargarMisPublicaciones() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         if (!esContratante) {
+            detachMis()
             rvMis?.visibility = View.GONE
             progressMis?.visibility = View.GONE
             emptyMis?.visibility = View.GONE
             return
         }
+        // Ya enganchado: el snapshot en vivo trae los cambios solo.
+        if (misListener != null) return
         progressMis?.visibility = View.VISIBLE
         rvMis?.visibility = View.GONE
         emptyMis?.visibility = View.GONE
-        viewLifecycleOwner.lifecycleScope.launch {
-            val lista = pubRepository.byOwner(uid, 50).getOrNull().orEmpty()
-            if (!isAdded) return@launch
-            progressMis?.visibility = View.GONE
-            if (lista.isEmpty()) {
-                rvMis?.visibility = View.GONE
-                emptyMis?.visibility = View.VISIBLE
-                emptyMis?.findViewById<TextView>(R.id.tvVacioTitulo)?.setText(R.string.publicaciones_vacio_titulo)
-                emptyMis?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.setText(R.string.publicaciones_vacio_sub)
-            } else {
-                emptyMis?.visibility = View.GONE
-                rvMis?.visibility = View.VISIBLE
-                misAdapter?.submitList(lista)
+        misListener = pubRepository.listenByOwner(
+            uid, 50,
+            onUpdate = { lista ->
+                if (!isAdded) return@listenByOwner
+                pintarMis(lista)
+            },
+            onError = {
+                if (!isAdded) return@listenByOwner
+                progressMis?.visibility = View.GONE
+                if (misAdapter?.itemCount == 0) emptyMis?.visibility = View.VISIBLE
+            }
+        )
+    }
+
+    private fun pintarMis(lista: List<Publication>) {
+        progressMis?.visibility = View.GONE
+        if (lista.isEmpty()) {
+            rvMis?.visibility = View.GONE
+            emptyMis?.visibility = View.VISIBLE
+            emptyMis?.findViewById<TextView>(R.id.tvVacioTitulo)?.setText(R.string.publicaciones_vacio_titulo)
+            emptyMis?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.setText(R.string.publicaciones_vacio_sub)
+        } else {
+            emptyMis?.visibility = View.GONE
+            rvMis?.visibility = View.VISIBLE
+            misAdapter?.submitList(lista)
+        }
+        // Repara una sola vez por vista los contadores denormalizados
+        // (quedaron en 0 cuando las reglas aún no permitían el ±1).
+        if (!conteoSincronizado && esContratante) {
+            conteoSincronizado = true
+            val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+            val total = lista.size
+            viewLifecycleOwner.lifecycleScope.launch {
+                pubRepository.syncPublishedCount(uid, total)
+                ProfileCache.perfil?.let { p ->
+                    if (p.employer.publishedCount != total) {
+                        ProfileCache.perfil = p.copy(
+                            employer = p.employer.copy(publishedCount = total),
+                            statistics = p.statistics.copy(publicationsCount = total)
+                        )
+                    }
+                }
             }
         }
+    }
+
+    private fun detachMis() {
+        misListener?.remove()
+        misListener = null
     }
 
     private fun alternarEstado(pub: Publication) {
@@ -392,6 +455,17 @@ class FragmentoPublicar : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     val r = pubRepository.delete(uid, pub.publicationId)
                     if (r.isSuccess) {
+                        // Caché en caliente: el servidor ya restó 1.
+                        ProfileCache.perfil?.let { p ->
+                            ProfileCache.perfil = p.copy(
+                                employer = p.employer.copy(
+                                    publishedCount = (p.employer.publishedCount - 1).coerceAtLeast(0)
+                                ),
+                                statistics = p.statistics.copy(
+                                    publicationsCount = (p.statistics.publicationsCount - 1).coerceAtLeast(0)
+                                )
+                            )
+                        }
                         Toast.makeText(requireContext(), "Publicación eliminada.", Toast.LENGTH_SHORT).show()
                         cargarMisPublicaciones()
                     } else {

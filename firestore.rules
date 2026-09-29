@@ -544,6 +544,33 @@ service cloud.firestore {
         || (!(before is map) && statisticsAreZero(after));
     }
 
+    // =============================================================
+    //  FASE 5 — Contadores de publicaciones (denormalizados)
+    // =============================================================
+    //
+    // Al crear/eliminar una publicación la app suma/resta 1 a
+    // `employer.publishedCount` y `statistics.publicationsCount` (Mi Perfil los
+    // muestra). Las ramas existentes lo impedirían: `keepsEmployerReputation`
+    // y `createsZeroStatistics` exigen esos contadores intactos. Esta rama lo
+    // permite SOLO cuando el único cambio es un paso de ±1 en esos dos
+    // contadores: nadie puede inventarse reputación ni tocar nada más.
+    function isAllowedPublicationCounterUpdate() {
+      let touched = request.resource.data.diff(resource.data).affectedKeys();
+      let beforeEmp = resource.data.get('employer', '');
+      let afterEmp = request.resource.data.get('employer', '');
+      let beforeStat = resource.data.get('statistics', '');
+      let afterStat = request.resource.data.get('statistics', '');
+      return touched.hasOnly(['employer', 'statistics', 'updatedAt'])
+        && beforeEmp is map && afterEmp is map
+        && beforeStat is map && afterStat is map
+        && afterEmp.diff(beforeEmp).affectedKeys().hasOnly(['publishedCount'])
+        && (afterEmp.get('publishedCount', 0) == beforeEmp.get('publishedCount', 0) + 1
+          || afterEmp.get('publishedCount', 0) == beforeEmp.get('publishedCount', 0) - 1)
+        && afterStat.diff(beforeStat).affectedKeys().hasOnly(['publicationsCount'])
+        && (afterStat.get('publicationsCount', 0) == beforeStat.get('publicationsCount', 0) + 1
+          || afterStat.get('publicationsCount', 0) == beforeStat.get('publicationsCount', 0) - 1);
+    }
+
     // Rama FASE 2 de la actualización de `users/{uid}`.
     // `affectedKeys()` devuelve las claves de primer nivel, así que
     // `hasOnly(...)` ya impide tocar `identity`, `auth`, `roles`,
@@ -631,6 +658,7 @@ service cloud.firestore {
           || isAllowedWorkerActivation()
           || isAllowedEmployerUpdate(uid)
           || isAllowedActiveRoleSwitch()
+          || isAllowedPublicationCounterUpdate()
           || isAllowedProfileUpdate(uid));
 
       allow delete: if false;

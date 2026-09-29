@@ -150,7 +150,7 @@ class PublicationAdapter(
             btnLike.setOnClickListener { onToggleLike(item) }
             tvComments.text = formatCount(p.statistics.comments)
             btnComment.setOnClickListener { onOpenDetail(item) }
-            tvRating.text = "★ ${formatCount(item.savesCount)} guardados · ${publicationTimeAgo(p.createdAt)}"
+            tvRating.text = "${formatCount(item.savesCount)} guardados · ${publicationTimeAgo(p.createdAt)}"
 
             // ── Apertura del detalle ──
             card.setOnClickListener { onOpenDetail(item) }

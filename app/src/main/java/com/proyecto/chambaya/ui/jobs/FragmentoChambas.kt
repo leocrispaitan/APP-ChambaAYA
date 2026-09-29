@@ -64,6 +64,14 @@ class FragmentoChambas : Fragment() {
     private var searchJob: Job? = null
     private var selectedCategory: String = ""
 
+    // ── Tiempo real: el listener se engancha en onResume y se suelta en
+    // onPause. Los flags like/save se cachean por id para no releerlos en
+    // cada snapshot; solo se consultan los ids nuevos.
+    private var feedListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private val stateCache = mutableMapOf<String, Pair<Boolean, Boolean>>()
+    private val hiddenCache = mutableSetOf<String>()
+    private var statesLoaded = false
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragmento_chambas, container, false)
     }
@@ -94,9 +102,9 @@ class FragmentoChambas : Fragment() {
         setupChips(view)
         setupHeaderActions(view)
 
-        view.findViewById<Button>(R.id.btnFeedRetry)?.setOnClickListener { cargarFeed() }
+        view.findViewById<Button>(R.id.btnFeedRetry)?.setOnClickListener { recargarFeed() }
         view.findViewById<Button>(R.id.btnFeedEmptyAction)?.setOnClickListener {
-            if (filters.isEmpty() && filters.query.isBlank() && selectedCategory.isBlank()) cargarFeed()
+            if (filters.isEmpty() && filters.query.isBlank() && selectedCategory.isBlank()) recargarFeed()
             else { limpiarFiltros(view); }
         }
 
@@ -119,16 +127,12 @@ class FragmentoChambas : Fragment() {
                 aplicarFiltros()
             }
         }
-        parentFragmentManager.setFragmentResultListener(JobDetailSheet.REQUEST_CHANGED, viewLifecycleOwner) { _, _ ->
-            cargarFeed(refreshInteractionsOnly = true)
-        }
         parentFragmentManager.setFragmentResultListener(JobDetailSheet.REQUEST_OPEN_PROFILE, viewLifecycleOwner) { _, bundle ->
             val uid = bundle.getString(JobDetailSheet.EXTRA_UID).orEmpty()
             if (uid.isNotBlank()) PublicProfileSheet.newInstance(uid).show(parentFragmentManager, "profile")
         }
 
         loadCategoriasFromJson()
-        cargarFeed()
     }
 
     // ── Feed ────────────────────────────────────────────────
@@ -160,31 +164,85 @@ class FragmentoChambas : Fragment() {
     }
 
     private fun cargarFeed(refreshInteractionsOnly: Boolean = false) {
-        if (!refreshInteractionsOnly) pintarEstado(Estado.CARGANDO)
+        if (refreshInteractionsOnly) {
+            statesLoaded = false
+        } else {
+            recargarFeed()
+            return
+        }
+        // Refresca solo los flags like/save/ocultos y repinta.
         viewLifecycleOwner.lifecycleScope.launch {
-            val resultado = pubRepo.feed(40)
+            val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+            val ids = allItems.map { it.publication.publicationId }
+            val liked = interRepo.likedIds(ids, uid)
+            val saved = interRepo.savedIds(ids, uid)
+            hiddenCache.addAll(interRepo.hiddenIds(ids, uid))
+            ids.forEach { stateCache[it] = (it in liked) to (it in saved) }
+            statesLoaded = true
             if (!isAdded) return@launch
-            resultado.onSuccess { pubs ->
-                val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+            allItems = allItems
+                .filter { it.publication.publicationId !in hiddenCache }
+                .map {
+                    val (l, s) = stateCache[it.publication.publicationId] ?: (false to false)
+                    it.copy(liked = l, saved = s)
+                }
+            aplicarFiltros()
+        }
+    }
+
+    /** Re-engancha el listener desde cero (reintentos y primera carga). */
+    private fun recargarFeed() {
+        detachFeed()
+        statesLoaded = false
+        attachFeed()
+    }
+
+    private fun attachFeed() {
+        if (feedListener != null) return
+        if (allItems.isEmpty()) pintarEstado(Estado.CARGANDO)
+        feedListener = pubRepo.listenFeed(
+            40,
+            onUpdate = { pubs -> integrarSnapshot(pubs) },
+            onError = { e ->
+                if (isAdded) pintarEstado(Estado.ERROR, e.message)
+            }
+        )
+    }
+
+    private fun detachFeed() {
+        feedListener?.remove()
+        feedListener = null
+    }
+
+    /** Fusiona el snapshot con los flags cacheados y repinta. */
+    private fun integrarSnapshot(pubs: List<com.proyecto.chambaya.data.model.Publication>) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+            if (!statesLoaded) {
                 val ids = pubs.map { it.publicationId }
                 val liked = interRepo.likedIds(ids, uid)
                 val saved = interRepo.savedIds(ids, uid)
-                val hidden = interRepo.hiddenIds(ids, uid)
-                allItems = pubs
-                    .filter { it.publicationId !in hidden }
-                    .map { p ->
-                        PublicationFeedItem(
-                            publication = p,
-                            liked = p.publicationId in liked,
-                            saved = p.publicationId in saved,
-                            likesCount = p.statistics.likes,
-                            savesCount = p.statistics.saves
-                        )
-                    }
-                aplicarFiltros()
-            }.onFailure { e ->
-                pintarEstado(Estado.ERROR, e.message)
+                hiddenCache.addAll(interRepo.hiddenIds(ids, uid))
+                pubs.forEach { stateCache[it.publicationId] = (it.publicationId in liked) to (it.publicationId in saved) }
+                statesLoaded = true
+            } else if (uid.isNotBlank()) {
+                val unknown = pubs.map { it.publicationId }
+                    .filter { it !in stateCache && it !in hiddenCache }
+                if (unknown.isNotEmpty()) {
+                    val liked = interRepo.likedIds(unknown, uid)
+                    val saved = interRepo.savedIds(unknown, uid)
+                    hiddenCache.addAll(interRepo.hiddenIds(unknown, uid))
+                    unknown.forEach { stateCache[it] = (it in liked) to (it in saved) }
+                }
             }
+            if (!isAdded) return@launch
+            allItems = pubs
+                .filter { it.publicationId !in hiddenCache }
+                .map { p ->
+                    val (l, s) = stateCache[p.publicationId] ?: (false to false)
+                    PublicationFeedItem(p, l, s, p.statistics.likes, p.statistics.saves)
+                }
+            aplicarFiltros()
         }
     }
 
@@ -357,12 +415,14 @@ class FragmentoChambas : Fragment() {
         // Optimista.
         item.liked = !item.liked
         item.likesCount += if (item.liked) 1 else -1
+        stateCache[item.publication.publicationId] = item.liked to item.saved
         adapter?.notifyDataSetChanged()
         viewLifecycleOwner.lifecycleScope.launch {
             val r = interRepo.toggleLike(item.publication.publicationId, uid)
             if (r.isFailure) {
                 item.liked = !item.liked
                 item.likesCount += if (item.liked) 1 else -1
+                stateCache[item.publication.publicationId] = item.liked to item.saved
                 adapter?.notifyDataSetChanged()
                 Toast.makeText(requireContext(), "No se pudo registrar el me gusta.", Toast.LENGTH_SHORT).show()
             }
@@ -377,6 +437,7 @@ class FragmentoChambas : Fragment() {
         }
         item.saved = !item.saved
         item.savesCount += if (item.saved) 1 else -1
+        stateCache[item.publication.publicationId] = item.liked to item.saved
         adapter?.notifyDataSetChanged()
         viewLifecycleOwner.lifecycleScope.launch {
             val r = interRepo.toggleSave(item.publication.publicationId, uid)
@@ -389,6 +450,7 @@ class FragmentoChambas : Fragment() {
             } else {
                 item.saved = !item.saved
                 item.savesCount += if (item.saved) 1 else -1
+                stateCache[item.publication.publicationId] = item.liked to item.saved
                 adapter?.notifyDataSetChanged()
             }
         }
@@ -429,6 +491,8 @@ class FragmentoChambas : Fragment() {
         if (uid.isBlank()) return
         viewLifecycleOwner.lifecycleScope.launch {
             interRepo.hide(item.publication.publicationId, uid)
+            hiddenCache += item.publication.publicationId
+            stateCache.remove(item.publication.publicationId)
             allItems = allItems.filter { it.publication.publicationId != item.publication.publicationId }
             aplicarFiltros()
             Toast.makeText(requireContext(), "Verás menos chambas como esta.", Toast.LENGTH_SHORT).show()
@@ -463,10 +527,22 @@ class FragmentoChambas : Fragment() {
         try {
             BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.brand_color))
         } catch (_: Exception) { }
+        // Re-engancha el feed: lo publicado desde Publicar aparece sin
+        // cerrar la app.
+        if (view != null) attachFeed()
+    }
+
+    override fun onPause() {
+        detachFeed()
+        super.onPause()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        detachFeed()
+        stateCache.clear()
+        hiddenCache.clear()
+        statesLoaded = false
         searchJob?.cancel()
         scrollView = null
         recyclerView = null
