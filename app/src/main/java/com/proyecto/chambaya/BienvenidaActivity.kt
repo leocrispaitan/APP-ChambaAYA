@@ -405,6 +405,6 @@ class BienvenidaActivity : AppCompatActivity() {
     )
 
     private companion object {
-        const val SLIDE_DURATION_MS = 3800L
+        const val SLIDE_DURATION_MS = 6500L
     }
 }
