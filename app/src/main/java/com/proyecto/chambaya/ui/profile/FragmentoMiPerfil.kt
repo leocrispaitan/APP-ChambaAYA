@@ -121,9 +121,10 @@ class FragmentoMiPerfil : Fragment() {
 
         // El caché compartido manda sobre la copia local del fragmento: si el
         // perfil se editó desde otra pantalla, ahí está lo más reciente.
+        // pintarPerfil trae además el lugar si el modo es contratante.
         val cacheado = ProfileCache.perfil ?: perfil
         perfil = cacheado
-        if (cacheado != null) pintar(view, cacheado) else cargarPerfil()
+        if (cacheado != null) pintarPerfil(view, cacheado) else cargarPerfil()
     }
 
     override fun onResume() {
@@ -158,8 +159,9 @@ class FragmentoMiPerfil : Fragment() {
         val root = view ?: return
         val compartido = ProfileCache.perfil ?: return
         if (compartido == perfil) return
-        perfil = compartido
-        pintar(root, compartido)
+        // pintarPerfil (no pintar): el modo pudo cambiar en Ajustes y el lugar
+        // del otro modo hay que traerlo de Firestore, no reusar el anterior.
+        pintarPerfil(root, compartido)
     }
 
     // ─────────────────────────────────────────────────────────────

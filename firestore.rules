@@ -367,6 +367,23 @@ service cloud.firestore {
         && keepsEmployerReputation();
     }
 
+    // Primera activación de TRABAJADOR en una cuenta que nació contratante.
+    // Espejo de la activación de contratante: suma el rol y entra en ese modo.
+    // El bloque `worker` nace en cero (o se habilita el existente) y la
+    // reputación queda intacta; el % se recalcula solo con los checks de
+    // trabajador.
+    function isAllowedWorkerActivation() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['roles', 'activeRole', 'worker', 'updatedAt'])
+        && resource.data.roles is list
+        && resource.data.roles.hasOnly(['CONTRATANTE'])
+        && request.resource.data.roles.hasOnly(['TRABAJADOR', 'CONTRATANTE'])
+        && request.resource.data.activeRole == 'TRABAJADOR'
+        && request.resource.data.get('worker', '').get('enabled', false) == true
+        && isValidWorkerUpdate()
+        && keepsWorkerReputation();
+    }
+
     function isAllowedActiveRoleSwitch() {
       return request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['activeRole', 'updatedAt'])
@@ -611,6 +628,7 @@ service cloud.firestore {
             && isCompleteRegistration()
             && keepsDocumentNumber())
           || isAllowedContractorActivation(uid)
+          || isAllowedWorkerActivation()
           || isAllowedEmployerUpdate(uid)
           || isAllowedActiveRoleSwitch()
           || isAllowedProfileUpdate(uid));

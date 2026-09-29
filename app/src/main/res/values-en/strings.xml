@@ -168,4 +168,26 @@
     <string name="publicar_bloqueado_titulo">Complete your profile to post</string>
     <string name="publicar_bloqueado_sub">Your contractor profile is at %1$d%%. Reach over 50%% to hire and post jobs.</string>
     <string name="publicar_bloqueado_btn">Complete profile</string>
+
+    <!-- Mode switch sheet -->
+    <string name="modo_hoja_titulo">Switch mode</string>
+    <string name="modo_hoja_sub">Use the same account: your other mode data is kept.</string>
+    <string name="modo_hoja_nota">When you start a mode, your percentage is recalculated with what that role needs.</string>
+    <string name="modo_trabajador_titulo">Worker mode</string>
+    <string name="modo_contratante_titulo">Contractor mode</string>
+    <string name="modo_trabajador_desc">Apply to jobs and offer your services</string>
+    <string name="modo_contratante_desc">Post jobs and hire specialists</string>
+    <string name="modo_actual">Current mode</string>
+    <string name="modo_cambiar_a">Tap to switch</string>
+    <string name="modo_activar_primera_vez">Tap to enable for the first time</string>
+    <string name="modo_ya_activo">You are already in that mode</string>
+    <string name="modo_error">Could not switch modes</string>
+    <string name="modo_ver_todos">See available modes</string>
+    <string name="modo_activar_trabajador">Also enable worker mode</string>
+    <string name="modo_activar_contratante">Also enable contractor mode</string>
+    <string name="modo_cambiado">%1$s enabled · profile at %2$d%%</string>
+    <string name="modo_cambiado_titulo">%1$s enabled</string>
+    <string name="modo_incompleto_mensaje">Your %1$s profile is at %2$d%%. Complete it to hire and post without blocks.</string>
+    <string name="modo_completar_ahora">Complete now</string>
+    <string name="modo_mas_tarde">Later</string>
 </resources>

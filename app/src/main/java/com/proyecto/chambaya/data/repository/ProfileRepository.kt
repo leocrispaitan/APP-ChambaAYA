@@ -339,6 +339,60 @@ class ProfileRepository(
             }
         }
 
+    /**
+     * Activa TRABAJADOR por primera vez en una cuenta que nació contratante.
+     *
+     * Espejo de [activateContractor] pero sin validación de identidad: el
+     * trabajador no declara documentos, solo completa su perfil en el wizard
+     * (paso 3 = experiencia). Si el rol ya existe, solo cambia el modo.
+     *
+     * Al cambiar de rol el porcentaje se recalcula solo: los checks de
+     * trabajador y de contratante son distintos ([ProfileCompletion]), así
+     * que el primer cambio casi siempre baja el % hasta completar lo nuevo.
+     */
+    suspend fun activateWorker(uid: String): Result<UserProfile> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val ref = firestore.collection(COLLECTION_USERS).document(uid)
+                val snapshot = Tasks.await(ref.get())
+                val actual = snapshot.toUserProfile()
+                require(actual.uid == uid) { "La cuenta no es válida." }
+
+                if (actual.roles.contains(UserRoles.TRABAJADOR)) {
+                    return@runCatching switchActiveRole(uid, UserRoles.TRABAJADOR).getOrThrow()
+                }
+                require(actual.roles.contains(UserRoles.CONTRATANTE)) {
+                    "Rol actual no válido."
+                }
+
+                val roles = linkedSetOf(UserRoles.TRABAJADOR, UserRoles.CONTRATANTE)
+                val cambios = mutableMapOf<String, Any?>(
+                    "roles" to roles.toList(),
+                    "activeRole" to UserRoles.TRABAJADOR,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+                // Si el documento no trae bloque `worker` se crea en cero
+                // (reputación intacta); si lo trae, solo se habilita.
+                if (snapshot.get("worker") !is Map<*, *>) {
+                    cambios["worker"] = mapOf(
+                        "enabled" to true,
+                        "experienceYears" to 0,
+                        "experienceDeclared" to false,
+                        "specialties" to emptyList<String>(),
+                        "skills" to emptyList<String>(),
+                        "workCount" to 0,
+                        "ratingAverage" to 0.0,
+                        "ratingCount" to 0,
+                        "profileCompleted" to 0
+                    )
+                } else {
+                    cambios["worker.enabled"] = true
+                }
+                Tasks.await(ref.update(cambios))
+                Tasks.await(ref.get()).toUserProfile()
+            }
+        }
+
     // ═══════════════════════════════════════════════════════════════
     //  UNICIDAD DEL USERNAME
     // ═══════════════════════════════════════════════════════════════
