@@ -1195,7 +1195,11 @@ service cloud.firestore {
     }
 
     match /conversations/{conversationId} {
-      allow get: if request.auth != null && isParticipant(resource.data);
+      // El exists() cubre el get() de un chat aún no creado (recurso nulo:
+      // resource.data reventaría). La app primero consulta y solo crea si falta.
+      allow get: if request.auth != null
+        && (!exists(/databases/$(database)/documents/conversations/$(conversationId))
+          || isParticipant(resource.data));
       // La app consulta whereArrayContains(participants, yo).
       allow list: if request.auth != null;
       allow create: if request.auth != null && isValidConversationCreate();

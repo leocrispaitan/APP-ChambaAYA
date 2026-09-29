@@ -46,9 +46,17 @@ class ChatRepository(
                 throw IllegalStateException("No puedes iniciar este chat por ahora.")
             }
             val id = conversationIdFor(publicationId, myUid, otherUid)
+            // OJO: no usar get() directo aquí — si el doc no existe, la regla
+            // `isParticipant(resource.data)` deniega la lectura. La consulta
+            // por campo (allow list abierto) devuelve vacío sin problema.
+            val existing = Tasks.await(
+                firestore.collection(COLLECTION)
+                    .whereEqualTo("conversationId", id)
+                    .limit(1)
+                    .get()
+            ).documents.firstOrNull()?.toConversation()
+            if (existing != null) return@runCatching existing
             val ref = firestore.collection(COLLECTION).document(id)
-            val snap = Tasks.await(ref.get())
-            if (snap.exists()) return@runCatching snap.toConversation()
             val now = FieldValue.serverTimestamp()
             val participants = listOf(myUid, otherUid).sorted()
             Tasks.await(
