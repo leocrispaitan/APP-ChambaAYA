@@ -1,6 +1,11 @@
-<resources>
-    <style name="Theme.ChambAYA.Splash" parent="Theme.ChambAYA">
-        <item name="android:windowBackground">@drawable/window_bg_as_splash</item>
-        <item name="android:windowSplashScreenBackground">@color/brand_color</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.ChambAYA.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
     </style>
 </resources>

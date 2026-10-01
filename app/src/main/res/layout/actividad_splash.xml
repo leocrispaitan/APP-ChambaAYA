@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/brand_color"
+    android:background="@android:color/white"
     tools:context=".SplashActivity">
 
     <LinearLayout
@@ -21,28 +21,20 @@
 
         <ImageView
             android:id="@+id/imgSplashLogo"
-            android:layout_width="104dp"
-            android:layout_height="104dp"
+            android:layout_width="192dp"
+            android:layout_height="192dp"
             android:contentDescription="@string/app_name"
-            android:src="@drawable/splash_logo" />
+            android:src="@drawable/logo" />
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvSplashBrand"
-        android:layout_width="wrap_content"
-        android:layout_height="44dp"
-        android:layout_marginBottom="38dp"
-        android:background="@drawable/bg_splash_brand"
-        android:fontFamily="sans-serif-black"
-        android:gravity="center"
-        android:includeFontPadding="false"
-        android:minWidth="190dp"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:text="@string/app_name"
-        android:textColor="@color/white"
-        android:textSize="26sp"
+    <ProgressBar
+        android:id="@+id/progressBarSplash"
+        android:layout_width="30dp"
+        android:layout_height="15dp"
+        android:layout_marginBottom="48dp"
+        android:indeterminate="true"
+        android:indeterminateDrawable="@drawable/anim_three_dots"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
