@@ -29,6 +29,7 @@ class PendingRegistrationStore(context: Context) {
     fun saveDraft(draft: RegistrationDraft) {
         prefs.edit()
             .putString(KEY_DRAFT_ROLE, draft.role)
+            .putString(KEY_DRAFT_EMPLOYER_TYPE, draft.employerType)
             .putString(KEY_DRAFT_DISPLAY_NAME, draft.accountDisplayName)
             .putString(KEY_DRAFT_PHOTO_URL, draft.accountPhotoUrl)
             .putString(KEY_DRAFT_IDENTITY, identityToJson(draft.identity).toString())
@@ -44,7 +45,8 @@ class PendingRegistrationStore(context: Context) {
             role = prefs.getString(KEY_DRAFT_ROLE, "") ?: "",
             identity = identity,
             accountDisplayName = prefs.getString(KEY_DRAFT_DISPLAY_NAME, "") ?: "",
-            accountPhotoUrl = prefs.getString(KEY_DRAFT_PHOTO_URL, "") ?: ""
+            accountPhotoUrl = prefs.getString(KEY_DRAFT_PHOTO_URL, "") ?: "",
+            employerType = prefs.getString(KEY_DRAFT_EMPLOYER_TYPE, "") ?: ""
         )
     }
 
@@ -55,6 +57,7 @@ class PendingRegistrationStore(context: Context) {
         prefs.edit()
             .putString(KEY_PENDING_UID, pending.uid)
             .putString(KEY_PENDING_ROLE, pending.role)
+            .putString(KEY_PENDING_EMPLOYER_TYPE, pending.employerType)
             .putString(KEY_PENDING_EMAIL, email)
             .putString(KEY_PENDING_PROVIDER, pending.provider)
             .putString(KEY_PENDING_AUTH_METHOD, pending.authMethod)
@@ -104,7 +107,8 @@ class PendingRegistrationStore(context: Context) {
             otpVerified = prefs.getBoolean(KEY_PENDING_OTP_VERIFIED, false),
             identity = identity,
             accountDisplayName = prefs.getString(KEY_PENDING_DISPLAY_NAME, "") ?: "",
-            accountPhotoUrl = prefs.getString(KEY_PENDING_PHOTO_URL, "") ?: ""
+            accountPhotoUrl = prefs.getString(KEY_PENDING_PHOTO_URL, "") ?: "",
+            employerType = prefs.getString(KEY_PENDING_EMPLOYER_TYPE, "") ?: ""
         )
     }
 
@@ -164,12 +168,14 @@ class PendingRegistrationStore(context: Context) {
         private const val PREFS_NAME = "chambaya_pending_registration_v1"
 
         private const val KEY_DRAFT_ROLE = "draft_role"
+        private const val KEY_DRAFT_EMPLOYER_TYPE = "draft_employer_type"
         private const val KEY_DRAFT_DISPLAY_NAME = "draft_display_name"
         private const val KEY_DRAFT_PHOTO_URL = "draft_photo_url"
         private const val KEY_DRAFT_IDENTITY = "draft_identity"
 
         private const val KEY_PENDING_UID = "pending_uid"
         private const val KEY_PENDING_ROLE = "pending_role"
+        private const val KEY_PENDING_EMPLOYER_TYPE = "pending_employer_type"
         private const val KEY_PENDING_EMAIL = "pending_email"
         private const val KEY_PENDING_PROVIDER = "pending_provider"
         private const val KEY_PENDING_AUTH_METHOD = "pending_auth_method"

@@ -57,12 +57,6 @@
             android:theme="@style/Theme.ChambAYA.EditProfile"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity
-            android:name=".ActivarContratanteActivity"
-            android:exported="false"
-            android:theme="@style/Theme.ChambAYA.EditProfile"
-            android:windowSoftInputMode="adjustResize" />
-
         <!-- FASE 4 — Crear / editar el lugar del contratante. Mismo tema y
              ajuste de teclado que el resto de formularios. -->
         <activity

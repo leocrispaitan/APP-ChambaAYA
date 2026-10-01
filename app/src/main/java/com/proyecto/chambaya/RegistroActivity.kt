@@ -44,6 +44,7 @@ import com.proyecto.chambaya.data.model.EmailVerificationMethods
 import com.proyecto.chambaya.data.model.IdentityDocumentTypes
 import com.proyecto.chambaya.data.model.PendingRegistration
 import com.proyecto.chambaya.data.model.RegistrationDraft
+import com.proyecto.chambaya.data.model.EmployerTypes
 import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.ValidatedIdentity
 import com.proyecto.chambaya.data.remote.IdentityValidationResult
@@ -77,6 +78,8 @@ class RegistroActivity : AppCompatActivity() {
     private var roleSelected = false
     private var selectedRole = ""
     private var identityMode = IdentityDocumentTypes.DNI // "DNI" | "RUC" (solo empleador/contratante)
+    /** Tipo de contratante elegido en el Paso 1 (rol fijo, ya no se cambia). */
+    private var selectedEmployerType = ""
     private var pendingOtp = ""
 
     // Identidad validada en la FASE 1 (antes solo vivía en los TextView)
@@ -147,6 +150,12 @@ class RegistroActivity : AppCompatActivity() {
 
     // Step 1 — Identidad
     private lateinit var tvStep1Subtitle: TextView
+    private lateinit var layoutEmployerType: LinearLayout
+    private lateinit var rgEmployerType: RadioGroup
+    private lateinit var rbEmployerPersona: RadioButton
+    private lateinit var rbEmployerEmpresa: RadioButton
+    private lateinit var rbEmployerNegocio: RadioButton
+    private lateinit var rbEmployerIndependiente: RadioButton
     private lateinit var layoutIdentityTypeTabs: LinearLayout
     private lateinit var btnTabDni: MaterialButton
     private lateinit var btnTabRuc: MaterialButton
@@ -349,6 +358,12 @@ class RegistroActivity : AppCompatActivity() {
 
         // Step 1
         tvStep1Subtitle = findViewById(R.id.tvStep1Subtitle)
+        layoutEmployerType = findViewById(R.id.layoutEmployerType)
+        rgEmployerType = findViewById(R.id.rgEmployerType)
+        rbEmployerPersona = findViewById(R.id.rbEmployerPersona)
+        rbEmployerEmpresa = findViewById(R.id.rbEmployerEmpresa)
+        rbEmployerNegocio = findViewById(R.id.rbEmployerNegocio)
+        rbEmployerIndependiente = findViewById(R.id.rbEmployerIndependiente)
         layoutIdentityTypeTabs = findViewById(R.id.layoutIdentityTypeTabs)
         btnTabDni = findViewById(R.id.btnTabDni)
         btnTabRuc = findViewById(R.id.btnTabRuc)
@@ -590,6 +605,8 @@ class RegistroActivity : AppCompatActivity() {
         isDniVerified = false
         isRucVerified = false
         validatedIdentity = null
+        selectedEmployerType = ""
+        rgEmployerType.clearCheck()
         cardDniVerified.visibility = View.GONE
         cardRucVerified.visibility = View.GONE
         ivDniCheckIcon.visibility = View.GONE
@@ -634,6 +651,12 @@ class RegistroActivity : AppCompatActivity() {
             }
         })
 
+        // Tipo de contratante (Paso 1, solo rol Contratante): define DNI o RUC.
+        rbEmployerPersona.setOnClickListener { selectEmployerType(EmployerTypes.PERSONA) }
+        rbEmployerEmpresa.setOnClickListener { selectEmployerType(EmployerTypes.EMPRESA) }
+        rbEmployerNegocio.setOnClickListener { selectEmployerType(EmployerTypes.NEGOCIO) }
+        rbEmployerIndependiente.setOnClickListener { selectEmployerType(EmployerTypes.INDEPENDIENTE) }
+
         // Listeners del switch DNI/RUC - prevenir clicks repetidos en el mismo tab
         btnTabDni.setOnClickListener {
             if (identityMode != IdentityDocumentTypes.DNI) {  // Solo cambiar si no está ya seleccionado
@@ -663,8 +686,11 @@ class RegistroActivity : AppCompatActivity() {
             val dni = etDni.text.toString().trim()
             val ruc = etRuc.text.toString().trim()
             val identity = validatedIdentity
+            val esContratante = selectedRole == UserRoles.CONTRATANTE
 
             when {
+                esContratante && !EmployerTypes.isValid(selectedEmployerType) ->
+                    showToast("Elige cómo vas a contratar para continuar")
                 identityMode == IdentityDocumentTypes.DNI && dni.length != 8 ->
                     showToast("Ingresa tu DNI de 8 dígitos para continuar")
                 identityMode == IdentityDocumentTypes.DNI && !isDniVerified ->
@@ -688,21 +714,69 @@ class RegistroActivity : AppCompatActivity() {
         val isWorker = selectedRole == UserRoles.TRABAJADOR
         if (isWorker) {
             // Modo trabajador: solo DNI
+            layoutEmployerType.visibility = View.GONE
             layoutIdentityTypeTabs.visibility = View.GONE
             layoutDniForm.visibility = View.VISIBLE
             layoutRucForm.visibility = View.GONE
             identityMode = IdentityDocumentTypes.DNI
             tvStep1Subtitle.text = getString(R.string.register_step2_subtitle)
         } else {
-            // Modo empleador: mostrar tabs DNI/RUC
-            layoutIdentityTypeTabs.visibility = View.VISIBLE
-            // Mantener el RUC cuando ya fue validado en este mismo registro
-            identityMode = ""  // Forzar que selectIdentityTab procese el cambio
-            val keepRuc = validatedIdentity?.documentType == IdentityDocumentTypes.RUC
-            selectIdentityTab(
-                if (keepRuc) IdentityDocumentTypes.RUC else IdentityDocumentTypes.DNI
-            )
+            // Modo contratante: primero el tipo (Persona/Empresa/Negocio/
+            // Independiente); el documento se deriva del tipo y los tabs
+            // DNI/RUC ya no se usan.
+            layoutEmployerType.visibility = View.VISIBLE
+            layoutIdentityTypeTabs.visibility = View.GONE
+            tvStep1Subtitle.text = "Elige cómo vas a contratar y valida tu documento"
+            if (EmployerTypes.isValid(selectedEmployerType)) {
+                applyEmployerTypeUi(selectedEmployerType)
+            } else {
+                rgEmployerType.clearCheck()
+                identityMode = ""
+            }
+            syncContratanteForms()
         }
+    }
+
+    /** Muestra el formulario DNI o RUC según el tipo elegido (sin limpiar). */
+    private fun syncContratanteForms() {
+        if (!EmployerTypes.isValid(selectedEmployerType)) {
+            layoutDniForm.visibility = View.GONE
+            layoutRucForm.visibility = View.GONE
+            return
+        }
+        val ruc = EmployerTypes.requiresRuc(selectedEmployerType)
+        identityMode = if (ruc) IdentityDocumentTypes.RUC else IdentityDocumentTypes.DNI
+        layoutDniForm.visibility = if (ruc) View.GONE else View.VISIBLE
+        layoutRucForm.visibility = if (ruc) View.VISIBLE else View.GONE
+        tvStep1Subtitle.text = if (ruc) {
+            "Valida tu empresa registrada en SUNAT (RUC Activo/Habido)"
+        } else {
+            getString(R.string.register_step2_subtitle)
+        }
+    }
+
+    /**
+     * Tipo de contratante elegido en el registro (rol fijo).
+     * Empresa/Negocio → RUC (SUNAT); Persona/Independiente → DNI (RENIEC).
+     */
+    private fun selectEmployerType(type: String) {
+        if (!EmployerTypes.isValid(type)) return
+        selectedEmployerType = type
+        applyEmployerTypeUi(type)
+        // El tab limpia la verificación solo si cambia DNI↔RUC; entre
+        // Persona↔Independiente (ambos DNI) se conserva lo validado.
+        selectIdentityTab(
+            if (EmployerTypes.requiresRuc(type)) IdentityDocumentTypes.RUC
+            else IdentityDocumentTypes.DNI
+        )
+        persistRegistrationDraft()
+    }
+
+    private fun applyEmployerTypeUi(type: String) {
+        rbEmployerPersona.isChecked = type == EmployerTypes.PERSONA
+        rbEmployerEmpresa.isChecked = type == EmployerTypes.EMPRESA
+        rbEmployerNegocio.isChecked = type == EmployerTypes.NEGOCIO
+        rbEmployerIndependiente.isChecked = type == EmployerTypes.INDEPENDIENTE
     }
 
     private fun selectIdentityTab(mode: String) {
@@ -1395,13 +1469,20 @@ class RegistroActivity : AppCompatActivity() {
         }
     }
 
+    /** Etiqueta de rol para resúmenes: "Trabajador" o "Contratante · Empresa". */
+    private fun etiquetaRol(): String {
+        if (selectedRole == UserRoles.TRABAJADOR) return "Trabajador"
+        val tipo = EmployerTypes.label(selectedEmployerType).ifBlank { "Contratante" }
+        return if (tipo == "Contratante") tipo else "Contratante · $tipo"
+    }
+
     // Modal de éxito profesional para Google Auth (Regla 6)
     private fun showGoogleSuccessModal() {
         MaterialAlertDialogBuilder(this)
             .setTitle("¡Registro exitoso!")
             .setMessage("Tu cuenta se ha creado correctamente con Google.\n\n" +
                 "✓ Correo: ${registeredEmail ?: ""}\n" +
-                "✓ Rol: ${if (selectedRole == UserRoles.TRABAJADOR) "Trabajador" else "Contratante"}")
+                "✓ Rol: ${etiquetaRol()}")
             .setPositiveButton("Continuar") { _, _ ->
                 onPhase2Completed()
             }
@@ -2052,7 +2133,6 @@ class RegistroActivity : AppCompatActivity() {
 
         tvSummaryPhone.text = "No requerido"
 
-        val isWorker = selectedRole == UserRoles.TRABAJADOR
         val identity = validatedIdentity
 
         if (identity != null && identity.isCompany) {
@@ -2072,7 +2152,7 @@ class RegistroActivity : AppCompatActivity() {
             tvSummaryVerifiedBadge.text = "✓ Perfil Verificado Oficial (RENIEC)"
         }
 
-        tvSummaryRole.text = if (isWorker) "Trabajador" else "Contratante"
+        tvSummaryRole.text = etiquetaRol()
     }
 
     private fun showSuccessRegistrationDialog() {
@@ -2081,7 +2161,7 @@ class RegistroActivity : AppCompatActivity() {
         val fullName = identity?.displayName?.takeIf { it.isNotBlank() }
             ?: googleDisplayName.takeIf { it.isNotBlank() }
             ?: email
-        val roleLabel = if (selectedRole == UserRoles.TRABAJADOR) "Trabajador" else "Contratante"
+        val roleLabel = etiquetaRol()
         val methodLabel =
             if (registeredAuthMethod == AuthMethods.GOOGLE) "Google" else "Correo y contraseña"
         val sourceLabel = if (identity != null && identity.isCompany) "SUNAT" else "RENIEC"
@@ -2165,7 +2245,8 @@ class RegistroActivity : AppCompatActivity() {
                 role = selectedRole,
                 identity = identity,
                 accountDisplayName = googleDisplayName,
-                accountPhotoUrl = googlePhotoUrl
+                accountPhotoUrl = googlePhotoUrl,
+                employerType = selectedEmployerType
             )
         )
     }
@@ -2183,6 +2264,16 @@ class RegistroActivity : AppCompatActivity() {
         val stored = pendingRegistrationStore.loadPending(uid)
         val isGoogle = registeredAuthMethod == AuthMethods.GOOGLE ||
             firebaseUser?.providerData?.any { it.providerId == AuthProviders.GOOGLE } == true
+        // El tipo de contratante viaja con el registro; si se perdió en memoria
+        // se recupera del borrador guardado, y como último recurso del documento.
+        val employerType = selectedEmployerType
+            .ifBlank { stored?.employerType.orEmpty() }
+            .ifBlank {
+                if (role == UserRoles.CONTRATANTE) {
+                    if (identity.documentType == IdentityDocumentTypes.RUC) EmployerTypes.EMPRESA
+                    else EmployerTypes.PERSONA
+                } else ""
+            }
 
         return PendingRegistration(
             uid = uid,
@@ -2198,7 +2289,8 @@ class RegistroActivity : AppCompatActivity() {
             otpVerified = isOtpVerified,
             identity = identity,
             accountDisplayName = googleDisplayName.ifBlank { stored?.accountDisplayName.orEmpty() },
-            accountPhotoUrl = googlePhotoUrl.ifBlank { stored?.accountPhotoUrl.orEmpty() }
+            accountPhotoUrl = googlePhotoUrl.ifBlank { stored?.accountPhotoUrl.orEmpty() },
+            employerType = employerType
         )
     }
 
@@ -2266,7 +2358,10 @@ class RegistroActivity : AppCompatActivity() {
         validatedIdentity = draft.identity
 
         restoreRoleIntoUi(draft.role)
+        restoreEmployerTypeIntoUi(draft.employerType)
         applyIdentityIntoUi(draft.identity)
+        // Re-sincroniza qué formulario se muestra (el restore no navega pasos).
+        if (draft.role == UserRoles.CONTRATANTE) syncContratanteForms()
 
         // Si ya existía una cuenta de Firebase para este registro, recuperar el resto
         auth.currentUser?.let { user ->
@@ -2277,6 +2372,13 @@ class RegistroActivity : AppCompatActivity() {
                 isEmailVerifiedByAuth = pending.otpVerified
             }
         }
+    }
+
+    /** Restaura el tipo de contratante del borrador (solo rol Contratante). */
+    private fun restoreEmployerTypeIntoUi(employerType: String?) {
+        if (!EmployerTypes.isValid(employerType)) return
+        selectedEmployerType = employerType!!
+        applyEmployerTypeUi(employerType)
     }
 
     /** Restaura el rol elegido en el sub-paso 0 (también usado al reanudar). */

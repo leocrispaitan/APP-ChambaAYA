@@ -626,6 +626,76 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
+                    <!-- ─── TIPO DE CONTRATANTE (solo rol Contratante) ─── -->
+                    <LinearLayout
+                        android:id="@+id/layoutEmployerType"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/bg_requirement_box"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-bold"
+                            android:text="¿Cómo vas a contratar?"
+                            android:textColor="@color/black"
+                            android:textSize="16sp" />
+
+                        <RadioGroup
+                            android:id="@+id/rgEmployerType"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="vertical">
+
+                            <RadioButton
+                                android:id="@+id/rbEmployerPersona"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:text="Persona"
+                                android:textColor="@color/black"
+                                android:textSize="15sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbEmployerEmpresa"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:text="Empresa"
+                                android:textColor="@color/black"
+                                android:textSize="15sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbEmployerNegocio"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:text="Negocio"
+                                android:textColor="@color/black"
+                                android:textSize="15sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbEmployerIndependiente"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:text="Independiente"
+                                android:textColor="@color/black"
+                                android:textSize="15sp" />
+                        </RadioGroup>
+
+                        <TextView
+                            android:id="@+id/tvEmployerTypeHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="sans-serif"
+                            android:text="Empresa y Negocio se registran con RUC. Persona e Independiente con DNI."
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
                     <!-- ─── TABS DNI / RUC (solo visibles para Empleador) ─── -->
                     <LinearLayout
                         android:id="@+id/layoutIdentityTypeTabs"

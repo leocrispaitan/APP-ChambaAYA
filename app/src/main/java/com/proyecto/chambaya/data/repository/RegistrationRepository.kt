@@ -11,12 +11,15 @@ import com.proyecto.chambaya.data.model.AuthMethods
 import com.proyecto.chambaya.data.model.AuthProviders
 import com.proyecto.chambaya.data.model.BirthDates
 import com.proyecto.chambaya.data.model.EmailVerificationMethods
+import com.proyecto.chambaya.data.model.EmployerTypes
 import com.proyecto.chambaya.data.model.Genders
+import com.proyecto.chambaya.data.model.IdentityDocumentTypes
 import com.proyecto.chambaya.data.model.IdentityNameParser
 import com.proyecto.chambaya.data.model.PendingRegistration
 import com.proyecto.chambaya.data.model.PeruLocations
 import com.proyecto.chambaya.data.model.ProfilePhotoSources
 import com.proyecto.chambaya.data.model.RegistrationStatuses
+import com.proyecto.chambaya.data.model.UserRoles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -239,6 +242,12 @@ class RegistrationRepository(
                 "district" to identity.district.trim()
             ),
 
+            // --- Contratante: nace con su bloque employer (rol fijo) ---
+            // El tipo se eligió en el Paso 1 (Persona/Empresa/Negocio/
+            // Independiente). Sin él, se deduce del documento (RUC→EMPRESA).
+            // Las reglas de creación no exigen este bloque, así que es seguro.
+            *employerEntries(pending),
+
             // --- Auditoría ---
             "createdAt" to now,
             "updatedAt" to now,
@@ -253,6 +262,42 @@ class RegistrationRepository(
             "otpVerified" to pending.otpVerified,
             "authMethod" to authMethod,
             "verifiedAt" to now
+        )
+    }
+
+    /**
+     * Bloque `employer` inicial para cuentas que nacen CONTRATANTE.
+     *
+     * Se devuelve como arreglo (vacío para trabajador) para poder expandirlo
+     * con `*` dentro del `linkedMapOf` del documento de alta.
+     */
+    private fun employerEntries(pending: PendingRegistration): Array<Pair<String, Any?>> {
+        if (pending.role != UserRoles.CONTRATANTE) return emptyArray()
+        val tipo = pending.employerType.takeIf { EmployerTypes.isValid(it) }
+            ?: if (pending.identity.documentType == IdentityDocumentTypes.RUC) {
+                EmployerTypes.EMPRESA
+            } else {
+                EmployerTypes.PERSONA
+            }
+        val docNum = pending.identity.documentNumber
+        return arrayOf(
+            "employer" to linkedMapOf(
+                "enabled" to true,
+                "employerType" to tipo,
+                "businessName" to pending.identity.displayName,
+                "commercialName" to "",
+                "sector" to "",
+                "documentType" to pending.identity.documentType,
+                "documentNumber" to docNum,
+                "documentNumberMasked" to pending.identity.maskedDocumentNumber,
+                "ruc" to docNum.takeIf { pending.identity.documentType == IdentityDocumentTypes.RUC },
+                "identityName" to pending.identity.displayName,
+                "workplaceId" to null,
+                "publishedCount" to 0,
+                "hiredCount" to 0,
+                "ratingAverage" to 0.0,
+                "ratingCount" to 0
+            )
         )
     }
 

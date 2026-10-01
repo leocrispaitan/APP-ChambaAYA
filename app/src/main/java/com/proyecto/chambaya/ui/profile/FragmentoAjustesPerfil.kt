@@ -93,13 +93,6 @@ class FragmentoAjustesPerfil : Fragment() {
         if (cacheado != null) pintarUsuario(view, cacheado) else cargarPerfil()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CONTRATANTE && resultCode == Activity.RESULT_OK) {
-            cargarPerfil()
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         // Status bar blanca con iconos oscuros para coincidir con el top bar claro
@@ -153,10 +146,16 @@ class FragmentoAjustesPerfil : Fragment() {
             openEditProfileScreen()
         }
 
-        // FASE 3 — cambio de modo sin crear otra cuenta.
+        // Rol fijo: se define en el registro y ya no se puede cambiar.
+        // La fila solo informa el rol actual de la cuenta.
         root.findViewById<View>(R.id.btnCambiarModo)?.setOnClickListener {
             animateTap(it)
-            cambiarModo()
+            val rol = if (perfil?.activeRole == UserRoles.CONTRATANTE) "Contratante" else "Trabajador"
+            Toast.makeText(
+                requireContext(),
+                "Tu rol es $rol y se definió al registrarte.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         // Section: Cuenta
@@ -276,171 +275,13 @@ class FragmentoAjustesPerfil : Fragment() {
 
         val roleTitle = root.findViewById<TextView>(R.id.tvRoleModeTitle)
         val roleSubtitle = root.findViewById<TextView>(R.id.tvRoleModeSubtitle)
-        val tieneContratante = datos.roles().contains(UserRoles.CONTRATANTE)
-        val tieneTrabajador = datos.roles().contains(UserRoles.TRABAJADOR)
         if (datos.activeRole == UserRoles.CONTRATANTE) {
             roleTitle?.setText(R.string.modo_contratante_titulo)
-            roleSubtitle?.text = if (tieneTrabajador) {
-                getString(R.string.modo_ver_todos)
-            } else {
-                getString(R.string.modo_activar_trabajador)
-            }
+            roleSubtitle?.text = getString(R.string.modo_rol_fijo_contratante)
         } else {
             roleTitle?.setText(R.string.modo_trabajador_titulo)
-            roleSubtitle?.text = if (tieneContratante) {
-                getString(R.string.modo_ver_todos)
-            } else {
-                getString(R.string.modo_activar_contratante)
-            }
+            roleSubtitle?.text = getString(R.string.modo_rol_fijo_trabajador)
         }
-    }
-
-    private fun UserProfile.roles(): List<String> = roles
-
-    // ─────────────────────────────────────────────────────────────
-    //  CAMBIO DE MODO (hoja moderna con los roles disponibles)
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * Hoja con los dos modos: marca el actual y ofrece el otro.
-     *
-     * - El otro rol ya existe → cambio directo.
-     * - Contratante por primera vez → `ActivarContratanteActivity`.
-     * - Trabajador por primera vez → `activateWorker` (sin papeleo extra).
-     *
-     * Tras un primer cambio el % se recalcula solo (cada rol mide lo suyo) y,
-     * si queda incompleto, se ofrece ir al wizard en el paso que falta.
-     */
-    private fun mostrarHojaCambiarModo() {
-        val datos = perfil ?: return
-        val tieneTrabajador = datos.roles().contains(UserRoles.TRABAJADOR)
-        val tieneContratante = datos.roles().contains(UserRoles.CONTRATANTE)
-        val enContratante = datos.activeRole == UserRoles.CONTRATANTE
-
-        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
-        val hoja = layoutInflater.inflate(R.layout.bottom_sheet_cambiar_modo, null)
-        sheet.setContentView(hoja)
-        (hoja.parent as? View)?.setBackgroundColor(Color.TRANSPARENT)
-
-        val subTrabajador = hoja.findViewById<TextView>(R.id.tvModoTrabajadorSub)
-        val subContratante = hoja.findViewById<TextView>(R.id.tvModoContratanteSub)
-        val checkTrabajador = hoja.findViewById<View>(R.id.checkModoTrabajador)
-        val checkContratante = hoja.findViewById<View>(R.id.checkModoContratante)
-
-        if (enContratante) {
-            checkContratante.isVisible = true
-            subContratante.setText(R.string.modo_actual)
-            subTrabajador.setText(
-                if (tieneTrabajador) R.string.modo_cambiar_a
-                else R.string.modo_activar_primera_vez
-            )
-        } else {
-            checkTrabajador.isVisible = true
-            subTrabajador.setText(R.string.modo_actual)
-            subContratante.setText(
-                if (tieneContratante) R.string.modo_cambiar_a
-                else R.string.modo_activar_primera_vez
-            )
-        }
-
-        hoja.findViewById<View>(R.id.btnCerrarHojaModo)?.setOnClickListener { sheet.dismiss() }
-        hoja.findViewById<View>(R.id.opcionModoTrabajador)?.setOnClickListener {
-            animateTap(it)
-            sheet.dismiss()
-            alElegirModo(UserRoles.TRABAJADOR)
-        }
-        hoja.findViewById<View>(R.id.opcionModoContratante)?.setOnClickListener {
-            animateTap(it)
-            sheet.dismiss()
-            alElegirModo(UserRoles.CONTRATANTE)
-        }
-        sheet.show()
-    }
-
-    private fun alElegirModo(rol: String) {
-        val datos = perfil ?: return
-        val uid = auth.currentUser?.uid ?: return
-        if (rol == datos.activeRole) {
-            Toast.makeText(requireContext(), R.string.modo_ya_activo, Toast.LENGTH_SHORT).show()
-            return
-        }
-        // Rol ya registrado: cambio directo.
-        if (datos.roles().contains(rol)) {
-            lifecycleScope.launch {
-                repository.switchActiveRole(uid, rol)
-                    .onSuccess { exitoCambioModo(it) }
-                    .onFailure {
-                        Toast.makeText(
-                            requireContext(),
-                            it.message ?: getString(R.string.modo_error),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-            }
-            return
-        }
-        // Primera vez: contratante se activa con su pantalla, trabajador directo.
-        if (rol == UserRoles.CONTRATANTE) {
-            startActivityForResult(
-                Intent(requireContext(), com.proyecto.chambaya.ActivarContratanteActivity::class.java),
-                REQUEST_CONTRATANTE
-            )
-        } else {
-            lifecycleScope.launch {
-                repository.activateWorker(uid)
-                    .onSuccess { exitoCambioModo(it) }
-                    .onFailure {
-                        Toast.makeText(
-                            requireContext(),
-                            it.message ?: getString(R.string.modo_error),
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-            }
-        }
-    }
-
-    /**
-     * Tras cambiar de modo se repinta la tarjeta, se guarda en caché y se
-     * avisa con el % nuevo. Si el rol recién estrenado queda incompleto, se
-     * ofrece completarlo ahora (el paso 3 del wizard ya se adapta al modo).
-     */
-    private fun exitoCambioModo(datos: UserProfile) {
-        if (!isAdded) return
-        perfil = datos
-        ProfileCache.perfil = datos
-        view?.let { root -> pintarUsuario(root, datos) }
-        val porcentaje = datos.completion().percent
-        val nombreModo = if (datos.activeRole == UserRoles.CONTRATANTE) {
-            getString(R.string.modo_contratante_titulo)
-        } else {
-            getString(R.string.modo_trabajador_titulo)
-        }
-        if (datos.completion().isComplete) {
-            Toast.makeText(
-                requireContext(),
-                getString(R.string.modo_cambiado, nombreModo, porcentaje),
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
-        androidx.appcompat.app.AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
-            .setTitle(getString(R.string.modo_cambiado_titulo, nombreModo))
-            .setMessage(getString(R.string.modo_incompleto_mensaje, nombreModo, porcentaje))
-            .setPositiveButton(R.string.modo_completar_ahora) { _, _ ->
-                startActivity(
-                    Intent(requireContext(), EditarPerfilActivity::class.java).putExtra(
-                        EditarPerfilActivity.EXTRA_START_STEP,
-                        EditarPerfilActivity.PASO_INICIO_COMPLETAR
-                    )
-                )
-            }
-            .setNegativeButton(getString(R.string.modo_mas_tarde), null)
-            .show()
-    }
-
-    private fun cambiarModo() {
-        mostrarHojaCambiarModo()
     }
 
     /**
@@ -576,10 +417,6 @@ class FragmentoAjustesPerfil : Fragment() {
             @Suppress("DEPRECATION")
             requireActivity().overridePendingTransition(R.anim.dialog_slide_up, android.R.anim.fade_out)
         }
-    }
-
-    companion object {
-        private const val REQUEST_CONTRATANTE = 7301
     }
 
     private fun navigateBack() {

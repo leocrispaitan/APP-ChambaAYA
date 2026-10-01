@@ -46,6 +46,7 @@
     <string name="nav_jobs">Chambas</string>
     <string name="nav_map">Mapas</string>
     <string name="nav_publish">Publicar</string>
+    <string name="nav_trabajos">Mis chambas</string>
     <string name="nav_chat">Mensajes</string>
     <string name="nav_profile">Mi Perfil</string>
 
@@ -409,6 +410,8 @@
     <string name="modo_ver_todos">Ver modos disponibles</string>
     <string name="modo_activar_trabajador">Activa también el modo trabajador</string>
     <string name="modo_activar_contratante">Activa también el modo contratante</string>
+    <string name="modo_rol_fijo_trabajador">Tu rol es Trabajador (definido al registrarte)</string>
+    <string name="modo_rol_fijo_contratante">Tu rol es Contratante (definido al registrarte)</string>
     <string name="modo_cambiado">%1$s activado · perfil al %2$d%%</string>
     <string name="modo_cambiado_titulo">%1$s activado</string>
     <string name="modo_incompleto_mensaje">Tu perfil de %1$s está al %2$d%%. Complétalo para contratar y publicar sin bloqueos.</string>

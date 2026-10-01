@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private val jobsFragment by lazy { FragmentoChambas() }
     private val mapFragment by lazy { FragmentoMapas() }
     private val publishFragment by lazy { FragmentoPublicar() }
+    private val trabajosFragment by lazy { com.proyecto.chambaya.ui.trabajos.FragmentoMisTrabajos() }
     private val chatFragment by lazy { FragmentoMensajes() }
     private val profileFragment by lazy { FragmentoMiPerfil() }
     private val bottomNavPopInterpolator = OvershootInterpolator(1.12f)
@@ -97,13 +98,49 @@ class MainActivity : AppCompatActivity() {
      * el usuario entra de verdad, y ahí sí avisa si algo salió mal.
      */
     private fun precargarPerfil() {
-        if (ProfileCache.perfil != null) return
+        val cached = ProfileCache.perfil
+        if (cached != null) {
+            ajustarMenuPorRol()
+            return
+        }
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
         lifecycleScope.launch {
             ProfileRepository().loadProfile(uid)
-                .onSuccess { ProfileCache.perfil = it }
+                .onSuccess {
+                    ProfileCache.perfil = it
+                    ajustarMenuPorRol()
+                }
                 // Fallo silencioso a propósito: ver el comentario de la función.
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // El rol es fijo, pero el perfil puede llegar después del primer pintado:
+        // re-aplica la visibilidad sin parpadeos (idempotente).
+        ajustarMenuPorRol()
+    }
+
+    /**
+     * Menú según rol fijo de la cuenta:
+     *  - CONTRATANTE → Publicar (crear + gestionar chambas).
+     *  - TRABAJADOR → Mis chambas (solicitudes + historial).
+     * Las cuentas antiguas con ambos roles conservan la vista de contratante.
+     */
+    private fun ajustarMenuPorRol() {
+        val perfil = ProfileCache.perfil ?: return
+        val esContratante = perfil.roles.contains(
+            com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE
+        )
+        bottomNavigation.menu.findItem(R.id.nav_publish)?.isVisible = esContratante
+        bottomNavigation.menu.findItem(R.id.nav_trabajos)?.isVisible = !esContratante
+        // Si la tab activa quedó oculta por el cambio, vuelve a Chambas.
+        val seleccionado = bottomNavigation.selectedItemId
+        if ((seleccionado == R.id.nav_publish && !esContratante) ||
+            (seleccionado == R.id.nav_trabajos && esContratante)
+        ) {
+            bottomNavigation.selectedItemId = R.id.nav_jobs
         }
     }
 
@@ -122,6 +159,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_publish -> {
                     switchToTab(R.id.nav_publish)
+                    true
+                }
+                R.id.nav_trabajos -> {
+                    switchToTab(R.id.nav_trabajos)
                     true
                 }
                 R.id.nav_chat -> {
@@ -179,8 +220,15 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.selectedItemId = tabId
     }
 
-    /** Va a Publicar y abre directamente la sección pedida (FASE 17). */
+    /** Va a Publicar (contratante) o a Mis chambas (trabajador) según el rol. */
     fun irAPublicar(seccion: Int) {
+        val esContratante = ProfileCache.perfil?.roles?.contains(
+            com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE
+        ) == true
+        if (!esContratante) {
+            bottomNavigation.selectedItemId = R.id.nav_trabajos
+            return
+        }
         bottomNavigation.selectedItemId = R.id.nav_publish
         fragmentContainer.post {
             (supportFragmentManager.findFragmentByTag(TAG_PUBLISH) as? FragmentoPublicar)
@@ -244,6 +292,7 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_jobs -> jobsFragment
             R.id.nav_map -> mapFragment
             R.id.nav_publish -> publishFragment
+            R.id.nav_trabajos -> trabajosFragment
             R.id.nav_chat -> chatFragment
             R.id.nav_profile -> profileFragment
             else -> jobsFragment
@@ -255,6 +304,7 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_jobs -> TAG_JOBS
             R.id.nav_map -> TAG_MAP
             R.id.nav_publish -> TAG_PUBLISH
+            R.id.nav_trabajos -> TAG_TRABAJOS
             R.id.nav_chat -> TAG_CHAT
             R.id.nav_profile -> TAG_PROFILE
             else -> TAG_JOBS
@@ -265,6 +315,7 @@ class MainActivity : AppCompatActivity() {
         private const val TAG_JOBS = "tab_jobs"
         private const val TAG_MAP = "tab_map"
         private const val TAG_PUBLISH = "tab_publish"
+        private const val TAG_TRABAJOS = "tab_trabajos"
         private const val TAG_CHAT = "tab_chat"
         private const val TAG_PROFILE = "tab_profile"
     }

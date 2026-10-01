@@ -8,8 +8,9 @@ package com.proyecto.chambaya.data.model
  * Reglas del plan maestro que se respetan aquí:
  *  - Firebase Authentication es la fuente de identidad (uid).
  *  - Nunca se guardan contraseñas en Firestore.
- *  - Los roles se guardan como lista (`roles`) + `activeRole` para permitir
- *    TRABAJADOR + CONTRATANTE en una sola cuenta (FASE 3).
+ *  - El rol se elige UNA VEZ en el registro (TRABAJADOR o CONTRATANTE) y ya
+ *    no se puede cambiar: se guarda como lista (`roles`) + `activeRole`
+ *    (las cuentas antiguas pueden traer ambos por compatibilidad).
  *  - El DNI/RUC nunca debe mostrarse públicamente: por eso el modelo expone
  *    siempre una versión enmascarada (`maskedDocumentNumber`).
  *  - Durante el registro SOLO se piden datos mínimos (identidad, credenciales,
@@ -25,6 +26,35 @@ object UserRoles {
 object IdentityDocumentTypes {
     const val DNI = "DNI"
     const val RUC = "RUC"
+}
+
+/**
+ * Tipo de contratante elegido EN EL REGISTRO (rol fijo, ya no se cambia).
+ *
+ * - PERSONA / INDEPENDIENTE → se registran con DNI (RENIEC).
+ * - EMPRESA / NEGOCIO → se registran con RUC obligatorio (SUNAT).
+ */
+object EmployerTypes {
+    const val PERSONA = "PERSONA"
+    const val EMPRESA = "EMPRESA"
+    const val NEGOCIO = "NEGOCIO"
+    const val INDEPENDIENTE = "INDEPENDIENTE"
+
+    val ALL = listOf(PERSONA, EMPRESA, NEGOCIO, INDEPENDIENTE)
+
+    fun isValid(value: String?): Boolean = value in ALL
+
+    /** Empresa y Negocio exigen RUC; Persona e Independiente usan DNI. */
+    fun requiresRuc(employerType: String?): Boolean =
+        employerType == EMPRESA || employerType == NEGOCIO
+
+    fun label(employerType: String?): String = when (employerType) {
+        PERSONA -> "Persona"
+        EMPRESA -> "Empresa"
+        NEGOCIO -> "Negocio"
+        INDEPENDIENTE -> "Independiente"
+        else -> ""
+    }
 }
 
 object AuthProviders {
@@ -155,7 +185,9 @@ data class RegistrationDraft(
     val role: String,
     val identity: ValidatedIdentity,
     val accountDisplayName: String = "",
-    val accountPhotoUrl: String = ""
+    val accountPhotoUrl: String = "",
+    /** Tipo de contratante (solo rol CONTRATANTE; "" en trabajador). */
+    val employerType: String = ""
 )
 
 /**
@@ -172,5 +204,7 @@ data class PendingRegistration(
     val otpVerified: Boolean,
     val identity: ValidatedIdentity,
     val accountDisplayName: String = "",
-    val accountPhotoUrl: String = ""
+    val accountPhotoUrl: String = "",
+    /** Tipo de contratante elegido en el registro (solo CONTRATANTE). */
+    val employerType: String = ""
 )

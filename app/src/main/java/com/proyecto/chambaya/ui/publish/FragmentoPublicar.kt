@@ -27,7 +27,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
-import com.proyecto.chambaya.ActivarContratanteActivity
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.R
@@ -103,14 +102,11 @@ class FragmentoPublicar : Fragment() {
     private var progressSolicitudes: ProgressBar? = null
     private var emptySolicitudes: View? = null
     private var applicantsAdapter: ApplicantsAdapter? = null
-    private var myAppsAdapter: MyApplicationsAdapter? = null
     private var reqFilter = 0 // 0 todas · 1 pendientes · 2 decididas
     private var employerApps: List<JobApplication> = emptyList()
-    private var workerApps: List<JobApplication> = emptyList()
     private var jobsCache: Map<String, Job> = emptyMap() // applicationId -> Job
     private var ratedCache: Set<String> = emptySet() // jobIds ya calificados por mí
     private var solicitudesLoading = false
-
     private val lugarLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -223,11 +219,10 @@ class FragmentoPublicar : Fragment() {
         progressSolicitudes = null
         emptySolicitudes = null
         applicantsAdapter = null
-        myAppsAdapter = null
         super.onDestroyView()
     }
 
-    // ── FASE 4 · Puerta de publicación ────────────────────────────
+    // ── Puerta de publicación ────────────────────────────────────
 
     private fun enlazarVacio(root: View) {
         emptyLugar = root.findViewById(R.id.panelPublicar)
@@ -314,7 +309,13 @@ class FragmentoPublicar : Fragment() {
             publicarLauncher.launch(Intent(requireContext(), CrearPublicacionActivity::class.java))
             return
         }
-        startActivity(Intent(requireContext(), ActivarContratanteActivity::class.java))
+        // Rol fijo desde el registro: un trabajador no puede volverse
+        // contratante (esta pantalla ni siquiera aparece en su menú).
+        Toast.makeText(
+            requireContext(),
+            "Solo las cuentas contratante pueden publicar chambas.",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     // ── FASE 5 · Mis publicaciones ────────────────────────────────
@@ -537,13 +538,6 @@ class FragmentoPublicar : Fragment() {
                 abrirChat(row.app.workerUid, row.app.publicationId, row.app.publicationTitle)
             }
         )
-        myAppsAdapter = MyApplicationsAdapter(
-            onPrimary = { row -> accionMiPostulacion(row) },
-            onContact = { row -> abrirChat(row.app.employerUid, row.app.publicationId, row.app.publicationTitle) },
-            onOpenDetail = { row ->
-                JobDetailSheet.newInstance(row.app.publicationId).show(parentFragmentManager, "detail")
-            }
-        )
 
         val chipAll = view.findViewById<TextView>(R.id.chipReqAll)
         val chipPending = view.findViewById<TextView>(R.id.chipReqPending)
@@ -562,17 +556,27 @@ class FragmentoPublicar : Fragment() {
         chipDecided.setOnClickListener { activar(2) }
 
         emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.setOnClickListener {
-            if (esContratante) seleccionar(SECCION_PUBLICAR, animar = true)
-            else (activity as? com.proyecto.chambaya.MainActivity)?.navigateToTab(R.id.nav_jobs)
+            seleccionar(SECCION_PUBLICAR, animar = true)
         }
     }
 
-    /** Prepara la tab según el rol y carga sus solicitudes. */
+    /** Solicitudes recibidas (esta pantalla es solo del contratante). */
     private fun pintarSolicitudes() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid.isNullOrBlank() || !isAdded) return
-        rvSolicitudes?.adapter = if (esContratante) applicantsAdapter else myAppsAdapter
-        cargarSolicitudes()
+        rvSolicitudes?.adapter = applicantsAdapter
+        if (esContratante) cargarSolicitudes() else mostrarAvisoSoloContratante()
+    }
+
+    /** Estado defensivo: sin rol contratante no hay nada que gestionar aquí. */
+    private fun mostrarAvisoSoloContratante() {
+        progressSolicitudes?.visibility = View.GONE
+        rvSolicitudes?.visibility = View.GONE
+        emptySolicitudes?.visibility = View.VISIBLE
+        emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Solo contratantes"
+        emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
+            "Esta sección es para gestionar tus publicaciones y postulantes."
+        emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Ver publicaciones"
     }
 
     private fun filtrarApps(apps: List<JobApplication>): List<JobApplication> = when (reqFilter) {
@@ -583,37 +587,23 @@ class FragmentoPublicar : Fragment() {
 
     private fun cargarSolicitudes() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        if (solicitudesLoading || !isAdded) return
+        if (solicitudesLoading || !isAdded || !esContratante) return
         solicitudesLoading = true
         progressSolicitudes?.visibility = View.VISIBLE
         rvSolicitudes?.visibility = View.GONE
         emptySolicitudes?.visibility = View.GONE
         viewLifecycleOwner.lifecycleScope.launch {
-            if (esContratante) {
-                employerApps = appRepository.listByEmployer(uid).getOrNull().orEmpty()
-                val acceptedIds = employerApps
-                    .filter { it.status == ApplicationStatus.ACCEPTED }
-                    .map { it.applicationId }
-                jobsCache = if (acceptedIds.isEmpty()) emptyMap()
-                else jobRepository.findByApplicationIds(acceptedIds).getOrNull().orEmpty()
-                val completedIds = jobsCache.values
-                    .filter { it.status == JobStatus.COMPLETED }
-                    .map { it.jobId }
-                ratedCache = if (completedIds.isEmpty()) emptySet()
-                else ratingRepository.ratedJobIds(completedIds, uid).getOrNull().orEmpty()
-            } else {
-                workerApps = appRepository.listByWorker(uid).getOrNull().orEmpty()
-                val acceptedIds = workerApps
-                    .filter { it.status == ApplicationStatus.ACCEPTED }
-                    .map { it.applicationId }
-                jobsCache = if (acceptedIds.isEmpty()) emptyMap()
-                else jobRepository.findByApplicationIds(acceptedIds).getOrNull().orEmpty()
-                val completedIds = jobsCache.values
-                    .filter { it.status == JobStatus.COMPLETED }
-                    .map { it.jobId }
-                ratedCache = if (completedIds.isEmpty()) emptySet()
-                else ratingRepository.ratedJobIds(completedIds, uid).getOrNull().orEmpty()
-            }
+            employerApps = appRepository.listByEmployer(uid).getOrNull().orEmpty()
+            val acceptedIds = employerApps
+                .filter { it.status == ApplicationStatus.ACCEPTED }
+                .map { it.applicationId }
+            jobsCache = if (acceptedIds.isEmpty()) emptyMap()
+            else jobRepository.findByApplicationIds(acceptedIds).getOrNull().orEmpty()
+            val completedIds = jobsCache.values
+                .filter { it.status == JobStatus.COMPLETED }
+                .map { it.jobId }
+            ratedCache = if (completedIds.isEmpty()) emptySet()
+            else ratingRepository.ratedJobIds(completedIds, uid).getOrNull().orEmpty()
             if (!isAdded) {
                 solicitudesLoading = false
                 return@launch
@@ -626,58 +616,37 @@ class FragmentoPublicar : Fragment() {
     private fun pintarListaSolicitudes() {
         if (!isAdded) return
         progressSolicitudes?.visibility = View.GONE
-        if (esContratante) {
-            val filtradas = filtrarApps(employerApps)
-            if (filtradas.isEmpty()) {
-                rvSolicitudes?.visibility = View.GONE
-                emptySolicitudes?.visibility = View.VISIBLE
-                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Solicitudes de tus chambas"
-                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
-                    "Cuando un especialista se postule, verás aquí su perfil y podrás aceptar o rechazar."
-                emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Publicar chamba"
-            } else {
-                emptySolicitudes?.visibility = View.GONE
-                rvSolicitudes?.visibility = View.VISIBLE
-                val items = mutableListOf<RequestItem>()
-                filtradas.groupBy { it.publicationTitle.ifBlank { "Chamba" } }
-                    .forEach { (titulo, apps) ->
-                        items += RequestItem.Header(
-                            titulo,
-                            apps.count { it.status == ApplicationStatus.PENDING },
-                            apps.size
-                        )
-                        apps.forEach { app ->
-                            val job = jobsCache[app.applicationId]
-                            items += RequestItem.Row(
-                                ApplicantRow(
-                                    app = app,
-                                    job = job,
-                                    ratedByMe = job?.jobId in ratedCache
-                                )
-                            )
-                        }
-                    }
-                applicantsAdapter?.submitList(items)
-            }
+        val filtradas = filtrarApps(employerApps)
+        if (filtradas.isEmpty()) {
+            rvSolicitudes?.visibility = View.GONE
+            emptySolicitudes?.visibility = View.VISIBLE
+            emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Solicitudes de tus chambas"
+            emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
+                "Cuando un especialista se postule, verás aquí su perfil y podrás aceptar o rechazar."
+            emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Publicar chamba"
         } else {
-            val filtradas = filtrarApps(workerApps)
-            if (filtradas.isEmpty()) {
-                rvSolicitudes?.visibility = View.GONE
-                emptySolicitudes?.visibility = View.VISIBLE
-                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Tus postulaciones"
-                emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
-                    "Cuando te postules a una chamba, seguirás aquí su estado: pendiente, aceptado o rechazado."
-                emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Explorar chambas"
-            } else {
-                emptySolicitudes?.visibility = View.GONE
-                rvSolicitudes?.visibility = View.VISIBLE
-                myAppsAdapter?.submitList(
-                    filtradas.map { app ->
+            emptySolicitudes?.visibility = View.GONE
+            rvSolicitudes?.visibility = View.VISIBLE
+            val items = mutableListOf<RequestItem>()
+            filtradas.groupBy { it.publicationTitle.ifBlank { "Chamba" } }
+                .forEach { (titulo, apps) ->
+                    items += RequestItem.Header(
+                        titulo,
+                        apps.count { it.status == ApplicationStatus.PENDING },
+                        apps.size
+                    )
+                    apps.forEach { app ->
                         val job = jobsCache[app.applicationId]
-                        MyAppRow(app, job, job?.jobId in ratedCache)
+                        items += RequestItem.Row(
+                            ApplicantRow(
+                                app = app,
+                                job = job,
+                                ratedByMe = job?.jobId in ratedCache
+                            )
+                        )
                     }
-                )
-            }
+                }
+            applicantsAdapter?.submitList(items)
         }
     }
 
@@ -789,39 +758,6 @@ class FragmentoPublicar : Fragment() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
-    }
-
-    private fun accionMiPostulacion(row: MyAppRow) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val app = row.app
-        val job = row.job
-        when {
-            app.status == ApplicationStatus.PENDING -> {
-                AlertDialog.Builder(requireContext())
-                    .setTitle("Retirar postulación")
-                    .setMessage("¿Retirar tu postulación a “${app.publicationTitle.take(50)}”?")
-                    .setPositiveButton("Retirar") { _, _ ->
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            val r = appRepository.withdraw(uid, app.applicationId)
-                            if (!isAdded) return@launch
-                            Toast.makeText(
-                                requireContext(),
-                                if (r.isSuccess) "Postulación retirada." else "No se pudo retirar.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            cargarSolicitudes()
-                        }
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
-            }
-            job?.status == JobStatus.COMPLETED && !row.ratedByMe -> {
-                RateSheet.newInstance(job.jobId).show(parentFragmentManager, "rate")
-            }
-            else -> {
-                JobDetailSheet.newInstance(app.publicationId).show(parentFragmentManager, "detail")
-            }
-        }
     }
 
     // ── Contenido de cada sección ────────────────────────────────────────────

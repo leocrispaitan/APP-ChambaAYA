@@ -833,9 +833,8 @@ class FragmentoMiPerfil : Fragment() {
     /**
      * Perfil de contratante a medias.
      *
-     * Los tres campos que faltan (`employer.*`) los pide `ActivarContratanteActivity`,
-     * no el asistente de edición, así que el botón lleva a Ajustes en vez de abrir un
-     * paso donde esos campos no existen.
+     * Los datos de contratante se definieron en el registro (rol fijo), así
+     * que aquí solo se informa lo que falta por completar en el perfil.
      */
     private fun mostrarDialogoFaltaContratante(faltan: List<String>) {
         val mensaje = buildString {
