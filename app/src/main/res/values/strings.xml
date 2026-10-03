@@ -105,8 +105,8 @@
     <string name="map_label_los_angeles">Los Angeles</string>
     <string name="map_villa_title">Modern Family Villa</string>
     <string name="map_villa_price">\$1,250,000</string>
-    <string name="map_whats_nearby">What\'s Nearby</string>
-    <string name="map_whats_nearby_subtitle">Everything you need, close to home</string>
+    <string name="map_whats_nearby">Chambas cerca de ti</string>
+    <string name="map_whats_nearby_subtitle">Encuentra oportunidades en tu zona</string>
     <string name="map_cat_schools">Schools</string>
     <string name="map_cat_schools_dist">0.8 mi</string>
     <string name="map_cat_schools_count">3 nearby</string>

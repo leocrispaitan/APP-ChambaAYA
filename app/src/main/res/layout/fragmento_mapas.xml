@@ -437,7 +437,7 @@
                     android:layout_marginBottom="4dp"
                     android:background="@drawable/bg_bottom_sheet_handle" />
 
-                <!-- Section Title: "What's Nearby" -->
+                <!-- Título de sección -->
                 <TextView
                     android:id="@+id/tvWhatsNearbyTitle"
                     android:layout_width="wrap_content"
@@ -451,7 +451,7 @@
                     android:textColor="#0F172A"
                     android:textSize="20sp" />
 
-                <!-- Section Subtitle: "Everything you need, close to home" -->
+                <!-- Subtítulo de sección -->
                 <TextView
                     android:id="@+id/tvWhatsNearbySubtitle"
                     android:layout_width="wrap_content"
