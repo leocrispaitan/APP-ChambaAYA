@@ -47,7 +47,7 @@
             android:layout_width="38dp"
             android:layout_height="38dp"
             android:contentDescription="@string/app_name"
-            android:src="@drawable/logotipo_sin_fondo" />
+            android:src="@drawable/ic_welcome_mark" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -79,7 +79,7 @@
                 android:shadowDy="2"
                 android:shadowRadius="6"
                 android:text="AYA"
-                android:textColor="#20E798"
+                android:textColor="#FFFFFF"
                 android:textSize="28sp" />
         </LinearLayout>
     </LinearLayout>
