@@ -17,8 +17,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.JobStatus
@@ -31,7 +29,6 @@ import com.proyecto.chambaya.data.repository.RatingRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.InputStreamReader
 
 /**
  * FASE 6 — Feed de chambas con datos reales de Firestore.
@@ -130,6 +127,12 @@ class FragmentoChambas : Fragment() {
                     minAmount = bundle.getDouble(FilterBottomSheet.EXTRA_MIN),
                     sortNewestFirst = bundle.getBoolean(FilterBottomSheet.EXTRA_SORT, true)
                 )
+                // Una sola fuente de verdad para categoría: si el sheet trae
+                // categoría, el grid se sincroniza (o vuelve a "Todas").
+                selectedCategory = ""
+                categoriaAdapter?.setSeleccionada(
+                    if (filters.category.isBlank()) "Todas" else filters.category
+                )
                 aplicarFiltros()
             }
         }
@@ -144,7 +147,11 @@ class FragmentoChambas : Fragment() {
             if (uid.isNotBlank()) PublicProfileSheet.newInstance(uid).show(parentFragmentManager, "profile")
         }
 
-        loadCategoriasFromJson()
+        loadCategorias()
+        // Primera escucha inmediata (onResume la re-engancha al volver de Publicar).
+        attachFeed()
+        // Pinta lo cacheado al instante; el snapshot corregirá en tiempo real.
+        aplicarFiltros()
     }
 
     // ── Feed ────────────────────────────────────────────────
@@ -169,7 +176,10 @@ class FragmentoChambas : Fragment() {
         recyclerView?.apply {
             adapter = this@FragmentoChambas.adapter
             isNestedScrollingEnabled = false
-            setHasFixedSize(true)
+            // wrap_content dentro del NestedScrollView: con true se queda en
+            // altura 0 al pasar de vacío → con datos (por eso "Todos" quedaba
+            // en blanco hasta reiniciar).
+            setHasFixedSize(false)
             setItemViewCacheSize(10)
             itemAnimator = null
         }
@@ -229,38 +239,55 @@ class FragmentoChambas : Fragment() {
     /** Fusiona el snapshot con los flags cacheados y repinta. */
     private fun integrarSnapshot(pubs: List<com.proyecto.chambaya.data.model.Publication>) {
         viewLifecycleOwner.lifecycleScope.launch {
-            val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
-            if (!statesLoaded) {
-                val ids = pubs.map { it.publicationId }
-                val liked = interRepo.likedIds(ids, uid)
-                val saved = interRepo.savedIds(ids, uid)
-                hiddenCache.addAll(interRepo.hiddenIds(ids, uid))
-                // FASE 12 · excluye a bloqueados.
-                blockedCache.addAll(BlockRepository().myBlocks(uid).getOrNull().orEmpty())
-                pubs.forEach { stateCache[it.publicationId] = (it.publicationId in liked) to (it.publicationId in saved) }
-                statesLoaded = true
-            } else if (uid.isNotBlank()) {
-                val unknown = pubs.map { it.publicationId }
-                    .filter { it !in stateCache && it !in hiddenCache }
-                if (unknown.isNotEmpty()) {
-                    val liked = interRepo.likedIds(unknown, uid)
-                    val saved = interRepo.savedIds(unknown, uid)
-                    hiddenCache.addAll(interRepo.hiddenIds(unknown, uid))
-                    unknown.forEach { stateCache[it] = (it in liked) to (it in saved) }
+            try {
+                val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+                if (!statesLoaded) {
+                    val ids = pubs.map { it.publicationId }
+                    // Cada lookup es tolerante a fallos: si Firestore/permiso
+                    // falla, se sigue con sets vacíos en vez de dejar el feed
+                    // colgado en "cargando".
+                    val liked = runCatching { interRepo.likedIds(ids, uid) }.getOrDefault(emptySet())
+                    val saved = runCatching { interRepo.savedIds(ids, uid) }.getOrDefault(emptySet())
+                    hiddenCache.addAll(runCatching { interRepo.hiddenIds(ids, uid) }.getOrDefault(emptySet()))
+                    // FASE 12 · excluye a bloqueados.
+                    blockedCache.addAll(
+                        runCatching { BlockRepository().myBlocks(uid).getOrNull().orEmpty() }
+                            .getOrDefault(emptySet())
+                    )
+                    pubs.forEach { stateCache[it.publicationId] = (it.publicationId in liked) to (it.publicationId in saved) }
+                    statesLoaded = true
+                } else if (uid.isNotBlank()) {
+                    val unknown = pubs.map { it.publicationId }
+                        .filter { it !in stateCache && it !in hiddenCache }
+                    if (unknown.isNotEmpty()) {
+                        val liked = runCatching { interRepo.likedIds(unknown, uid) }.getOrDefault(emptySet())
+                        val saved = runCatching { interRepo.savedIds(unknown, uid) }.getOrDefault(emptySet())
+                        hiddenCache.addAll(runCatching { interRepo.hiddenIds(unknown, uid) }.getOrDefault(emptySet()))
+                        unknown.forEach { stateCache[it] = (it in liked) to (it in saved) }
+                    }
                 }
+                if (!isAdded) return@launch
+                allItems = pubs
+                    .filter { it.publicationId !in hiddenCache }
+                    .filter { p ->
+                        val owner = p.publisher.uid.ifBlank { p.ownerUid }
+                        owner.isBlank() || owner !in blockedCache
+                    }
+                    .map { p ->
+                        val (l, s) = stateCache[p.publicationId] ?: (false to false)
+                        PublicationFeedItem(p, l, s, p.statistics.likes, p.statistics.saves)
+                    }
+            } catch (e: Exception) {
+                android.util.Log.e("FragmentoChambas", "integrarSnapshot falló", e)
+            } finally {
+                if (!isAdded) return@launch
+                android.util.Log.d(
+                    "FragmentoChambas",
+                    "snapshot pubs=${pubs.size} all=${allItems.size} " +
+                        "q='${filters.query}' cat='${filters.category}' sel='$selectedCategory'"
+                )
+                aplicarFiltros()
             }
-            if (!isAdded) return@launch
-            allItems = pubs
-                .filter { it.publicationId !in hiddenCache }
-                .filter { p ->
-                    val owner = p.publisher.uid.ifBlank { p.ownerUid }
-                    owner.isBlank() || owner !in blockedCache
-                }
-                .map { p ->
-                    val (l, s) = stateCache[p.publicationId] ?: (false to false)
-                    PublicationFeedItem(p, l, s, p.statistics.likes, p.statistics.saves)
-                }
-            aplicarFiltros()
         }
     }
 
@@ -270,7 +297,15 @@ class FragmentoChambas : Fragment() {
         )
         // Búsqueda simple solo por texto/categoría.
         val filtrada = allItems.applyFilters(efectivo)
-        adapter?.submitList(filtrada)
+        android.util.Log.d(
+            "FragmentoChambas",
+            "aplicarFiltros all=${allItems.size} filtrada=${filtrada.size} " +
+                "q='${efectivo.query}' cat='${efectivo.category}'"
+        )
+        adapter?.submitList(filtrada) {
+            // Con wrap_content el RecyclerView debe remedirse tras el Diff.
+            recyclerView?.requestLayout()
+        }
         if (filtrada.isEmpty()) {
             val buscando = efectivo.query.isNotBlank() || !efectivo.isEmpty() || selectedCategory.isNotBlank()
             pintarEstado(
@@ -335,44 +370,13 @@ class FragmentoChambas : Fragment() {
     }
 
     private fun setupChips(view: View) {
-        val chipAll = view.findViewById<TextView>(R.id.chipAll)
-        val chipNewest = view.findViewById<TextView>(R.id.chipNewest)
-        val chipPopular = view.findViewById<TextView>(R.id.chipPopular)
-        val chipConstruction = view.findViewById<TextView>(R.id.chipConstruction)
-        val chips = listOfNotNull(chipAll, chipNewest, chipPopular, chipConstruction)
-
-        fun activar(activo: TextView?) {
-            chips.forEach {
-                val on = it == activo
-                it.setBackgroundResource(if (on) R.drawable.bg_chip_active else R.drawable.bg_chip_inactive)
-                it.setTextColor(
-                    requireContext().getColor(if (on) R.color.white else R.color.text_primary)
-                )
-            }
-        }
-        chipAll?.setOnClickListener {
-            selectedCategory = ""
-            filters = filters.copy(sortNewestFirst = true)
-            activar(chipAll); aplicarFiltros()
-        }
-        chipNewest?.setOnClickListener {
-            selectedCategory = ""
-            filters = filters.copy(sortNewestFirst = true)
-            activar(chipNewest); aplicarFiltros()
-        }
-        chipPopular?.setOnClickListener {
-            filters = filters.copy(sortNewestFirst = false)
-            activar(chipPopular); aplicarFiltros()
-        }
-        chipConstruction?.setOnClickListener {
-            selectedCategory = if (selectedCategory == "Construcción") "" else "Construcción"
-            activar(if (selectedCategory.isBlank()) chipAll else chipConstruction)
-            aplicarFiltros()
-        }
+        // Los chips horizontales se eliminaron del layout: el filtro por
+        // categoría ahora es solo el grid con imágenes.
         view.findViewById<View>(R.id.tvSpecialSeeAll)?.setOnClickListener {
             selectedCategory = ""; filters = PublicationFilters()
+            categoriaAdapter?.setSeleccionada("Todas")
             view.findViewById<EditText>(R.id.etSearch)?.setText("")
-            activar(chipAll); aplicarFiltros()
+            aplicarFiltros()
         }
         view.findViewById<View>(R.id.btnBannerCta)?.setOnClickListener {
             scrollView?.smoothScrollTo(0, recyclerView?.top ?: 0)
@@ -382,6 +386,7 @@ class FragmentoChambas : Fragment() {
     private fun limpiarFiltros(view: View) {
         filters = PublicationFilters()
         selectedCategory = ""
+        categoriaAdapter?.setSeleccionada("Todas")
         view.findViewById<EditText>(R.id.etSearch)?.setText("")
         aplicarFiltros()
     }
@@ -393,9 +398,6 @@ class FragmentoChambas : Fragment() {
             } else {
                 NotificationsSheet().show(parentFragmentManager, "notif")
             }
-        }
-        view.findViewById<View>(R.id.tvCategorySeeAll)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Explora las categorías tocando cada tarjeta.", Toast.LENGTH_SHORT).show()
         }
         actualizarBadge()
     }
@@ -420,7 +422,7 @@ class FragmentoChambas : Fragment() {
         }
     }
 
-    // ── Categorías (se mantiene la fuente api_oficios.json) ──
+    // ── Categorías (mismas que ChambAYA-APP-main, con fotos locales) ──
 
     private fun setupCategorias(view: View) {
         rvCategories = view.findViewById(R.id.rvCategories)
@@ -431,26 +433,19 @@ class FragmentoChambas : Fragment() {
         }
     }
 
-    private fun loadCategoriasFromJson() {
-        try {
-            val inputStream = requireContext().assets.open("api_oficios.json")
-            val reader = InputStreamReader(inputStream)
-            val gson = Gson()
-            val type = object : TypeToken<List<Categoria>>() {}.type
-            val categorias: List<Categoria> = gson.fromJson(reader, type)
-            reader.close()
-            categoriaAdapter = CategoriaAdapter(categorias) { categoria ->
-                // Toca la categoría → filtra el feed real por esa categoría.
-                selectedCategory = if (selectedCategory == categoria.categoria) "" else categoria.categoria
-                aplicarFiltros()
-                if (selectedCategory.isNotBlank()) {
-                    Toast.makeText(requireContext(), "Filtrando: $selectedCategory", Toast.LENGTH_SHORT).show()
-                }
+    private fun loadCategorias() {
+        val lista = listOf("Todas") + CategoriasChamba.disponibles
+        categoriaAdapter = CategoriaAdapter(lista, "Todas") { elegida ->
+            // "Todas" = sin filtro; el resto filtra por nombre. Se limpia
+            // filters.category para que no quede un filtro viejo del sheet.
+            filters = filters.copy(category = "")
+            selectedCategory = if (elegida.equals("Todas", ignoreCase = true)) "" else elegida
+            aplicarFiltros()
+            if (selectedCategory.isNotBlank()) {
+                Toast.makeText(requireContext(), "Filtrando: $selectedCategory", Toast.LENGTH_SHORT).show()
             }
-            rvCategories?.adapter = categoriaAdapter
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
+        rvCategories?.adapter = categoriaAdapter
     }
 
     // ── Interacciones ───────────────────────────────────────

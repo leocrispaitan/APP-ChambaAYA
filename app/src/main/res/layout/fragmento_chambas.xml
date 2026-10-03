@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
     fragmento_chambas.xml — Home Screen de ChambAYA
     Diseño optimizado con CoordinatorLayout para scroll fluido y rendimiento mejorado.
@@ -388,53 +388,40 @@
             </LinearLayout>
 
             <!-- ──────────────────────────────────────────
-                 SECCIÓN: Categorías
+                 SECCIÓN: Categorías (mismo estilo que ChambAYA-APP-main)
                  ────────────────────────────────────────── -->
 
-            <!-- Título + Ver todo -->
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp">
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="18dp"
+                android:fontFamily="sans-serif-black"
+                android:text="Explora por categoría"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp" />
 
-                <TextView
-                    android:id="@+id/tvCategoryTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-black"
-                    android:text="@string/home_category_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="2dp"
+                android:text="Elige el tipo de chamba que buscas"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
 
-                <TextView
-                    android:id="@+id/tvCategorySeeAll"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="@string/home_see_all"
-                    android:textColor="@color/brand_color"
-                    android:textSize="13sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- Grid de categorías (horizontal) - Carga datos desde api_oficios.json -->
+            <!-- Grid de categorías (horizontal) - mismas imágenes que ChambAYA-APP-main -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvCategories"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:layout_height="112dp"
+                android:layout_marginTop="9dp"
                 android:clipToPadding="false"
                 android:orientation="horizontal"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/item_categoria" />
 
             <!-- ──────────────────────────────────────────
                  SECCIÓN: Chambas Nuevas (Flash Sale)
@@ -490,81 +477,7 @@
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Filtros de categoría (chips horizontales) -->
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <!-- Chip activo: Todos -->
-                    <TextView
-                        android:id="@+id/chipAll"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_chip_inactive"
-                        android:gravity="center"
-                        android:paddingStart="18dp"
-                        android:paddingEnd="18dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/home_filter_all"
-                        android:textColor="@color/text_primary"
-                        android:textSize="13sp" />
-
-                    <!-- Chip activo: Recientes -->
-                    <TextView
-                        android:id="@+id/chipNewest"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_chip_active"
-                        android:gravity="center"
-                        android:paddingStart="18dp"
-                        android:paddingEnd="18dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/home_filter_newest"
-                        android:textColor="@color/white"
-                        android:textSize="13sp" />
-
-                    <!-- Chip inactivo: Populares -->
-                    <TextView
-                        android:id="@+id/chipPopular"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_chip_inactive"
-                        android:gravity="center"
-                        android:paddingStart="18dp"
-                        android:paddingEnd="18dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/home_filter_popular"
-                        android:textColor="@color/text_primary"
-                        android:textSize="13sp" />
-
-                    <!-- Chip inactivo: Construcción -->
-                    <TextView
-                        android:id="@+id/chipConstruction"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:background="@drawable/bg_chip_inactive"
-                        android:gravity="center"
-                        android:paddingStart="18dp"
-                        android:paddingEnd="18dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/home_filter_construction"
-                        android:textColor="@color/text_primary"
-                        android:textSize="13sp" />
-                </LinearLayout>
-            </HorizontalScrollView>
+            
 
             <!-- ──────────────────────────────────────────
                  LISTA DE JOB CARDS (RecyclerView optimizado)
@@ -700,3 +613,4 @@
     </androidx.core.widget.NestedScrollView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+

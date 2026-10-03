@@ -45,7 +45,7 @@ fun List<PublicationFeedItem>.applyFilters(filters: PublicationFilters): List<Pu
         }
     }
     if (filters.category.isNotBlank()) {
-        list = list.filter { it.publication.category.equals(filters.category, ignoreCase = true) }
+        list = list.filter { categoriaCoincide(filters.category, it.publication.category) }
     }
     if (filters.district.isNotBlank()) {
         list = list.filter { it.publication.location.district.equals(filters.district, ignoreCase = true) }
@@ -68,4 +68,54 @@ fun formatCount(count: Long): String = when {
     count >= 1_000_000 -> String.format("%.1fM", count / 1_000_000.0)
     count >= 1_000 -> String.format("%.1fk", count / 1_000.0)
     else -> count.toString()
+}
+
+/**
+ * ¿La categoría publicada pasa el filtro elegido?
+ *
+ * El feed filtra con 20 categorías con foto (Pintor, Albañil…), pero lo
+ * publicado guarda las 6 de `api_oficios.json` (Pintura, Construcción…).
+ * Con `equals` exacto casi todo daba 0 resultados. Aquí se normaliza
+ * (minúsculas, sin tildes) y se agrupa por alias para que Pintor≈Pintura,
+ * Albañil≈Construcción, Reparto≈Delivery, etc.
+ */
+fun categoriaCoincide(filtro: String, publicada: String): Boolean {
+    val f = normalizarCategoria(filtro)
+    val p = normalizarCategoria(publicada)
+    if (f.isBlank() || p.isBlank()) return false
+    if (f == p) return true
+    if (grupoCategoria(f) == grupoCategoria(p)) return true
+    // Contención para variantes ("Limpieza profunda" vs "Limpieza").
+    return (f.length >= 4 && p.contains(f)) || (p.length >= 4 && f.contains(p))
+}
+
+private fun normalizarCategoria(s: String): String =
+    java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+        .replace("\\p{Mn}+".toRegex(), "")
+        .lowercase(java.util.Locale.ROOT)
+        .trim()
+
+/** Clave canónica: las dos taxonomías colapsan al mismo grupo. */
+private fun grupoCategoria(n: String): String = when {
+    "pint" in n -> "pintor"
+    "albanil" in n || "construc" in n -> "albanil"
+    "limpieza" in n -> "limpieza"
+    "delivery" in n || "reparto" in n -> "delivery"
+    "jardin" in n -> "jardineria"
+    "mecanica" in n || "mecanico" in n || "lavado" in n || n == "auto" || "autos" in n -> "mecanica"
+    "mozo" in n || "mesero" in n -> "mozo"
+    "cocina" in n -> "cocina"
+    "evento" in n -> "eventos"
+    "mudanza" in n || n == "carga" || "carga" in n -> "mudanzas"
+    "nino" in n || "nina" in n -> "ninos"
+    "adulto" in n -> "adultos"
+    "mascota" in n -> "mascotas"
+    "venta" in n || "promoc" in n -> "ventas"
+    "volante" in n -> "volanteo"
+    "tienda" in n -> "tienda"
+    "empaque" in n || "almacen" in n -> "almacen"
+    "mandado" in n || "compra" in n || "encargo" in n -> "mandados"
+    "grass" in n || "cesped" in n || "cesped" in n -> "grass"
+    "otro" in n -> "otro"
+    else -> n
 }
