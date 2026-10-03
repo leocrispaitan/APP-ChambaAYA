@@ -1513,21 +1513,33 @@ class EditarPerfilActivity : AppCompatActivity() {
     }
 
     private fun showSuccessDialog(completitud: Int) {
-        val builder = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-        builder.setTitle(R.string.edit_perfil_exito_titulo)
-        builder.setMessage(
-            getString(R.string.edit_perfil_exito_mensaje, completitud) +
-                "\n\n" +
-                getString(R.string.edit_perfil_exito_verificaciones)
+        val content = layoutInflater.inflate(R.layout.dialog_profile_success, null)
+        content.findViewById<TextView>(R.id.tvSuccessTitle)
+            .setText(R.string.edit_perfil_exito_titulo)
+        content.findViewById<TextView>(R.id.tvSuccessMessage)
+            .setText(getString(R.string.edit_perfil_exito_mensaje, completitud).substringBefore("\n\n"))
+        content.findViewById<TextView>(R.id.tvSuccessCompletion).text = "$completitud%"
+        content.findViewById<android.widget.ProgressBar>(R.id.progressProfileCompletion)
+            .progress = completitud.coerceIn(0, 100)
+        content.findViewById<TextView>(R.id.tvSuccessVerifications)
+            .setText(R.string.edit_perfil_exito_verificaciones)
+        val dialog = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            .setView(content)
+            .setCancelable(false)
+            .create()
+        content.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSuccessContinue)
+            .setOnClickListener {
+                dialog.dismiss()
+                setResult(Activity.RESULT_OK)
+                finish()
+                applyExitTransition()
+            }
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.90f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
         )
-        builder.setPositiveButton(R.string.edit_perfil_exito_continuar) { dialog, _ ->
-            dialog.dismiss()
-            setResult(Activity.RESULT_OK)
-            finish()
-            applyExitTransition()
-        }
-        builder.setCancelable(false)
-        builder.show()
     }
 
     // ═══════════════════════════════════════════════════════════════

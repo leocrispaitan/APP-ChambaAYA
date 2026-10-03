@@ -2166,23 +2166,27 @@ class RegistroActivity : AppCompatActivity() {
             if (registeredAuthMethod == AuthMethods.GOOGLE) "Google" else "Correo y contraseña"
         val sourceLabel = if (identity != null && identity.isCompany) "SUNAT" else "RENIEC"
 
-        MaterialAlertDialogBuilder(
+        val content = layoutInflater.inflate(R.layout.dialog_registration_success, null)
+        content.findViewById<TextView>(R.id.tvRegistrationWelcome)
+            .text = "¡Bienvenido a ChambAYA!"
+        content.findViewById<TextView>(R.id.tvRegistrationSuccessMessage)
+            .text = "Tu cuenta ha sido creada y verificada con éxito."
+        content.findViewById<TextView>(R.id.tvRegistrationName).text = "👤  $fullName"
+        content.findViewById<TextView>(R.id.tvRegistrationEmail).text = "✉  $email"
+        content.findViewById<TextView>(R.id.tvRegistrationRole).text = "💼  $roleLabel"
+        content.findViewById<TextView>(R.id.tvRegistrationMethod).text = "Acceso vía: $methodLabel"
+        content.findViewById<TextView>(R.id.tvRegistrationIdentity)
+            .text = "Identidad verificada ($sourceLabel)"
+
+        val dialog = MaterialAlertDialogBuilder(
             this,
             com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog_Centered
         )
-            .setIcon(android.R.drawable.ic_dialog_email)
-            .setTitle("🎉 ¡Bienvenido a ChambAYA!")
-            .setMessage(
-                "Tu cuenta ha sido creada y verificada con éxito.\n\n" +
-                "👤  $fullName\n" +
-                "📧  $email\n" +
-                "💼  $roleLabel\n" +
-                "🔐  Acceso vía: $methodLabel\n\n" +
-                "✅ Identidad verificada ($sourceLabel)\n" +
-                "✅ Correo verificado\n" +
-                "✅ Perfil guardado en Cloud Firestore"
-            )
-            .setPositiveButton("Ir a ChambAYA →") { _, _ ->
+            .setView(content)
+            .setCancelable(false)
+            .create()
+        content.findViewById<MaterialButton>(R.id.btnRegistrationContinue).setOnClickListener {
+                dialog.dismiss()
                 // El registro terminó: se limpia el borrador local
                 pendingRegistrationStore.clear()
                 val intent = Intent(this, MainActivity::class.java).apply {
@@ -2191,8 +2195,12 @@ class RegistroActivity : AppCompatActivity() {
                 startActivity(intent)
                 finish()
             }
-            .setCancelable(false)
-            .show()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.90f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun handleBackAction() {
