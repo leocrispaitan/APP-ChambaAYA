@@ -42,6 +42,8 @@ class PublicationRepository(
         workplaceId: String = "",
         workplaceName: String = "",
         workplacePhotoUrl: String = "",
+        workplaceLat: Double? = null,
+        workplaceLng: Double? = null,
         images: List<PublicationImage> = emptyList()
     ): Result<Publication> = withContext(Dispatchers.IO) {
         runCatching {
@@ -91,8 +93,9 @@ class PublicationRepository(
                     "district" to draft.district.trim(),
                     "province" to perfil.profile.province.ifBlank { "Huamanga" },
                     "department" to perfil.profile.department.ifBlank { "Ayacucho" },
-                    "latitude" to null,
-                    "longitude" to null,
+                    // GPS del local: el pin del mapa queda fijo desde que nace.
+                    "latitude" to workplaceLat,
+                    "longitude" to workplaceLng,
                     "exactAddress" to draft.exactAddress.trim()
                 ),
                 "workplaceId" to workplaceId,

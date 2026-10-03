@@ -97,6 +97,7 @@
     <string name="solicitudes_vacio_btn">Ver publicaciones</string>
 
     <!-- Map Redesign Strings -->
+    <string name="map_search_hint">Buscar calle, lugar o restaurante</string>
     <string name="map_title_location">Location</string>
     <string name="map_subtitle_address">1234 Sunset Blvd, Los Angeles, CA</string>
     <string name="map_label_beverly_hills">Beverly Hills</string>

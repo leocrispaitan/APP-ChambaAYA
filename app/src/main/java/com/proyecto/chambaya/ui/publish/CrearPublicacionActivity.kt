@@ -261,6 +261,8 @@ class CrearPublicacionActivity : AppCompatActivity() {
                     workplaceId = lugar?.workplaceId.orEmpty(),
                     workplaceName = lugar?.name.orEmpty(),
                     workplacePhotoUrl = lugar?.photoUrl.orEmpty(),
+                    workplaceLat = lugar?.location?.latitude,
+                    workplaceLng = lugar?.location?.longitude,
                     images = imagenes
                 )
                 if (r.isFailure) throw r.exceptionOrNull() ?: Exception("No se pudo publicar.")
