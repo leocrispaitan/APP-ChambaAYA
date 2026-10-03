@@ -467,6 +467,8 @@
                     app:cornerRadius="16dp"
                     app:backgroundTint="@color/brand_color"
                     app:icon="@drawable/ic_chat_send"
+                    app:iconSize="22dp"
+                    app:iconTint="@color/white"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
                     android:contentDescription="Enviar" />
@@ -516,6 +518,7 @@
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
                     android:text="Postularme"
+                    android:textColor="@color/white"
                     android:textSize="15sp"
                     app:cornerRadius="16dp"
                     app:backgroundTint="@color/brand_color" />
@@ -560,6 +563,7 @@
                         android:layout_weight="1"
                         android:layout_marginStart="8dp"
                         android:text="Finalizar"
+                        android:textColor="@color/white"
                         android:textSize="13sp"
                         app:cornerRadius="14dp"
                         app:backgroundTint="@color/text_primary" />

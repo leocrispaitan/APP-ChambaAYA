@@ -120,7 +120,6 @@ class FragmentoMiPerfil : Fragment() {
 
         setupTopBar(view)
         setupActionButtons(view)
-        setupActividad(view)
         setupTabNavigation(view)
         setupEmptyStateButtons(view)
         ocultarSeccionesDeFasesPosteriores(view)
@@ -692,17 +691,6 @@ class FragmentoMiPerfil : Fragment() {
     }
 
     private fun setupActionButtons(root: View) {
-        root.findViewById<View>(R.id.btnEditarPerfil)?.setOnClickListener {
-            animateTap(it)
-            // "Editar perfil" recorre los cuatro pasos desde el principio.
-            abrirEdicion(EditarPerfilActivity.PASO_INICIO_EDITAR)
-        }
-
-        root.findViewById<View>(R.id.btnCompartirPerfil)?.setOnClickListener {
-            animateTap(it)
-            compartirPerfil()
-        }
-
         root.findViewById<View>(R.id.btnCompletarPerfil)?.setOnClickListener {
             animateTap(it)
             abrirEdicionEnPasoIncompleto()
@@ -948,24 +936,6 @@ class FragmentoMiPerfil : Fragment() {
                 listOf(contentSobreMi, contentFotos, contentResenas)
             )
             cargarResenas(root)
-        }
-    }
-
-    /**
-     * FASE 17/19 — Accesos de actividad: postulaciones, trabajos y guardados.
-     */
-    private fun setupActividad(root: View) {
-        root.findViewById<View>(R.id.btnActPostulaciones)?.setOnClickListener {
-            (activity as? MainActivity)?.irAPublicar(
-                com.proyecto.chambaya.ui.publish.FragmentoPublicar.SECCION_SOLICITUDES
-            )
-        }
-        root.findViewById<View>(R.id.btnActTrabajos)?.setOnClickListener {
-            val comoEmpleador = (perfil ?: ProfileCache.perfil)?.activeRole == UserRoles.CONTRATANTE
-            JobsSheet.newInstance(comoEmpleador).show(parentFragmentManager, "jobs")
-        }
-        root.findViewById<View>(R.id.btnActGuardados)?.setOnClickListener {
-            SavedSheet().show(parentFragmentManager, "saved")
         }
     }
 

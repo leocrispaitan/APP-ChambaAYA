@@ -304,6 +304,8 @@
     <string name="settings_row_address_sub">Ubicaciones guardadas y de trabajo</string>
     <string name="settings_row_password">Seguridad y Contraseñas</string>
     <string name="settings_row_password_sub">PIN, contraseña y autenticación</string>
+    <string name="settings_row_saved">Guardados</string>
+    <string name="settings_row_saved_sub">Chambas que guardaste</string>
 
     <!-- Settings: App Preferences -->
     <string name="settings_section_app">Ajustes de la Aplicación</string>

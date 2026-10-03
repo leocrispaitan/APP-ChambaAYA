@@ -179,6 +179,11 @@ class FragmentoAjustesPerfil : Fragment() {
             Toast.makeText(requireContext(), "Seguridad y contraseñas", Toast.LENGTH_SHORT).show()
         }
 
+        root.findViewById<View>(R.id.rowGuardados)?.setOnClickListener {
+            animateTap(it)
+            SavedSheet().show(parentFragmentManager, "saved")
+        }
+
         // Section: Ajustes de la Aplicación
         val switchNotif = root.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchNotifications)
         root.findViewById<View>(R.id.rowNotifications)?.setOnClickListener {

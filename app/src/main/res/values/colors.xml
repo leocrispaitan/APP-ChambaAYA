@@ -43,6 +43,8 @@
     <color name="chat_check_blue">#3B82F6</color>
     <color name="chat_title">#111827</color>
     <color name="chat_subtitle">#6B7280</color>
+    <color name="notif_swipe_delete_bg">#EF4444</color>
+    <color name="notif_selected_bg">#E3EBFB</color>
 
     <!-- Profile Screen Colors (Replica reference) -->
     <color name="profile_header_dark">#12042B</color>

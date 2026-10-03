@@ -93,6 +93,72 @@ class NotificationRepository(
         }
     }
 
+    /** Marca una o varias como leídas (true) o no leídas (false). */
+    suspend fun setRead(uid: String, ids: List<String>, read: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(uid.isNotBlank() && ids.isNotEmpty()) { "Avisos no válidos." }
+            val batch = firestore.batch()
+            ids.chunked(400).forEach { lote ->
+                lote.forEach { batch.update(firestore.collection(COLLECTION).document(it), "read", read) }
+            }
+            Tasks.await(batch.commit())
+            Unit
+        }
+    }
+
+    /** Elimina una notificación propia. */
+    suspend fun deleteOne(uid: String, notificationId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(uid.isNotBlank() && notificationId.isNotBlank()) { "Aviso no válido." }
+            val ref = firestore.collection(COLLECTION).document(notificationId)
+            val actual = Tasks.await(ref.get())
+            require(actual.exists()) { "El aviso ya no existe." }
+            require(actual.getString("recipientUid") == uid) { "Ese aviso no te pertenece." }
+            Tasks.await(ref.delete())
+            Unit
+        }
+    }
+
+    /** Elimina todas mis notificaciones (lotes de 100). */
+    suspend fun deleteAll(uid: String): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(uid.isNotBlank()) { "Sesión no válida." }
+            val snap = Tasks.await(
+                firestore.collection(COLLECTION)
+                    .whereEqualTo("recipientUid", uid)
+                    .limit(100)
+                    .get()
+            )
+            if (snap.isEmpty) return@runCatching 0
+            val batch = firestore.batch()
+            snap.documents.forEach { batch.delete(it.reference) }
+            Tasks.await(batch.commit())
+            snap.size()
+        }
+    }
+
+    /** Restaura un aviso borrado (botón Deshacer): conserva contenido y hora. */
+    suspend fun restore(uid: String, n: AppNotification): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(uid.isNotBlank() && n.recipientUid == uid) { "Aviso no válido." }
+            Tasks.await(
+                firestore.collection(COLLECTION).add(
+                    mapOf(
+                        "recipientUid" to uid,
+                        "type" to n.type,
+                        "title" to n.title,
+                        "message" to n.message,
+                        "senderUid" to n.senderUid,
+                        "publicationId" to n.publicationId,
+                        "read" to n.read,
+                        "createdAt" to (n.createdAt ?: FieldValue.serverTimestamp())
+                    )
+                )
+            )
+            Unit
+        }
+    }
+
     companion object {
         const val COLLECTION = "notifications"
     }

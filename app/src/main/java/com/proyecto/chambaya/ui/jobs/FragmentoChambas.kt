@@ -150,8 +150,9 @@ class FragmentoChambas : Fragment() {
         loadCategorias()
         // Primera escucha inmediata (onResume la re-engancha al volver de Publicar).
         attachFeed()
-        // Pinta lo cacheado al instante; el snapshot corregirá en tiempo real.
-        aplicarFiltros()
+        // Con caché pinta al instante; sin datos muestra "cargando" (la misma
+        // animación de Recargar) hasta el primer snapshot, nunca "vacío".
+        if (allItems.isNotEmpty()) aplicarFiltros() else pintarEstado(Estado.CARGANDO)
     }
 
     // ── Feed ────────────────────────────────────────────────
