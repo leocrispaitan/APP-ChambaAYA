@@ -129,14 +129,14 @@
     <!-- Chat Screen Strings (Exact match with reference design) -->
     <string name="chat_title_chats">Chats</string>
     <string name="chat_btn_new_chat">Nuevo chat</string>
-    <string name="chat_search_hint">Search</string>
-    <string name="chat_filter_all">All</string>
-    <string name="chat_filter_unread">Unread 1</string>
-    <string name="chat_filter_favorites">Favorites 4</string>
+    <string name="chat_search_hint">Buscar chats</string>
+    <string name="chat_filter_all">Todos</string>
+    <string name="chat_filter_unread">No leídos</string>
+    <string name="chat_filter_favorites">Favoritos</string>
     <string name="chat_add_filter">Agregar filtro</string>
-    <string name="chat_status_online">Online</string>
-    <string name="chat_date_today">Today</string>
-    <string name="chat_input_hint">Message</string>
+    <string name="chat_status_online">En línea</string>
+    <string name="chat_date_today">Hoy</string>
+    <string name="chat_input_hint">Escribe algo…</string>
 
     <!-- Registration Flow Strings -->
     <string name="register_title">Registrarse</string>

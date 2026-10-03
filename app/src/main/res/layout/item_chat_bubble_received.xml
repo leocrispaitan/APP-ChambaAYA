@@ -10,7 +10,7 @@
     android:paddingEnd="64dp"
     android:paddingBottom="6dp">
 
-    <!-- Received Message Bubble -->
+    <!-- Burbuja del chat recibido -->
     <TextView
         android:id="@+id/tvReceivedMessage"
         android:layout_width="wrap_content"
@@ -23,10 +23,9 @@
         android:paddingEnd="16dp"
         android:paddingBottom="12dp"
         android:textColor="@color/chat_bubble_received_text"
-        android:textSize="15sp"
-        tools:text="Hey! How are you?" />
+        android:textSize="15sp" />
 
-    <!-- Timestamp below received bubble -->
+    <!-- Hora debajo de la burbuja recibida -->
     <TextView
         android:id="@+id/tvReceivedTime"
         android:layout_width="wrap_content"
@@ -35,7 +34,6 @@
         android:layout_marginTop="3dp"
         android:fontFamily="sans-serif"
         android:textColor="@color/chat_time_text"
-        android:textSize="11sp"
-        tools:text="2:15 PM" />
+        android:textSize="11sp" />
 
 </LinearLayout>

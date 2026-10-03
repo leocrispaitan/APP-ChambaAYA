@@ -40,6 +40,9 @@ class FragmentoMensajes : Fragment() {
     private lateinit var headerLayout: View
 
     private var currentFilter = AdaptadorConversaciones.TipoFiltro.TODOS
+    private var queryActual = ""
+    /** Primera foto del servidor ya integrada: distingue "cargando" de "vacío". */
+    private var cargaInicialCompleta = false
 
     private val chatRepo = ChatRepository()
     private val profileRepo = ProfileRepository()
@@ -113,7 +116,8 @@ class FragmentoMensajes : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                adapter.filtrarPorTexto(s?.toString() ?: "")
+                queryActual = s?.toString() ?: ""
+                adapter.filtrarPorTexto(queryActual)
             }
 
             override fun afterTextChanged(s: Editable?) {}
@@ -181,7 +185,16 @@ class FragmentoMensajes : Fragment() {
         convListener = chatRepo.listenMine(
             uid,
             onUpdate = { convs -> integrarConversaciones(uid, convs) },
-            onError = { mostrarVacio("No se pudieron cargar los chats.") }
+            onError = { e ->
+                // Sin Toast: los errores transitorios al re-enganchar son
+                // normales y los datos llegan enseguida. Solo se loguea; si
+                // no hay nada cargado se muestra el estado vacío de error.
+                android.util.Log.e("FragmentoMensajes", "listenMine falló", e)
+                if (!isAdded) return@listenMine
+                if (!cargaInicialCompleta && (!::adapter.isInitialized || adapter.itemCount == 0)) {
+                    mostrarVacio("No se pudieron cargar los chats.")
+                }
+            }
         )
     }
 
@@ -214,8 +227,8 @@ class FragmentoMensajes : Fragment() {
                 )
             }
             if (!isAdded) return@launch
-            adapter.actualizarLista(items)
-            adapter.filtrarPorTipo(currentFilter)
+            cargaInicialCompleta = true
+            adapter.actualizarYFiltrar(items, currentFilter, queryActual)
             if (items.isEmpty()) mostrarVacio("Sin conversaciones.\nLos chats nacen de tus postulaciones y solicitudes.")
             else ocultarVacio()
         }
@@ -231,13 +244,25 @@ class FragmentoMensajes : Fragment() {
                 textSize = 14f
                 setPadding(48, 48, 48, 48)
             }
-            (rvChats.parent as? ViewGroup)?.addView(
-                tv,
+            val parent = rvChats.parent as? ViewGroup
+            val params = if (parent is androidx.constraintlayout.widget.ConstraintLayout) {
+                androidx.constraintlayout.widget.ConstraintLayout.LayoutParams(
+                    androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.MATCH_PARENT,
+                    androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topToBottom = R.id.filterScrollView
+                    bottomToBottom = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+                    startToStart = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+                    endToEnd = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+                    verticalBias = 0.3f
+                }
+            } else {
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
-            )
+            }
+            parent?.addView(tv, params)
             emptyView = tv
         }
         tv.text = texto

@@ -13,7 +13,7 @@
     android:paddingEnd="20dp"
     android:paddingBottom="12dp">
 
-    <!-- Avatar Container -->
+    <!-- Avatar del chat -->
     <FrameLayout
         android:id="@+id/flAvatarContainer"
         android:layout_width="56dp"
@@ -27,10 +27,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.Circle"
-            tools:src="@drawable/avatar_alex" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Circle" />
 
-        <!-- Online indicator dot with white border -->
+        <!-- Punto en línea con borde blanco -->
         <View
             android:id="@+id/viewOnlineDot"
             android:layout_width="14dp"
@@ -43,7 +42,7 @@
             tools:visibility="visible" />
     </FrameLayout>
 
-    <!-- Contact Name -->
+    <!-- Nombre del chat -->
     <TextView
         android:id="@+id/tvContactName"
         android:layout_width="0dp"
@@ -59,10 +58,9 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/tvTime"
         app:layout_constraintStart_toEndOf="@id/flAvatarContainer"
-        app:layout_constraintTop_toTopOf="@id/flAvatarContainer"
-        tools:text="Alex Thompson" />
+        app:layout_constraintTop_toTopOf="@id/flAvatarContainer" />
 
-    <!-- Last message snippet -->
+    <!-- Último chat -->
     <TextView
         android:id="@+id/tvLastMessage"
         android:layout_width="0dp"
@@ -77,10 +75,9 @@
         android:textSize="14sp"
         app:layout_constraintEnd_toStartOf="@id/tvUnreadBadge"
         app:layout_constraintStart_toEndOf="@id/flAvatarContainer"
-        app:layout_constraintTop_toBottomOf="@id/tvContactName"
-        tools:text="How's yesterday meet-up?" />
+        app:layout_constraintTop_toBottomOf="@id/tvContactName" />
 
-    <!-- Message timestamp -->
+    <!-- Hora del chat -->
     <TextView
         android:id="@+id/tvTime"
         android:layout_width="wrap_content"
@@ -89,10 +86,9 @@
         android:textColor="@color/chat_time_text"
         android:textSize="12sp"
         app:layout_constraintBaseline_toBaselineOf="@id/tvContactName"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:text="12:27 PM" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Unread count badge -->
+    <!-- Insignia de no leídos -->
     <TextView
         android:id="@+id/tvUnreadBadge"
         android:layout_width="wrap_content"
@@ -110,8 +106,6 @@
         android:textStyle="bold"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvTime"
-        tools:text="1"
-        tools:visibility="visible" />
+        app:layout_constraintTop_toBottomOf="@id/tvTime" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

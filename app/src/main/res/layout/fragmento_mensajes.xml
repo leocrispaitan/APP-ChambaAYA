@@ -8,7 +8,7 @@
     android:background="@color/white"
     tools:context=".ui.chat.FragmentoMensajes">
 
-    <!-- Top Header Layout with Title and Add Button -->
+    <!-- Cabecera con título y botón agregar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/headerLayout"
         android:layout_width="match_parent"
@@ -19,7 +19,7 @@
         android:paddingBottom="12dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Title "Chats" -->
+        <!-- Título "Chats" -->
         <TextView
             android:id="@+id/tvChatsTitle"
             android:layout_width="wrap_content"
@@ -33,7 +33,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Circular Green Plus Button -->
+        <!-- Botón circular azul para nuevo chat -->
         <FrameLayout
             android:id="@+id/btnNewChat"
             android:layout_width="40dp"
@@ -55,7 +55,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Pill Search Bar -->
+    <!-- Barra de búsqueda -->
     <LinearLayout
         android:id="@+id/searchBarContainer"
         android:layout_width="match_parent"
@@ -94,7 +94,7 @@
 
     </LinearLayout>
 
-    <!-- Filter Chips Horizontal Scroll -->
+    <!-- Filtros en scroll horizontal -->
     <HorizontalScrollView
         android:id="@+id/filterScrollView"
         android:layout_width="match_parent"
@@ -113,7 +113,7 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <!-- "All" Chip (Selected by default) -->
+            <!-- Chip "Todos" (seleccionado por defecto) -->
             <TextView
                 android:id="@+id/chipAll"
                 android:layout_width="wrap_content"
@@ -132,7 +132,7 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <!-- "Unread 1" Chip -->
+            <!-- Chip "No leídos" -->
             <TextView
                 android:id="@+id/chipUnread"
                 android:layout_width="wrap_content"
@@ -150,7 +150,7 @@
                 android:textColor="@color/chat_chip_inactive_text"
                 android:textSize="14sp" />
 
-            <!-- "Favorites 4" Chip -->
+            <!-- Chip "Favoritos" -->
             <TextView
                 android:id="@+id/chipFavorites"
                 android:layout_width="wrap_content"
@@ -168,7 +168,7 @@
                 android:textColor="@color/chat_chip_inactive_text"
                 android:textSize="14sp" />
 
-            <!-- Add Filter "+" Chip -->
+            <!-- Chip "+" para agregar filtro -->
             <FrameLayout
                 android:id="@+id/chipAddFilter"
                 android:layout_width="wrap_content"
@@ -193,7 +193,7 @@
 
     </HorizontalScrollView>
 
-    <!-- Chats RecyclerView -->
+    <!-- Lista de chats -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvChats"
         android:layout_width="match_parent"

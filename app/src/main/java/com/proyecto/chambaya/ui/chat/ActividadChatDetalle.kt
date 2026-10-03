@@ -107,6 +107,20 @@ class ActividadChatDetalle : AppCompatActivity() {
                 placeholder(R.drawable.ic_user_circle)
                 error(R.drawable.ic_user_circle)
             }
+        } else {
+            ivDetailAvatar.setImageResource(R.drawable.ic_user_circle)
+        }
+        // La lista a veces trae la foto vacía: se reintenta directo del perfil.
+        lifecycleScope.launch {
+            val fresca = com.proyecto.chambaya.data.repository.ProfileRepository()
+                .loadPublicProfile(otherUid).getOrNull()?.photoUrl.orEmpty()
+            if (fresca.isNotBlank() && fresca != photoUrl) {
+                ivDetailAvatar.load(fresca) {
+                    crossfade(true)
+                    placeholder(R.drawable.ic_user_circle)
+                    error(R.drawable.ic_user_circle)
+                }
+            }
         }
         // Sin sistema de presencia: el subtítulo muestra el contexto.
         viewDetailOnlineDot.visibility = View.GONE

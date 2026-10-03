@@ -10,7 +10,7 @@
     android:paddingEnd="16dp"
     android:paddingBottom="6dp">
 
-    <!-- Sent Message Bubble -->
+    <!-- Burbuja del chat enviado -->
     <TextView
         android:id="@+id/tvSentMessage"
         android:layout_width="wrap_content"
@@ -23,10 +23,9 @@
         android:paddingEnd="16dp"
         android:paddingBottom="12dp"
         android:textColor="@color/chat_bubble_sent_text"
-        android:textSize="15sp"
-        tools:text="Hi Alex! I'm good, thanks!\nHow about you?" />
+        android:textSize="15sp" />
 
-    <!-- Timestamp + Double Checkmarks below sent bubble -->
+    <!-- Hora + doble check debajo de la burbuja enviada -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -42,15 +41,14 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif"
             android:textColor="@color/chat_time_text"
-            android:textSize="11sp"
-            tools:text="2:16 PM" />
+            android:textSize="11sp" />
 
         <ImageView
             android:id="@+id/ivSentStatus"
             android:layout_width="14dp"
             android:layout_height="14dp"
             android:layout_marginStart="4dp"
-            android:contentDescription="Read"
+            android:contentDescription="Leído"
             android:src="@drawable/ic_chat_double_check" />
 
     </LinearLayout>

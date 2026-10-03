@@ -67,13 +67,39 @@ class AdaptadorConversaciones(
     override fun getItemCount(): Int = listaFiltrada.size
 
     fun actualizarLista(nuevaLista: List<ChatConversacion>) {
+        actualizarYFiltrar(nuevaLista, TipoFiltro.TODOS)
+    }
+
+    /**
+     * Actualiza datos + filtro de tipo + texto en una sola pasada y solo
+     * repinta si lo visible realmente cambió: así volver del detalle no
+     * hace parpadear la lista.
+     */
+    fun actualizarYFiltrar(
+        nuevaLista: List<ChatConversacion>,
+        tipo: TipoFiltro,
+        query: String = ""
+    ) {
         listaOriginal = nuevaLista
-        listaFiltrada = nuevaLista
-        notifyDataSetChanged()
+        var filtrada = when (tipo) {
+            TipoFiltro.TODOS -> nuevaLista
+            TipoFiltro.NO_LEIDOS -> nuevaLista.filter { it.noLeidos > 0 }
+            TipoFiltro.FAVORITOS -> nuevaLista.filter { it.esFavorito }
+        }
+        if (query.isNotBlank()) {
+            filtrada = filtrada.filter {
+                it.nombre.contains(query, ignoreCase = true) ||
+                    it.ultimoMensaje.contains(query, ignoreCase = true)
+            }
+        }
+        if (filtrada != listaFiltrada) {
+            listaFiltrada = filtrada
+            notifyDataSetChanged()
+        }
     }
 
     fun filtrarPorTexto(query: String) {
-        listaFiltrada = if (query.isBlank()) {
+        val nueva = if (query.isBlank()) {
             listaOriginal
         } else {
             listaOriginal.filter {
@@ -81,16 +107,22 @@ class AdaptadorConversaciones(
                         it.ultimoMensaje.contains(query, ignoreCase = true)
             }
         }
-        notifyDataSetChanged()
+        if (nueva != listaFiltrada) {
+            listaFiltrada = nueva
+            notifyDataSetChanged()
+        }
     }
 
     fun filtrarPorTipo(tipo: TipoFiltro) {
-        listaFiltrada = when (tipo) {
+        val nueva = when (tipo) {
             TipoFiltro.TODOS -> listaOriginal
             TipoFiltro.NO_LEIDOS -> listaOriginal.filter { it.noLeidos > 0 }
             TipoFiltro.FAVORITOS -> listaOriginal.filter { it.esFavorito }
         }
-        notifyDataSetChanged()
+        if (nueva != listaFiltrada) {
+            listaFiltrada = nueva
+            notifyDataSetChanged()
+        }
     }
 
     enum class TipoFiltro {
