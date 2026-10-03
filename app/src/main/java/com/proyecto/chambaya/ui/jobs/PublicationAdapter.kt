@@ -6,7 +6,12 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import android.os.Handler
+import android.os.Looper
+import android.animation.ValueAnimator
+import android.view.animation.LinearInterpolator
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -14,6 +19,7 @@ import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.imageview.ShapeableImageView
+import androidx.viewpager2.widget.ViewPager2
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.precioTexto
 import com.proyecto.chambaya.data.model.publicationTimeAgo
@@ -47,6 +53,11 @@ class PublicationAdapter(
 
     override fun onBindViewHolder(holder: VH, position: Int) = holder.bind(getItem(position))
 
+    override fun onViewRecycled(holder: VH) {
+        holder.stopImageCarousel()
+        super.onViewRecycled(holder)
+    }
+
     inner class VH(view: View) : RecyclerView.ViewHolder(view) {
         private val card: MaterialCardView = view.findViewById(R.id.cardJob)
         private val ivAvatar: ShapeableImageView = view.findViewById(R.id.ivProfilePhoto)
@@ -59,6 +70,20 @@ class PublicationAdapter(
         private val btnVerMas: TextView = view.findViewById(R.id.btnVerMas)
         private val frameImage: FrameLayout = view.findViewById(R.id.frameJobImage)
         private val ivPhoto: ImageView = view.findViewById(R.id.ivJobImage)
+        private val vpPhotos: ViewPager2 = view.findViewById(R.id.vpJobImages)
+        private val dotsPhotos: LinearLayout = view.findViewById(R.id.dotsJobImages)
+        private val carouselHandler = Handler(Looper.getMainLooper())
+        private var carouselCallback: ViewPager2.OnPageChangeCallback? = null
+        private var dotAnimator: ValueAnimator? = null
+        private val advanceCarousel = object : Runnable {
+            override fun run() {
+                val count = vpPhotos.adapter?.itemCount ?: 0
+                if (vpPhotos.visibility == View.VISIBLE && count > 1) {
+                    vpPhotos.currentItem = (vpPhotos.currentItem + 1) % count
+                    carouselHandler.postDelayed(this, 6500L)
+                }
+            }
+        }
         private val infoCard: View = view.findViewById(R.id.layoutJobInfoCard)
         private val ivCatIcon: ImageView = view.findViewById(R.id.ivCategoryIcon)
         private val tvTitle: TextView = view.findViewById(R.id.tvJobTitle)
@@ -115,8 +140,28 @@ class PublicationAdapter(
             }
 
             // ── Foto o tarjeta de info ──
-            val firstImage = p.images.firstOrNull()?.url.orEmpty()
-            if (firstImage.isNotBlank()) {
+            stopImageCarousel()
+            val imageUrls = p.images.map { it.url }.filter { it.isNotBlank() }.take(3)
+            val firstImage = imageUrls.firstOrNull().orEmpty()
+            if (imageUrls.size > 1) {
+                ivPhoto.visibility = View.GONE
+                infoCard.visibility = View.GONE
+                frameImage.setBackgroundColor(0xFF1E293B.toInt())
+                vpPhotos.visibility = View.VISIBLE
+                vpPhotos.isUserInputEnabled = true
+                vpPhotos.adapter = DetailPhotoAdapter(imageUrls)
+                dotsPhotos.visibility = View.VISIBLE
+                paintCarouselDots(imageUrls.size, 0)
+                carouselCallback = object : ViewPager2.OnPageChangeCallback() {
+                    override fun onPageSelected(position: Int) {
+                        paintCarouselDots(imageUrls.size, position)
+                    }
+                }.also(vpPhotos::registerOnPageChangeCallback)
+                carouselHandler.postDelayed(advanceCarousel, 6500L)
+            } else if (firstImage.isNotBlank()) {
+                vpPhotos.visibility = View.GONE
+                dotsPhotos.visibility = View.GONE
+                vpPhotos.adapter = null
                 ivPhoto.visibility = View.VISIBLE
                 infoCard.visibility = View.GONE
                 frameImage.setBackgroundColor(0xFF1E293B.toInt())
@@ -126,6 +171,9 @@ class PublicationAdapter(
                     error(R.drawable.bg_job_image_placeholder)
                 }
             } else {
+                vpPhotos.visibility = View.GONE
+                dotsPhotos.visibility = View.GONE
+                vpPhotos.adapter = null
                 ivPhoto.visibility = View.GONE
                 infoCard.visibility = View.VISIBLE
                 frameImage.setBackgroundColor(0xFF1E293B.toInt())
@@ -170,6 +218,48 @@ class PublicationAdapter(
             }
             // Los callbacks del sheet se resuelven en el Fragment vía
             // parentFragmentManager listeners (ver FragmentoChambas).
+        }
+
+        fun stopImageCarousel() {
+            carouselHandler.removeCallbacks(advanceCarousel)
+            dotAnimator?.cancel()
+            dotAnimator = null
+            carouselCallback?.let { vpPhotos.unregisterOnPageChangeCallback(it) }
+            carouselCallback = null
+        }
+
+        private fun paintCarouselDots(total: Int, selected: Int) {
+            dotAnimator?.cancel()
+            dotAnimator = null
+            dotsPhotos.removeAllViews()
+            val density = itemView.resources.displayMetrics.density
+            repeat(total) { index ->
+                val selectedDot = index == selected
+                val collapsedWidth = (8 * density).toInt()
+                val dot = View(itemView.context).apply {
+                    layoutParams = LinearLayout.LayoutParams(collapsedWidth, (6 * density).toInt()).apply {
+                        if (index > 0) marginStart = (6 * density).toInt()
+                    }
+                    setBackgroundResource(
+                        if (selectedDot) R.drawable.bg_indicator_active
+                        else R.drawable.bg_indicator_inactive
+                    )
+                }
+                dotsPhotos.addView(dot)
+                if (selectedDot) {
+                    val expandedWidth = (32 * density).toInt()
+                    dotAnimator = ValueAnimator.ofInt(collapsedWidth, expandedWidth).apply {
+                        duration = 6500L
+                        interpolator = LinearInterpolator()
+                        addUpdateListener { animator ->
+                            dot.layoutParams = dot.layoutParams.apply {
+                                width = animator.animatedValue as Int
+                            }
+                        }
+                        start()
+                    }
+                }
+            }
         }
     }
 

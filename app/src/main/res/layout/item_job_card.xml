@@ -228,6 +228,22 @@
                 tools:visibility="visible"
                 tools:src="@drawable/bg_job_image_placeholder" />
 
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/vpJobImages"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/dotsJobImages"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="12dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone" />
+
             <!-- Vista alternativa cuando no hay imagen: tarjeta de info limpia -->
             <LinearLayout
                 android:id="@+id/layoutJobInfoCard"
