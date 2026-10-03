@@ -16,7 +16,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -30,6 +29,8 @@ import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.repository.ProfileRepository
+import com.proyecto.chambaya.data.repository.WorkplaceRepository
+import com.proyecto.chambaya.ui.workplace.EditarLugarActivity
 import kotlinx.coroutines.launch
 
 /**
@@ -42,8 +43,8 @@ import kotlinx.coroutines.launch
  *  4. Fila "Cerrar sesión" cierra la sesión de verdad y vuelve al login
  *
  * FASE 2: la tarjeta de usuario de arriba y el diálogo de "Información de la
- * cuenta" ya no son textos fijos: salen de `users/{uid}`. El resto de filas
- * siguen avisando con un `Toast` porque pertenecen a fases posteriores.
+ * cuenta" ya no son textos fijos: salen de `users/{uid}`. El historial,
+ * las direcciones y el idioma se conectan a sus flujos existentes.
  */
 class FragmentoAjustesPerfil : Fragment() {
 
@@ -72,6 +73,12 @@ class FragmentoAjustesPerfil : Fragment() {
             Toast.makeText(requireContext(), R.string.profile_guardado, Toast.LENGTH_SHORT).show()
             cargarPerfil()
         }
+    }
+
+    private val editWorkplaceLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) cargarPerfil()
     }
 
     override fun onCreateView(
@@ -166,12 +173,13 @@ class FragmentoAjustesPerfil : Fragment() {
 
         root.findViewById<View>(R.id.rowMyOrders)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Mis pedidos y chambas", Toast.LENGTH_SHORT).show()
+            val comoEmpleador = perfil?.activeRole == UserRoles.CONTRATANTE
+            JobsSheet.newInstance(comoEmpleador).show(parentFragmentManager, "jobs")
         }
 
         root.findViewById<View>(R.id.rowAddressManagement)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Gestión de direcciones", Toast.LENGTH_SHORT).show()
+            gestionarDirecciones()
         }
 
         root.findViewById<View>(R.id.rowPasswordManager)?.setOnClickListener {
@@ -304,50 +312,72 @@ class FragmentoAjustesPerfil : Fragment() {
             return
         }
 
-        val lineas = buildList {
-            add(
-                getString(
-                    R.string.settings_campo_usuario,
-                    if (datos.profile.username.isBlank()) {
-                        getString(R.string.settings_sin_dato)
-                    } else {
-                        "@${datos.profile.username}"
-                    }
-                )
-            )
-            add(
-                getString(
-                    R.string.settings_campo_telefono,
-                    datos.profile.phone.ifBlank { getString(R.string.settings_sin_dato) }
-                )
-            )
-            add(
-                getString(
-                    R.string.settings_campo_ubicacion,
-                    datos.profile.locationLabel.ifBlank { getString(R.string.settings_sin_dato) }
-                )
-            )
-            add(
-                getString(
-                    R.string.settings_campo_documento,
-                    datos.identity.verifiedLabel.ifBlank {
-                        getString(R.string.profile_identidad_pendiente)
-                    }
-                )
-            )
-            add(
-                getString(
-                    R.string.settings_campo_registro,
-                    datos.profile.fullName.ifBlank { getString(R.string.settings_sin_dato) }
-                )
-            )
-        }
+        val sinDato = getString(R.string.settings_sin_dato)
+        val content = layoutInflater.inflate(R.layout.dialog_account_info, null)
+        content.findViewById<TextView>(R.id.tvAccountInfoTitle)
+            .setText(R.string.settings_row_account_info)
+        content.findViewById<TextView>(R.id.tvAccountInfoSubtitle)
+            .setText(R.string.settings_account_info_subtitle)
+        content.findViewById<TextView>(R.id.tvAccountUsername).text =
+            datos.profile.username.takeIf { it.isNotBlank() }?.let { "@$it" } ?: sinDato
+        content.findViewById<TextView>(R.id.tvAccountEmail).text =
+            datos.auth.email.ifBlank { auth.currentUser?.email.orEmpty() }.ifBlank { sinDato }
+        content.findViewById<TextView>(R.id.tvAccountPhone).text = datos.profile.phone.ifBlank { sinDato }
+        content.findViewById<TextView>(R.id.tvAccountLocation).text =
+            datos.profile.locationLabel.ifBlank { sinDato }
+        content.findViewById<TextView>(R.id.tvAccountDocument).text =
+            datos.identity.verifiedLabel.ifBlank { getString(R.string.profile_identidad_pendiente) }
+        content.findViewById<TextView>(R.id.tvAccountLegalName).text =
+            datos.profile.fullName.ifBlank { sinDato }
 
-        AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
-            .setTitle(R.string.settings_section_account)
-            .setMessage(lineas.joinToString("\n\n"))
+        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
+            .setView(content)
             .setPositiveButton(android.R.string.ok, null)
-            .show()
+            .create()
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.90f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    private fun gestionarDirecciones() {
+        val datos = perfil
+        if (datos == null) {
+            Toast.makeText(requireContext(), R.string.profile_error_cargar, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (datos.activeRole == UserRoles.CONTRATANTE) {
+            val uid = auth.currentUser?.uid.orEmpty()
+            if (uid.isBlank()) return
+            viewLifecycleOwner.lifecycleScope.launch {
+                val workplace = WorkplaceRepository().loadByOwner(uid).getOrNull()
+                if (!isAdded) return@launch
+                val ubicacion = workplace?.let { it.locationLabel.ifBlank { it.address } }
+                    .orEmpty().ifBlank { getString(R.string.settings_work_address_not_set) }
+                AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
+                    .setTitle(R.string.settings_address_work_title)
+                    .setMessage(listOfNotNull(workplace?.name, ubicacion).joinToString("\n\n"))
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(
+                        if (workplace == null) R.string.settings_address_add_place
+                        else R.string.settings_address_edit_place
+                    ) { _, _ ->
+                        val intent = Intent(requireContext(), EditarLugarActivity::class.java)
+                        workplace?.workplaceId?.let { intent.putExtra(EditarLugarActivity.EXTRA_WORKPLACE_ID, it) }
+                        editWorkplaceLauncher.launch(intent)
+                    }
+                    .show()
+            }
+        } else {
+            AlertDialog.Builder(requireContext(), R.style.CustomAlertDialog)
+                .setTitle(R.string.settings_address_worker_title)
+                .setMessage(datos.profile.locationLabel.ifBlank { getString(R.string.settings_address_not_set) })
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.settings_address_edit_location) { _, _ -> openEditProfileScreen(2) }
+                .show()
+        }
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -407,8 +437,9 @@ class FragmentoAjustesPerfil : Fragment() {
     //  HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    private fun openEditProfileScreen() {
+    private fun openEditProfileScreen(startStep: Int = EditarPerfilActivity.PASO_INICIO_EDITAR) {
         val intent = Intent(requireContext(), EditarPerfilActivity::class.java)
+            .putExtra(EditarPerfilActivity.EXTRA_START_STEP, startStep)
         editProfileLauncher.launch(intent)
         
         // Aplicar transición compatible con todas las versiones
