@@ -44,24 +44,44 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:layout_width="34dp"
-            android:layout_height="34dp"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:contentDescription="@string/app_name"
-            android:src="@drawable/ic_welcome_mark" />
+            android:src="@drawable/logotipo_sin_fondo" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:fontFamily="sans-serif-black"
-            android:includeFontPadding="false"
-            android:shadowColor="#80000000"
-            android:shadowDx="0"
-            android:shadowDy="2"
-            android:shadowRadius="6"
-            android:text="@string/app_name"
-            android:textColor="@color/white"
-            android:textSize="28sp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:includeFontPadding="false"
+                android:shadowColor="#80000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="6"
+                android:text="Chamb"
+                android:textColor="@color/white"
+                android:textSize="28sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:includeFontPadding="false"
+                android:shadowColor="#80000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="6"
+                android:text="AYA"
+                android:textColor="#20E798"
+                android:textSize="28sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Botón selector de idioma con estilo glassmorphism -->
