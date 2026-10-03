@@ -146,7 +146,7 @@
                     tools:text="2 vacantes" />
             </LinearLayout>
 
-            <!-- Foto (solo si hay) -->
+            <!-- Fotos (carrusel con dots; dots solo si hay 2+) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardDetailPhoto"
                 android:layout_width="match_parent"
@@ -157,13 +157,24 @@
                 app:cardElevation="0dp"
                 tools:visibility="visible">
 
-                <ImageView
-                    android:id="@+id/ivDetailPhoto"
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/vpDetailPhotos"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:contentDescription="Foto del trabajo" />
+                    android:layout_height="match_parent" />
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- Indicadores del carrusel (dots) — propios del detalle -->
+            <LinearLayout
+                android:id="@+id/dotsDetailPhotos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:minHeight="8dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
             <!-- Tarjeta de pago -->
             <LinearLayout

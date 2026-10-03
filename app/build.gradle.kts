@@ -109,6 +109,9 @@ dependencies {
     // Gson for JSON parsing
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // Carrusel de fotos del detalle (ViewPager2 + dots propios)
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dot inactivo del carrusel de fotos (bottom_sheet_job_detail.xml).
+     Propio del detalle: no toca bg_indicator_* (bienvenida) ni bg_carousel_dot_* (home). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#CCCCCC" />
+    <size
+        android:width="8dp"
+        android:height="8dp" />
+</shape>

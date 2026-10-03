@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
+import androidx.viewpager2.widget.ViewPager2
 import coil.load
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
@@ -54,6 +55,7 @@ class JobDetailSheet : BottomSheetDialogFragment() {
 
     private var currentPub: Publication? = null
     private var commentListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var photoPageCallback: ViewPager2.OnPageChangeCallback? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.bottom_sheet_job_detail, container, false)
@@ -119,12 +121,8 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         view.findViewById<TextView>(R.id.tvDetailStatus).text =
             if (libres <= 0) "Vacantes cubiertas" else "$libres vacante${if (libres == 1) "" else "s"}"
 
-        val cardPhoto = view.findViewById<MaterialCardView>(R.id.cardDetailPhoto)
-        val firstImage = pub.images.firstOrNull()?.url.orEmpty()
-        if (firstImage.isNotBlank()) {
-            cardPhoto.visibility = View.VISIBLE
-            view.findViewById<ImageView>(R.id.ivDetailPhoto).load(firstImage) { crossfade(true) }
-        } else cardPhoto.visibility = View.GONE
+        val urls = pub.images.mapNotNull { it.url.takeIf { u -> u.isNotBlank() } }
+        montarCarruselFotos(view, urls)
 
         view.findViewById<TextView>(R.id.tvDetailPrice).text = pub.precioTexto()
         view.findViewById<TextView>(R.id.tvDetailNegotiable).visibility =
@@ -298,6 +296,64 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         }
     }
 
+    /** Carrusel de fotos: 0 = oculto, 1 = foto fija sin dots, 2+ = swipe + dots. */
+    private fun montarCarruselFotos(view: View, urls: List<String>) {
+        val card = view.findViewById<MaterialCardView>(R.id.cardDetailPhoto)
+        val vp = view.findViewById<ViewPager2>(R.id.vpDetailPhotos)
+        val dots = view.findViewById<LinearLayout>(R.id.dotsDetailPhotos)
+        photoPageCallback?.let { vp.unregisterOnPageChangeCallback(it) }
+        photoPageCallback = null
+        if (urls.isEmpty()) {
+            card.visibility = View.GONE
+            dots.visibility = View.GONE
+            return
+        }
+        card.visibility = View.VISIBLE
+        vp.adapter = DetailPhotoAdapter(urls)
+        if (urls.size == 1) {
+            // Una sola foto: sin dots y sin swipe.
+            dots.visibility = View.GONE
+            vp.isUserInputEnabled = false
+            return
+        }
+        vp.isUserInputEnabled = true
+        dots.visibility = View.VISIBLE
+        // Se pinta tras el layout: si se construyen los dots en el mismo
+        // frame del GONE→VISIBLE, el NestedScrollView puede medir el
+        // contenedor con altura 0 y solo aparece al repintar (al deslizar).
+        dots.post {
+            if (!isAdded) return@post
+            pintarDotsFotos(dots, urls.size, vp.currentItem)
+            dots.requestLayout()
+        }
+        val callback = object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                pintarDotsFotos(dots, urls.size, position)
+            }
+        }
+        photoPageCallback = callback
+        vp.registerOnPageChangeCallback(callback)
+    }
+
+    /** Dots propios del detalle (no usa los de bienvenida ni los del home). */
+    private fun pintarDotsFotos(dots: LinearLayout, total: Int, activo: Int) {
+        val density = dots.resources.displayMetrics.density
+        dots.removeAllViews()
+        repeat(total) { i ->
+            val dot = View(requireContext()).apply {
+                val size = (8 * density).toInt()
+                layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                    if (i > 0) marginStart = (5 * density).toInt()
+                }
+                setBackgroundResource(
+                    if (i == activo) R.drawable.bg_dot_detail_active
+                    else R.drawable.bg_dot_detail_inactive
+                )
+            }
+            dots.addView(dot)
+        }
+    }
+
     /** FASE 10 — Comentarios en vivo + publicar + menú propio/ajeno. */
     private fun configurarComentarios(view: View, publicationId: String, uid: String) {
         val rv = view.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvComments)
@@ -460,6 +516,10 @@ class JobDetailSheet : BottomSheetDialogFragment() {
     override fun onDestroyView() {
         commentListener?.remove()
         commentListener = null
+        photoPageCallback?.let { cb ->
+            view?.findViewById<ViewPager2>(R.id.vpDetailPhotos)?.unregisterOnPageChangeCallback(cb)
+        }
+        photoPageCallback = null
         super.onDestroyView()
     }
 
