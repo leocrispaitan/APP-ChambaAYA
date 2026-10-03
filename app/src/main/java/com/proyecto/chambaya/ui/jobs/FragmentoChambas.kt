@@ -7,8 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -24,16 +22,12 @@ import com.google.gson.reflect.TypeToken
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.JobStatus
-import com.proyecto.chambaya.data.remote.GeoDistance
-import com.proyecto.chambaya.data.remote.GeoPlace
-import com.proyecto.chambaya.data.remote.GeoSearchService
 import com.proyecto.chambaya.data.repository.BlockRepository
 import com.proyecto.chambaya.data.repository.JobRepository
 import com.proyecto.chambaya.data.repository.NotificationRepository
 import com.proyecto.chambaya.data.repository.PublicationInteractionRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
 import com.proyecto.chambaya.data.repository.RatingRepository
-import com.proyecto.chambaya.ui.map.GeoPlaceAdapter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -75,26 +69,6 @@ class FragmentoChambas : Fragment() {
     private var searchJob: Job? = null
     private var selectedCategory: String = ""
 
-    /**
-     * FASE 15 · Lugar elegido con Geocode Earth (calle, restaurante,
-     * distrito…). Cuando está activo el feed se recorta a un radio y se
-     * ordena por cercanía; la cabecera lo muestra como pastilla.
-     */
-    private var ubicacion: UbicacionActiva? = null
-    private var llActiveLocation: LinearLayout? = null
-    private var tvLocationValue: TextView? = null
-
-    // ── Autocompletado de calles/lugares en el buscador (Geocode Earth) ──
-    private val geoService = GeoSearchService()
-    private var rvGeoSugerencias: RecyclerView? = null
-    private var geoAdapter: GeoPlaceAdapter? = null
-    private var progressGeoSugerencias: ProgressBar? = null
-    private var geoJob: Job? = null
-    /** Petición en curso: una respuesta lenta no debe pisar a la nueva. */
-    private var geoRequestId = 0L
-    /** Evita que el `setText` al elegir un lugar dispare otra búsqueda. */
-    private var textoGeoBloqueado = false
-
     // ── Tiempo real: el listener se engancha en onResume y se suelta en
     // onPause. Los flags like/save se cachean por id para no releerlos en
     // cada snapshot; solo se consultan los ids nuevos.
@@ -131,17 +105,13 @@ class FragmentoChambas : Fragment() {
         setupFeed(view)
         setupCategorias(view)
         setupSearch(view)
-        setupLocation(view)
         setupChips(view)
         setupHeaderActions(view)
 
         view.findViewById<Button>(R.id.btnFeedRetry)?.setOnClickListener { recargarFeed() }
         view.findViewById<Button>(R.id.btnFeedEmptyAction)?.setOnClickListener {
-            when {
-                ubicacion != null -> limpiarUbicacion()
-                filters.isEmpty() && filters.query.isBlank() && selectedCategory.isBlank() -> recargarFeed()
-                else -> limpiarFiltros(view)
-            }
+            if (filters.isEmpty() && filters.query.isBlank() && selectedCategory.isBlank()) recargarFeed()
+            else limpiarFiltros(view)
         }
 
         // Resultados de sheets hijos.
@@ -172,14 +142,6 @@ class FragmentoChambas : Fragment() {
         parentFragmentManager.setFragmentResultListener(JobDetailSheet.REQUEST_OPEN_PROFILE, viewLifecycleOwner) { _, bundle ->
             val uid = bundle.getString(JobDetailSheet.EXTRA_UID).orEmpty()
             if (uid.isNotBlank()) PublicProfileSheet.newInstance(uid).show(parentFragmentManager, "profile")
-        }
-        // FASE 15 · lugar elegido en el buscador de calles/venues.
-        parentFragmentManager.setFragmentResultListener(LocationSearchSheet.REQUEST, viewLifecycleOwner) { _, bundle ->
-            if (bundle.getBoolean(LocationSearchSheet.EXTRA_CLEAR)) {
-                limpiarUbicacion()
-            } else {
-                elegirUbicacion(desdeBundle(bundle))
-            }
         }
 
         loadCategoriasFromJson()
@@ -306,21 +268,14 @@ class FragmentoChambas : Fragment() {
         val efectivo = filters.copy(
             category = filters.category.ifBlank { selectedCategory }
         )
-        // FASE 15 · el lugar elegido va después de los filtros de texto/
-        // categoría para que "cerca de X" sea el criterio más cercano a la
-        // pantalla; además deja el feed ordenado por distancia.
-        val filtrada = allItems.applyFilters(efectivo).applyLocation(ubicacion)
+        // Búsqueda simple solo por texto/categoría.
+        val filtrada = allItems.applyFilters(efectivo)
         adapter?.submitList(filtrada)
-        actualizarMetaUbicacion(filtrada.size)
         if (filtrada.isEmpty()) {
             val buscando = efectivo.query.isNotBlank() || !efectivo.isEmpty() || selectedCategory.isNotBlank()
             pintarEstado(
                 Estado.VACIO,
-                when {
-                    ubicacion != null -> "sin_geo"
-                    buscando -> "sin_resultados"
-                    else -> null
-                }
+                if (buscando) "sin_resultados" else null
             )
         } else {
             pintarEstado(Estado.LISTA)
@@ -336,14 +291,6 @@ class FragmentoChambas : Fragment() {
         layoutError?.visibility = if (estado == Estado.ERROR) View.VISIBLE else View.GONE
         if (estado == Estado.VACIO) {
             when (detalle) {
-                "sin_geo" -> {
-                    val nombre = ubicacion?.nombre.orEmpty()
-                    tvEmptyTitle?.text = "Sin chambas cerca de $nombre"
-                    tvEmptySub?.text =
-                        "No hay publicaciones en ${GeoDistance.format(ubicacion?.radiusKm ?: 0.0)} " +
-                            "de ese lugar. Toca para ver todas las de Ayacucho."
-                    view?.findViewById<Button>(R.id.btnFeedEmptyAction)?.text = "Ver todas"
-                }
                 "sin_resultados" -> {
                     tvEmptyTitle?.text = "Sin resultados"
                     tvEmptySub?.text = "Prueba con otra palabra o ajusta los filtros."
@@ -361,34 +308,14 @@ class FragmentoChambas : Fragment() {
         }
     }
 
-    // ── Búsqueda ────────────────────────────────────────────
+    // ── Búsqueda simple por texto ───────────────────────────
 
     private fun setupSearch(view: View) {
         val et = view.findViewById<EditText>(R.id.etSearch) ?: return
-        setupGeoSugerencias(view)
 
         et.doAfterTextChanged { texto ->
             val query = texto?.toString().orEmpty()
-            // `setText` al elegir un lugar no es una búsqueda: si no lo
-            // saltamos, el debounce filtraría por el nombre de la calle.
-            if (textoGeoBloqueado) return@doAfterTextChanged
-            // Si el usuario edita a mano lo que pusimos en la barra, la zona
-            // deja de aplicar: vuelve la búsqueda por texto normal.
-            if (ubicacion != null && query != ubicacion?.nombre) {
-                ubicacion = null
-                pintarUbicacion()
-            }
             searchJob?.cancel()
-            geoJob?.cancel()
-            if (query.trim().length >= GeoSearchService.MIN_CHARS) {
-                geoJob = viewLifecycleOwner.lifecycleScope.launch {
-                    delay(DEBOUNCE_GEO_MS)
-                    pedirSugerenciasGeo(query)
-                }
-            } else {
-                ++geoRequestId
-                ocultarSugerenciasGeo()
-            }
             searchJob = viewLifecycleOwner.lifecycleScope.launch {
                 delay(350)
                 filters = filters.copy(query = query)
@@ -396,213 +323,15 @@ class FragmentoChambas : Fragment() {
             }
         }
         et.setOnEditorActionListener { v, _, _ ->
-            val query = v.text?.toString().orEmpty().trim()
-            geoJob?.cancel()
-            if (query.length >= GeoSearchService.MIN_CHARS) {
-                // Enter = buscar el lugar exacto (calle con número incluida).
-                viewLifecycleOwner.lifecycleScope.launch { buscarLugarExacto(query) }
-            } else {
-                filters = filters.copy(query = v.text?.toString().orEmpty())
-                ocultarSugerenciasGeo()
-                aplicarFiltros()
-            }
+            filters = filters.copy(query = v.text?.toString().orEmpty())
+            aplicarFiltros()
             true
         }
-        // Al salir del campo, el desplegable se cierra (igual que Google Maps).
-        et.setOnFocusChangeListener { _, conFoco ->
-            if (!conFoco) ocultarSugerenciasGeo()
-        }
-        // Desplazar el feed también cierra las sugerencias.
-        scrollView?.setOnTouchListener { _, _ ->
-            ocultarSugerenciasGeo()
-            false
-        }
         view.findViewById<View>(R.id.btnFilter)?.setOnClickListener {
-            ocultarSugerenciasGeo()
             val cats = allItems.map { it.publication.category }.filter { it.isNotBlank() }.distinct().sorted()
             val dis = allItems.map { it.publication.location.district }.filter { it.isNotBlank() }.distinct().sorted()
             FilterBottomSheet.newInstance(cats, dis, filters).show(parentFragmentManager, "filters")
         }
-    }
-
-    // ── Sugerencias de lugares en el buscador ────────────────
-
-    private fun setupGeoSugerencias(view: View) {
-        rvGeoSugerencias = view.findViewById(R.id.rvGeoSugerencias)
-        progressGeoSugerencias = view.findViewById(R.id.progressGeoSugerencias)
-        geoAdapter = GeoPlaceAdapter { lugar ->
-            elegirSugerenciaGeo(lugar)
-        }
-        rvGeoSugerencias?.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = geoAdapter
-            isNestedScrollingEnabled = false
-            overScrollMode = View.OVER_SCROLL_NEVER
-        }
-    }
-
-    /**
-     * Autocompletado de Pelias sesgado hacia la zona activa (o Ayacucho).
-     * Reordena por cercanía, así que "asamblea" sale primero en la calle de
-     * al lado y no en otra ciudad.
-     */
-    private suspend fun pedirSugerenciasGeo(query: String) {
-        val id = ++geoRequestId
-        progressGeoSugerencias?.visibility = View.VISIBLE
-        val (lat, lng) = focoGeo()
-        val res = geoService.autocomplete(query, lat, lng, limit = SUGERENCIAS_MAX)
-        if (!isAdded || id != geoRequestId) return
-        progressGeoSugerencias?.visibility = View.GONE
-        // Un fallo (cuota o sin red) no interrumpe la búsqueda de texto.
-        res.onSuccess { lugares -> mostrarSugerenciasGeo(lugares) }
-            .onFailure { ocultarSugerenciasGeo() }
-    }
-
-    /** Enter: `search` sí devuelve direcciones con número de puerta. */
-    private suspend fun buscarLugarExacto(query: String) {
-        val id = ++geoRequestId
-        progressGeoSugerencias?.visibility = View.VISIBLE
-        val (lat, lng) = focoGeo()
-        val res = geoService.search(query, lat, lng, limit = SUGERENCIAS_MAX)
-        if (!isAdded || id != geoRequestId) return
-        progressGeoSugerencias?.visibility = View.GONE
-        val lugares = res.getOrNull().orEmpty()
-        if (lugares.isEmpty()) {
-            ocultarSugerenciasGeo()
-            filters = filters.copy(query = query)
-            aplicarFiltros()
-            return
-        }
-        // El primer resultado es el más cercano a la zona actual.
-        elegirSugerenciaGeo(lugares.first())
-    }
-
-    private fun mostrarSugerenciasGeo(lugares: List<GeoPlace>) {
-        if (lugares.isEmpty()) {
-            ocultarSugerenciasGeo()
-            return
-        }
-        geoAdapter?.submitList(lugares)
-        rvGeoSugerencias?.visibility = View.VISIBLE
-    }
-
-    private fun ocultarSugerenciasGeo() {
-        rvGeoSugerencias?.visibility = View.GONE
-        progressGeoSugerencias?.visibility = View.GONE
-    }
-
-    /** Toca una calle/restaurante → pasa a ser la zona activa del feed. */
-    private fun elegirSugerenciaGeo(lugar: GeoPlace) {
-        if (!isAdded) return
-        ocultarSugerenciasGeo()
-        // Ninguna búsqueda pendiente debe pisar la zona recién elegida.
-        geoJob?.cancel()
-        searchJob?.cancel()
-        ++geoRequestId
-        // Dejamos el nombre del lugar en la barra como confirmación visual.
-        textoGeoBloqueado = true
-        view?.findViewById<EditText>(R.id.etSearch)?.apply {
-            setText(lugar.name.ifBlank { lugar.label })
-            setSelection(text?.length ?: 0)
-        }
-        textoGeoBloqueado = false
-        // El texto ya no filtra por título: ahora manda la distancia.
-        filters = filters.copy(query = "")
-        hideKeyboard()
-        elegirUbicacion(lugar)
-    }
-
-    /** Punto hacia el que Pelias sesga los resultados: la zona o Ayacucho. */
-    private fun focoGeo(): Pair<Double, Double> {
-        val foco = ubicacion?.place
-        return (foco?.latitude ?: GeoSearchService.AYACUCHO_LAT) to
-            (foco?.longitude ?: GeoSearchService.AYACUCHO_LNG)
-    }
-
-    private fun hideKeyboard() {
-        val et = view?.findViewById<EditText>(R.id.etSearch) ?: return
-        val imm = requireContext()
-            .getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
-            as? android.view.inputmethod.InputMethodManager
-        imm?.hideSoftInputFromWindow(et.windowToken, 0)
-        et.clearFocus()
-    }
-
-    // ── Ubicación (Geocode Earth) ────────────────────────────
-
-    /**
-     * FASE 15 — La fila "Ubicación" de la cabecera abre el buscador de
-     * calles/venues. El lugar elegido recorta el feed a un radio y ordena
-     * por cercanía; la pastilla lo muestra con la X para quitarlo.
-     */
-    private fun setupLocation(view: View) {
-        tvLocationValue = view.findViewById(R.id.tvLocationValue)
-        llActiveLocation = view.findViewById(R.id.llActiveLocation)
-
-        val abrirBuscador = View.OnClickListener {
-            val foco = ubicacion?.place
-            LocationSearchSheet.newInstance(
-                foco?.latitude ?: GeoSearchService.AYACUCHO_LAT,
-                foco?.longitude ?: GeoSearchService.AYACUCHO_LNG
-            ).show(parentFragmentManager, "location")
-        }
-        view.findViewById<View>(R.id.llLocation)?.setOnClickListener(abrirBuscador)
-        view.findViewById<View>(R.id.tvLocationValue)?.setOnClickListener(abrirBuscador)
-        llActiveLocation?.setOnClickListener(abrirBuscador)
-        view.findViewById<View>(R.id.btnClearLocation)?.setOnClickListener { limpiarUbicacion() }
-
-        pintarUbicacion()
-    }
-
-    private fun desdeBundle(b: Bundle): GeoPlace = GeoPlace(
-        name = b.getString(LocationSearchSheet.EXTRA_NAME).orEmpty(),
-        label = b.getString(LocationSearchSheet.EXTRA_LABEL).orEmpty(),
-        latitude = b.getDouble(LocationSearchSheet.EXTRA_LAT),
-        longitude = b.getDouble(LocationSearchSheet.EXTRA_LNG),
-        layer = b.getString(LocationSearchSheet.EXTRA_LAYER).orEmpty(),
-        street = b.getString(LocationSearchSheet.EXTRA_STREET).orEmpty(),
-        locality = b.getString(LocationSearchSheet.EXTRA_LOCALITY).orEmpty(),
-        county = b.getString(LocationSearchSheet.EXTRA_COUNTY).orEmpty(),
-        region = b.getString(LocationSearchSheet.EXTRA_REGION).orEmpty()
-    )
-
-    private fun elegirUbicacion(lugar: GeoPlace) {
-        if (lugar.latitude == 0.0 && lugar.longitude == 0.0) return
-        ubicacion = UbicacionActiva(lugar)
-        pintarUbicacion()
-        aplicarFiltros()
-        if (!isAdded) return
-        Toast.makeText(
-            requireContext(),
-            "Chambas cerca de ${ubicacion?.nombre}",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
-    private fun limpiarUbicacion() {
-        if (ubicacion == null) return
-        ubicacion = null
-        pintarUbicacion()
-        aplicarFiltros()
-    }
-
-    /** Refleja el lugar activo en la cabecera (texto + pastilla). */
-    private fun pintarUbicacion() {
-        val activa = ubicacion
-        tvLocationValue?.text = activa?.nombre?.takeIf { it.isNotBlank() }
-            ?: getString(R.string.home_location_value)
-        llActiveLocation?.visibility = if (activa != null) View.VISIBLE else View.GONE
-        view?.findViewById<TextView>(R.id.tvActiveLocationName)?.text = activa?.nombre.orEmpty()
-        // El conteo real lo pone aplicarFiltros() al recortar el feed.
-        view?.findViewById<TextView>(R.id.tvActiveLocationMeta)?.text = ""
-    }
-
-    /** "12 chambas" en la pastilla del lugar activo. */
-    private fun actualizarMetaUbicacion(cantidad: Int) {
-        val activa = ubicacion ?: return
-        val meta = view?.findViewById<TextView>(R.id.tvActiveLocationMeta) ?: return
-        val plural = if (cantidad == 1) "chamba" else "chambas"
-        meta.text = "$cantidad $plural · radio ${GeoDistance.format(activa.radiusKm)}"
     }
 
     private fun setupChips(view: View) {
@@ -906,25 +635,10 @@ class FragmentoChambas : Fragment() {
         blockedCache.clear()
         statesLoaded = false
         searchJob?.cancel()
-        geoJob?.cancel()
-        ++geoRequestId
         scrollView = null
         recyclerView = null
         adapter = null
         rvCategories = null
         categoriaAdapter = null
-        llActiveLocation = null
-        tvLocationValue = null
-        rvGeoSugerencias = null
-        geoAdapter = null
-        progressGeoSugerencias = null
-    }
-
-    companion object {
-        /** Espera a que el usuario termine de escribir (mismo debounce del sheet). */
-        private const val DEBOUNCE_GEO_MS = 400L
-
-        /** Cuántas sugerencias de calle/local se muestran como máximo. */
-        private const val SUGERENCIAS_MAX = 6
     }
 }
