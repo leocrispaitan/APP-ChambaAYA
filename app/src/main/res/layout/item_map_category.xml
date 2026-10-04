@@ -3,7 +3,7 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="76dp"
+    android:layout_width="116dp"
     android:layout_height="wrap_content"
     android:layout_margin="3dp"
     app:cardBackgroundColor="#F8F9FB"
@@ -31,12 +31,14 @@
 
         <TextView
             android:id="@+id/tvMapCatName"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:fontFamily="sans-serif-bold"
-            android:maxLines="1"
+            android:gravity="center"
+            android:maxLines="3"
+            android:minHeight="32dp"
             android:textColor="#0F172A"
             android:textSize="11sp"
             tools:text="Pintura" />

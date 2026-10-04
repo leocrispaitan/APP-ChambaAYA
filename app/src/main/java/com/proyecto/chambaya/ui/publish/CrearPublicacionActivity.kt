@@ -22,7 +22,6 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.R
-import com.proyecto.chambaya.data.model.OficioCatalog
 import com.proyecto.chambaya.data.model.PaymentPeriod
 import com.proyecto.chambaya.data.model.Publication
 import com.proyecto.chambaya.data.model.PublicationDraft
@@ -33,6 +32,8 @@ import com.proyecto.chambaya.data.remote.PhotoUploadResult
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
 import com.proyecto.chambaya.data.repository.WorkplaceRepository
+import com.proyecto.chambaya.ui.jobs.CategoriasChamba
+import com.proyecto.chambaya.ui.jobs.categoriaCoincide
 import com.proyecto.chambaya.ui.profile.ProfileCache
 import kotlinx.coroutines.launch
 
@@ -99,22 +100,10 @@ class CrearPublicacionActivity : AppCompatActivity() {
             setOnClickListener { showDropDown() }
             tag = periodos
         }
-        // Categorías: primero el catálogo local (inmediato), luego se
-        // completan con las oficiales de Firestore (FASE 15, mejor esfuerzo).
-        val cats = OficioCatalog.load(this).map { it.categoria }.distinct().take(14)
+        // Usa las mismas categorías con foto que aparecen en Chambas y Mapas.
+        val cats = CategoriasChamba.disponibles
         val group = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupCategoria)
         cats.forEach { cat -> agregarChipCategoria(group, cat) }
-        lifecycleScope.launch {
-            val oficiales = com.proyecto.chambaya.data.repository.CategoryRepository()
-                .list().getOrNull().orEmpty().map { it.name }.filter { it.isNotBlank() }
-            if (oficiales.isEmpty() || isFinishing) return@launch
-            val actuales = (0 until (group?.childCount ?: 0))
-                .map { (group?.getChildAt(it) as? Chip)?.tag as? String }
-                .toSet()
-            oficiales.filter { it !in actuales }.take(14).forEach { cat ->
-                if (!isFinishing) agregarChipCategoria(group, cat)
-            }
-        }
         // Distritos frecuentes de Ayacucho.
         val distritos = listOf("Ayacucho", "Carmen Alto", "San Juan Bautista", "Jesús Nazareno", "Andrés Avelino Cáceres", "Magdalena", "Huanta", "Tambo")
         findViewById<MaterialAutoCompleteTextView>(R.id.actvDistrito)?.apply {
@@ -128,7 +117,11 @@ class CrearPublicacionActivity : AppCompatActivity() {
         cat: String
     ) {
         if (group == null) return
-        val chip = Chip(this).apply { text = cat; isCheckable = true; tag = cat }
+        val chip = Chip(this).apply {
+            text = cat
+            isCheckable = true
+            tag = cat
+        }
         chip.setOnCheckedChangeListener { _, checked -> if (checked) categoriaElegida = cat }
         // Al editar, marca la categoría guardada aunque llegue tarde de Firestore.
         if (cat == categoriaElegida) chip.isChecked = true
@@ -186,7 +179,11 @@ class CrearPublicacionActivity : AppCompatActivity() {
             val group = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupCategoria)
             for (i in 0 until (group?.childCount ?: 0)) {
                 val chip = group?.getChildAt(i) as? Chip ?: continue
-                if ((chip.tag as? String) == pub.category) { chip.isChecked = true; break }
+                val chipCategory = chip.tag as? String ?: continue
+                if (categoriaCoincide(chipCategory, pub.category)) {
+                    chip.isChecked = true
+                    break
+                }
             }
         }
     }

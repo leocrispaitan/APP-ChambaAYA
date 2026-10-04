@@ -47,7 +47,10 @@ import com.proyecto.chambaya.data.repository.BlockRepository
 import com.proyecto.chambaya.data.repository.PublicationInteractionRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
 import com.proyecto.chambaya.data.repository.WorkplaceRepository
+import com.proyecto.chambaya.ui.jobs.CategoriasChamba
 import com.proyecto.chambaya.ui.jobs.JobDetailSheet
+import com.proyecto.chambaya.ui.jobs.categoriaCoincide
+import com.proyecto.chambaya.ui.profile.OficioIcons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -651,16 +654,11 @@ class FragmentoMapas : Fragment() {
         val row = rowMapCategories ?: return
         if (!isAdded) return
         row.removeAllViews()
-        val oficios = try {
-            OficioCatalog.load(requireContext())
-        } catch (e: Exception) {
-            emptyList()
-        }
         fun norm(s: String) = OficioCatalog.normalizar(s)
-        val counts = allPins.groupingBy { norm(it.publication.category) }.eachCount()
 
         tarjetaCategoria(
             nombre = "Todas",
+            categoria = "Todas",
             iconoUrl = "",
             conteo = allPins.size,
             seleccionada = selectedCategory.isBlank()
@@ -670,15 +668,18 @@ class FragmentoMapas : Fragment() {
             refreshPinsAndList()
         }?.let { row.addView(it) }
 
-        oficios.forEach { oficio ->
-            val conteo = counts[norm(oficio.categoria)] ?: 0
+        CategoriasChamba.disponibles.forEach { categoria ->
+            val key = norm(categoria)
+            val conteo = allPins.count { categoriaCoincide(categoria, it.publication.category) }
             tarjetaCategoria(
-                nombre = oficio.categoria,
-                iconoUrl = oficio.icono,
+                nombre = categoria,
+                categoria = categoria,
+                iconoUrl = OficioCatalog.load(requireContext())
+                    .firstOrNull { categoriaCoincide(categoria, it.categoria) }
+                    ?.icono.orEmpty(),
                 conteo = conteo,
-                seleccionada = norm(oficio.categoria) == selectedCategory
+                seleccionada = key == selectedCategory
             ) {
-                val key = norm(oficio.categoria)
                 selectedCategory = if (selectedCategory == key) "" else key
                 pintarCategorias()
                 refreshPinsAndList()
@@ -688,6 +689,7 @@ class FragmentoMapas : Fragment() {
 
     private fun tarjetaCategoria(
         nombre: String,
+        categoria: String,
         iconoUrl: String,
         conteo: Int,
         seleccionada: Boolean,
@@ -699,18 +701,23 @@ class FragmentoMapas : Fragment() {
         val iv = card.findViewById<ImageView>(R.id.ivMapCatIcon)
         val tvName = card.findViewById<TextView>(R.id.tvMapCatName)
         val tvCount = card.findViewById<TextView>(R.id.tvMapCatCount)
+        val categoriaCatalogo = OficioCatalog.load(requireContext())
+            .firstOrNull { categoriaCoincide(categoria, it.categoria) }
+        val iconoLocal = categoriaCatalogo?.let { OficioIcons.local(it.categoria) }
+            ?: OficioIcons.local(categoria)
         tvName.text = nombre
         tvCount.text = if (conteo == 1) "1 chamba" else "$conteo chambas"
         if (iconoUrl.isNotBlank()) {
+            iv.setImageResource(iconoLocal)
             val req = ImageRequest.Builder(requireContext())
                 .data(iconoUrl)
                 .target(iv)
-                .placeholder(R.drawable.ic_cat_construccion)
-                .error(R.drawable.ic_cat_construccion)
+                .placeholder(iconoLocal)
+                .error(iconoLocal)
                 .build()
             svgImageLoader().enqueue(req)
         } else {
-            iv.setImageResource(R.drawable.ic_home_search)
+            iv.setImageResource(if (categoria == "Todas") R.drawable.ic_home_search else iconoLocal)
         }
         if (seleccionada) {
             card.strokeColor = ContextCompat.getColor(requireContext(), R.color.brand_color)
@@ -725,7 +732,7 @@ class FragmentoMapas : Fragment() {
         return allPins
             .filter {
                 selectedCategory.isBlank() ||
-                    OficioCatalog.normalizar(it.publication.category) == selectedCategory
+                    categoriaCoincide(selectedCategory, it.publication.category)
             }
             .sortedBy { it.distanceKm }
     }
