@@ -1,6 +1,7 @@
 package com.proyecto.chambaya.ui.chat
 
 import android.content.Intent
+import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -18,6 +19,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.ItemTouchHelper
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.chatListTime
@@ -98,6 +100,34 @@ class FragmentoMensajes : Fragment() {
             abrirDetalleChat(chat)
         }
         rvChats.adapter = adapter
+        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.bindingAdapterPosition
+                val chat = adapter.chatAt(position)
+                if (chat == null) {
+                    adapter.notifyDataSetChanged()
+                    return
+                }
+                val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+                if (uid.isBlank()) {
+                    adapter.notifyDataSetChanged()
+                    return
+                }
+                preferenciasChats().edit()
+                    .putLong(claveChatOculto(uid, chat.id), chat.lastMessageAtEpochMillis)
+                    .apply()
+                adapter.quitarConversacion(chat.id)
+                if (!adapter.tieneConversaciones()) {
+                    mostrarVacio("Sin conversaciones.\nLos chats nacen de tus postulaciones y solicitudes.")
+                }
+            }
+        }).attachToRecyclerView(rvChats)
     }
 
     private fun abrirDetalleChat(chat: ChatConversacion) {
@@ -201,8 +231,15 @@ class FragmentoMensajes : Fragment() {
     private fun integrarConversaciones(uid: String, convs: List<com.proyecto.chambaya.data.model.Conversation>) {
         viewLifecycleOwner.lifecycleScope.launch {
             val bloques = blockRepo.myBlocks(uid).getOrNull().orEmpty()
+            val preferencias = preferenciasChats()
             val items = mutableListOf<ChatConversacion>()
             for (conv in convs) {
+                val hiddenAt = preferencias.getLong(claveChatOculto(uid, conv.conversationId), -1L)
+                val latestAt = conv.lastMessageAt?.toDate()?.time ?: 0L
+                if (hiddenAt >= 0L) {
+                    if (latestAt <= hiddenAt) continue
+                    preferencias.edit().remove(claveChatOculto(uid, conv.conversationId)).apply()
+                }
                 val other = conv.otherUid(uid)
                 if (other.isBlank() || other in bloques) continue
                 var perfil = perfilCache[other]
@@ -223,7 +260,8 @@ class FragmentoMensajes : Fragment() {
                     photoUrl = perfil?.photoUrl.orEmpty(),
                     otherUid = other,
                     publicationId = conv.publicationId,
-                    publicationTitle = conv.publicationTitle
+                    publicationTitle = conv.publicationTitle,
+                    lastMessageAtEpochMillis = latestAt
                 )
             }
             if (!isAdded) return@launch
@@ -289,4 +327,9 @@ class FragmentoMensajes : Fragment() {
         val density = resources.displayMetrics.density
         return (dp * density).toInt()
     }
+
+    private fun preferenciasChats() =
+        requireContext().getSharedPreferences("chat_inbox_hidden", Context.MODE_PRIVATE)
+
+    private fun claveChatOculto(uid: String, conversationId: String) = "${uid}_$conversationId"
 }

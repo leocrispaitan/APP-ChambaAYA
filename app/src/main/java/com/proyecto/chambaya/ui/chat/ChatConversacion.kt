@@ -14,7 +14,8 @@ data class ChatConversacion(
     val esFavorito: Boolean = false,
     val otherUid: String = "",
     val publicationId: String = "",
-    val publicationTitle: String = ""
+    val publicationTitle: String = "",
+    val lastMessageAtEpochMillis: Long = 0L
 )
 
 data class MensajeChat(

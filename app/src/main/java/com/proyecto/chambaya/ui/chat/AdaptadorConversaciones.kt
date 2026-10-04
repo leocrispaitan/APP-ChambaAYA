@@ -66,8 +66,17 @@ class AdaptadorConversaciones(
 
     override fun getItemCount(): Int = listaFiltrada.size
 
+    fun chatAt(position: Int): ChatConversacion? = listaFiltrada.getOrNull(position)
+    fun tieneConversaciones(): Boolean = listaOriginal.isNotEmpty()
+
     fun actualizarLista(nuevaLista: List<ChatConversacion>) {
         actualizarYFiltrar(nuevaLista, TipoFiltro.TODOS)
+    }
+
+    fun quitarConversacion(conversationId: String) {
+        listaOriginal = listaOriginal.filterNot { it.id == conversationId }
+        listaFiltrada = listaFiltrada.filterNot { it.id == conversationId }
+        notifyDataSetChanged()
     }
 
     /**

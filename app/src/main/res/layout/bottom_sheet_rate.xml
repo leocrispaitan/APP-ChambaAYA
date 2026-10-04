@@ -127,6 +127,7 @@
         android:layout_height="52dp"
         android:layout_marginTop="14dp"
         android:text="Enviar calificación"
+        android:textColor="@android:color/white"
         android:textSize="15sp"
         app:cornerRadius="16dp"
         app:backgroundTint="@color/brand_color" />
