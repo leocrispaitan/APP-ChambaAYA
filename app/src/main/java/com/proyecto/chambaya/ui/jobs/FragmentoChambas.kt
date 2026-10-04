@@ -172,7 +172,11 @@ class FragmentoChambas : Fragment() {
             onToggleSave = { item -> toggleSave(item) },
             onShare = { item -> compartir(item) },
             onHide = { },
-            onReport = { }
+            onReport = { },
+            onOpenComments = { item ->
+                CommentsSheet.newInstance(item.publication.publicationId)
+                    .show(parentFragmentManager, "comments")
+            }
         )
         recyclerView?.apply {
             adapter = this@FragmentoChambas.adapter

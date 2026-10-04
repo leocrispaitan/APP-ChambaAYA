@@ -41,7 +41,8 @@ class PublicationAdapter(
     private val onToggleSave: (PublicationFeedItem) -> Unit = {},
     private val onShare: (PublicationFeedItem) -> Unit = {},
     private val onHide: (PublicationFeedItem) -> Unit = {},
-    private val onReport: (PublicationFeedItem) -> Unit = {}
+    private val onReport: (PublicationFeedItem) -> Unit = {},
+    private val onOpenComments: (PublicationFeedItem) -> Unit = onOpenDetail
 ) : ListAdapter<PublicationFeedItem, PublicationAdapter.VH>(Diff()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -194,7 +195,7 @@ class PublicationAdapter(
             tvLikes.text = formatCount(item.likesCount)
             btnLike.setOnClickListener { onToggleLike(item) }
             tvComments.text = formatCount(p.statistics.comments)
-            btnComment.setOnClickListener { onOpenDetail(item) }
+            btnComment.setOnClickListener { onOpenComments(item) }
             tvRating.text = "${formatCount(item.savesCount)} guardados · ${publicationTimeAgo(p.createdAt)}"
 
             // ── Apertura del detalle ──
