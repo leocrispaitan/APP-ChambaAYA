@@ -87,8 +87,12 @@ class NotificationsSheet : BottomSheetDialogFragment() {
         view.findViewById<View>(R.id.btnNotifReadAll).setOnClickListener { v ->
             v.isEnabled = false
             viewLifecycleOwner.lifecycleScope.launch {
-                repo.markAllRead(uid)
-                if (isAdded) v.isEnabled = true
+                val result = repo.markAllRead(uid)
+                if (!isAdded) return@launch
+                v.isEnabled = true
+                if (result.isFailure) {
+                    Toast.makeText(requireContext(), "No se pudieron marcar como leídas.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
         view.findViewById<View>(R.id.btnNotifDeleteAll).setOnClickListener {
@@ -106,7 +110,17 @@ class NotificationsSheet : BottomSheetDialogFragment() {
             when (item.itemId) {
                 1 -> {
                     viewLifecycleOwner.lifecycleScope.launch {
-                        repo.setRead(uid, listOf(n.notificationId), !n.read)
+                        val result = repo.setRead(uid, listOf(n.notificationId), !n.read)
+                        if (!isAdded) return@launch
+                        Toast.makeText(
+                            requireContext(),
+                            when {
+                                result.isFailure -> "No se pudo actualizar la notificación."
+                                n.read -> "Notificación marcada como no leída."
+                                else -> "Notificación marcada como leída."
+                            },
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     true
                 }
@@ -214,8 +228,18 @@ class NotificationsSheet : BottomSheetDialogFragment() {
             if (lista.isEmpty()) return@setOnClickListener
             salirSeleccion()
             viewLifecycleOwner.lifecycleScope.launch {
-                lista.forEach { repo.deleteOne(uid, it.notificationId) }
+                val resultados = lista.map { it to repo.deleteOne(uid, it.notificationId) }
                 if (!isAdded) return@launch
+                val eliminadas = resultados.filter { it.second.isSuccess }.map { it.first }
+                val fallidas = resultados.size - eliminadas.size
+                if (fallidas > 0) {
+                    Toast.makeText(
+                        requireContext(),
+                        "$fallidas notificación(es) no se pudieron eliminar.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                if (eliminadas.isEmpty()) return@launch
                 Snackbar.make(
                     requireView(),
                     if (lista.size == 1) "1 notificación eliminada"
@@ -224,7 +248,7 @@ class NotificationsSheet : BottomSheetDialogFragment() {
                 )
                     .setAction("Deshacer") {
                         viewLifecycleOwner.lifecycleScope.launch {
-                            lista.forEach { repo.restore(uid, it) }
+                            eliminadas.forEach { repo.restore(uid, it) }
                         }
                     }
                     .show()

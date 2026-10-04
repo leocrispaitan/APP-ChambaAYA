@@ -1264,8 +1264,9 @@ service cloud.firestore {
       allow update: if request.auth != null
         && resource.data.get('recipientUid', '') == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
-        && request.resource.data.get('read', false) == true;
-      allow delete: if false;
+        && request.resource.data.get('read', null) is bool;
+      allow delete: if request.auth != null
+        && resource.data.get('recipientUid', '') == request.auth.uid;
     }
   }
 }
