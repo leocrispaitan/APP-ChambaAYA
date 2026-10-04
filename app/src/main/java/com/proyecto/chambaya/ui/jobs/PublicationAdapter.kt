@@ -10,8 +10,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.os.Handler
 import android.os.Looper
-import android.animation.ValueAnimator
-import android.view.animation.LinearInterpolator
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -74,7 +72,6 @@ class PublicationAdapter(
         private val dotsPhotos: LinearLayout = view.findViewById(R.id.dotsJobImages)
         private val carouselHandler = Handler(Looper.getMainLooper())
         private var carouselCallback: ViewPager2.OnPageChangeCallback? = null
-        private var dotAnimator: ValueAnimator? = null
         private val advanceCarousel = object : Runnable {
             override fun run() {
                 val count = vpPhotos.adapter?.itemCount ?: 0
@@ -222,22 +219,17 @@ class PublicationAdapter(
 
         fun stopImageCarousel() {
             carouselHandler.removeCallbacks(advanceCarousel)
-            dotAnimator?.cancel()
-            dotAnimator = null
             carouselCallback?.let { vpPhotos.unregisterOnPageChangeCallback(it) }
             carouselCallback = null
         }
 
         private fun paintCarouselDots(total: Int, selected: Int) {
-            dotAnimator?.cancel()
-            dotAnimator = null
             dotsPhotos.removeAllViews()
             val density = itemView.resources.displayMetrics.density
             repeat(total) { index ->
                 val selectedDot = index == selected
-                val collapsedWidth = (8 * density).toInt()
                 val dot = View(itemView.context).apply {
-                    layoutParams = LinearLayout.LayoutParams(collapsedWidth, (6 * density).toInt()).apply {
+                    layoutParams = LinearLayout.LayoutParams((8 * density).toInt(), (6 * density).toInt()).apply {
                         if (index > 0) marginStart = (6 * density).toInt()
                     }
                     setBackgroundResource(
@@ -246,19 +238,6 @@ class PublicationAdapter(
                     )
                 }
                 dotsPhotos.addView(dot)
-                if (selectedDot) {
-                    val expandedWidth = (32 * density).toInt()
-                    dotAnimator = ValueAnimator.ofInt(collapsedWidth, expandedWidth).apply {
-                        duration = 6500L
-                        interpolator = LinearInterpolator()
-                        addUpdateListener { animator ->
-                            dot.layoutParams = dot.layoutParams.apply {
-                                width = animator.animatedValue as Int
-                            }
-                        }
-                        start()
-                    }
-                }
             }
         }
     }
