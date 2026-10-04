@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bg_notifications_dialog"
+    android:paddingStart="20dp"
+    android:paddingTop="20dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="16dp">
+
+    <LinearLayout
+        android:id="@+id/layoutNotifHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_notifications_header_icon">
+
+            <ImageView
+                android:layout_width="23dp"
+                android:layout_height="23dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_home_bell"
+                android:tint="@color/brand_color" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-black"
+            android:text="Notificaciones &amp; Alertas"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp" />
+
+        <ImageButton
+            android:id="@+id/btnNotifClose"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Cerrar notificaciones"
+            android:padding="8dp"
+            android:src="@drawable/ic_close"
+            android:tint="@color/text_secondary" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="14dp"
+        android:background="#E5E7EB" />
+
+    <LinearLayout
+        android:id="@+id/layoutNotifActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btnNotifReadAll"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end"
+            android:fontFamily="sans-serif-medium"
+            android:text="Marcar leídas"
+            android:textColor="@color/brand_color"
+            android:textSize="13sp"
+            android:padding="8dp" />
+
+        <ImageButton
+            android:id="@+id/btnNotifDeleteAll"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Eliminar todas"
+            android:padding="9dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_notif_delete"
+            android:tint="@color/text_secondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutNotifSelection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/btnSelBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Cancelar selección"
+            android:padding="9dp"
+            android:src="@drawable/ic_arrow_back"
+            android:tint="@color/text_primary" />
+
+        <TextView
+            android:id="@+id/tvSelCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-black"
+            android:textColor="@color/text_primary"
+            android:textSize="17sp"
+            tools:text="1 seleccionada" />
+
+        <TextView
+            android:id="@+id/btnSelAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="Todo"
+            android:textColor="@color/brand_color"
+            android:textSize="14sp"
+            android:padding="10dp" />
+
+        <ImageButton
+            android:id="@+id/btnSelRead"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Marcar como leídas"
+            android:padding="9dp"
+            android:src="@drawable/ic_check_circle"
+            android:tint="@color/brand_color" />
+
+        <ImageButton
+            android:id="@+id/btnSelDelete"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Eliminar seleccionadas"
+            android:padding="9dp"
+            android:src="@drawable/ic_notif_delete"
+            android:tint="#EF4444" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progressNotif"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvNotifications"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never" />
+
+    <LinearLayout
+        android:id="@+id/layoutNotifEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            android:src="@drawable/ic_home_bell"
+            android:tint="#94A3B8" />
+
+        <TextView
+            android:id="@+id/tvNotifEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center"
+            android:text="Sin notificaciones pendientes"
+            android:textColor="@color/text_primary"
+            android:textSize="17sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="Te avisaremos aquí en tiempo real cuando postulen a tus ofertas o quieran contratar tu tiempo libre."
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,9 +1,12 @@
 package com.proyecto.chambaya.ui.jobs
 
+import android.app.Dialog
+import android.graphics.Color
 import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
@@ -18,7 +21,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.fragment.app.DialogFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.R
@@ -32,7 +35,7 @@ import kotlinx.coroutines.launch
  * Bandeja de notificaciones: abrir con tap, deslizar a la izquierda para
  * eliminar una (con Deshacer) y papelera para borrar todas (con confirmación).
  */
-class NotificationsSheet : BottomSheetDialogFragment() {
+class NotificationsSheet : DialogFragment() {
 
     private val repo = NotificationRepository()
     private var adapter: Adapter? = null
@@ -40,7 +43,25 @@ class NotificationsSheet : BottomSheetDialogFragment() {
     private var backCallback: androidx.activity.OnBackPressedCallback? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return inflater.inflate(R.layout.bottom_sheet_notifications, container, false)
+        return inflater.inflate(R.layout.dialog_notifications, container, false)
+    }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog = Dialog(requireContext())
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.let { window ->
+            val density = resources.displayMetrics.density
+            val metrics = resources.displayMetrics
+            val width = (metrics.widthPixels - 36f * density).toInt()
+            val height = minOf((metrics.heightPixels * 0.72f).toInt(), (620f * density).toInt())
+            window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window.setDimAmount(0.42f)
+            window.setGravity(Gravity.CENTER)
+            window.setLayout(width, height)
+            window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -67,7 +88,7 @@ class NotificationsSheet : BottomSheetDialogFragment() {
         setupSwipeToDelete(rv, uid)
         setupBarraSeleccion(uid)
         val progress = view.findViewById<ProgressBar>(R.id.progressNotif)
-        val empty = view.findViewById<TextView>(R.id.tvNotifEmpty)
+        val empty = view.findViewById<View>(R.id.layoutNotifEmpty)
         progress.visibility = View.VISIBLE
 
         registration = repo.listenMine(
@@ -76,12 +97,14 @@ class NotificationsSheet : BottomSheetDialogFragment() {
                 if (!isAdded) return@listenMine
                 progress.visibility = View.GONE
                 empty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                rv.visibility = if (list.isEmpty()) View.GONE else View.VISIBLE
                 adapter?.submitList(list)
             },
             onError = {
                 if (!isAdded) return@listenMine
                 progress.visibility = View.GONE
                 empty.visibility = View.VISIBLE
+                rv.visibility = View.GONE
             }
         )
         view.findViewById<View>(R.id.btnNotifReadAll).setOnClickListener { v ->
@@ -98,6 +121,7 @@ class NotificationsSheet : BottomSheetDialogFragment() {
         view.findViewById<View>(R.id.btnNotifDeleteAll).setOnClickListener {
             confirmarBorrarTodas(uid)
         }
+        view.findViewById<View>(R.id.btnNotifClose).setOnClickListener { dismiss() }
     }
 
     /** Menú de pulsación larga: leído/no leído, eliminar y seleccionar. */
@@ -172,6 +196,7 @@ class NotificationsSheet : BottomSheetDialogFragment() {
 
     private fun mostrarBarraSeleccion() {
         view?.findViewById<View>(R.id.layoutNotifHeader)?.visibility = View.GONE
+        view?.findViewById<View>(R.id.layoutNotifActions)?.visibility = View.GONE
         view?.findViewById<View>(R.id.layoutNotifSelection)?.visibility = View.VISIBLE
         actualizarBarraSeleccion()
         backCallback?.isEnabled = true
@@ -193,6 +218,7 @@ class NotificationsSheet : BottomSheetDialogFragment() {
     private fun ocultarBarraSeleccion() {
         view?.findViewById<View>(R.id.layoutNotifSelection)?.visibility = View.GONE
         view?.findViewById<View>(R.id.layoutNotifHeader)?.visibility = View.VISIBLE
+        view?.findViewById<View>(R.id.layoutNotifActions)?.visibility = View.VISIBLE
         backCallback?.isEnabled = false
     }
 
