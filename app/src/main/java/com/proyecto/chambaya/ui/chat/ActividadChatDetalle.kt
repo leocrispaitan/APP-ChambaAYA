@@ -154,9 +154,12 @@ class ActividadChatDetalle : AppCompatActivity() {
         finish()
     }
 
-    private fun verPerfil() {
+    private fun verPerfil(mostrarBotonMensaje: Boolean = true) {
         if (otherUid.isNotBlank()) {
-            PublicProfileSheet.newInstance(otherUid).show(supportFragmentManager, "profile")
+            PublicProfileSheet.newInstance(
+                uid = otherUid,
+                showMessageAction = mostrarBotonMensaje
+            ).show(supportFragmentManager, "profile")
         }
     }
 
@@ -167,7 +170,7 @@ class ActividadChatDetalle : AppCompatActivity() {
         menu.menu.add(0, 3, 0, getString(R.string.k_comun_denunciar))
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                1 -> verPerfil()
+                1 -> verPerfil(mostrarBotonMensaje = false)
                 2 -> confirmarBloqueo()
                 3 -> denunciar()
             }

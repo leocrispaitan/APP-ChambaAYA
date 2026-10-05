@@ -2,6 +2,7 @@ package com.proyecto.chambaya.ui.jobs
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -180,6 +181,14 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
         val me = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         val btnMsg = view.findViewById<View>(R.id.btnPublicMessage)
         val btnMore = view.findViewById<View>(R.id.btnPublicMore)
+        if (!requireArguments().getBoolean(ARG_SHOW_MESSAGE, true)) {
+            btnMsg.visibility = View.GONE
+            (btnMore.parent as? android.widget.LinearLayout)?.gravity = Gravity.END
+            (btnMore.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+                params.marginStart = 0
+                btnMore.layoutParams = params
+            }
+        }
         if (me.isBlank() || me == uid) {
             btnMsg.visibility = View.GONE
             btnMore.visibility = View.GONE
@@ -309,12 +318,19 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
         private const val ARG_UID = "uid"
         private const val ARG_PUB = "publicationId"
         private const val ARG_PUB_TITLE = "publicationTitle"
-        fun newInstance(uid: String, publicationId: String = "", publicationTitle: String = "") =
+        private const val ARG_SHOW_MESSAGE = "showMessageAction"
+        fun newInstance(
+            uid: String,
+            publicationId: String = "",
+            publicationTitle: String = "",
+            showMessageAction: Boolean = true
+        ) =
             PublicProfileSheet().apply {
                 arguments = androidx.core.os.bundleOf(
                     ARG_UID to uid,
                     ARG_PUB to publicationId,
-                    ARG_PUB_TITLE to publicationTitle
+                    ARG_PUB_TITLE to publicationTitle,
+                    ARG_SHOW_MESSAGE to showMessageAction
                 )
             }
     }
