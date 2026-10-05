@@ -71,6 +71,8 @@ class FragmentoChambas : Fragment() {
     // onPause. Los flags like/save se cachean por id para no releerlos en
     // cada snapshot; solo se consultan los ids nuevos.
     private var feedListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var badgeListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var badgeUid: String? = null
     private val stateCache = mutableMapOf<String, Pair<Boolean, Boolean>>()
     private val hiddenCache = mutableSetOf<String>()
     private val blockedCache = mutableSetOf<String>()
@@ -426,19 +428,30 @@ class FragmentoChambas : Fragment() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         val badge = view?.findViewById<TextView>(R.id.tvNotifBadge) ?: return
         if (uid.isBlank()) {
+            badgeListener?.remove()
+            badgeListener = null
+            badgeUid = null
             badge.visibility = View.GONE
             return
         }
-        viewLifecycleOwner.lifecycleScope.launch {
-            val n = NotificationRepository().unreadCount(uid, 99)
-            if (!isAdded) return@launch
+        if (badgeUid == uid && badgeListener != null) return
+        badgeListener?.remove()
+        badgeUid = uid
+        badgeListener = NotificationRepository().listenUnreadCount(
+            uid = uid,
+            onUpdate = { n ->
+                if (!isAdded || view == null) return@listenUnreadCount
             if (n > 0) {
                 badge.visibility = View.VISIBLE
                 badge.text = if (n > 99) "99+" else n.toString()
             } else {
                 badge.visibility = View.GONE
             }
-        }
+            },
+            onError = { error ->
+                android.util.Log.w("FragmentoChambas", "No se pudo actualizar el badge de notificaciones", error)
+            }
+        )
     }
 
     // ── Categorías (mismas que ChambAYA-APP-main, con fotos locales) ──
@@ -665,12 +678,18 @@ class FragmentoChambas : Fragment() {
 
     override fun onPause() {
         detachFeed()
+        badgeListener?.remove()
+        badgeListener = null
+        badgeUid = null
         super.onPause()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         detachFeed()
+        badgeListener?.remove()
+        badgeListener = null
+        badgeUid = null
         stateCache.clear()
         hiddenCache.clear()
         blockedCache.clear()
