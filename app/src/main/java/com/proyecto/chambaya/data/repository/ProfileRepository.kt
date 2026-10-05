@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import com.proyecto.chambaya.data.model.Genders
 import com.proyecto.chambaya.data.model.OficioCatalog
@@ -91,6 +92,20 @@ class ProfileRepository(
                     .takeIf { it.exists() }?.toPublicProfile()
                     ?: throw NoSuchElementException("Perfil no disponible.")
             }
+        }
+
+    /** Foto pública actualizada en vivo, sin leer el documento privado del usuario. */
+    fun listenPublicPhoto(
+        uid: String,
+        onUpdate: (String) -> Unit,
+        onError: (Exception) -> Unit
+    ): ListenerRegistration = firestore.collection(COLLECTION_PUBLIC).document(uid)
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onError(error)
+                return@addSnapshotListener
+            }
+            if (snapshot?.exists() == true) onUpdate(snapshot.getString("photoUrl").orEmpty())
         }
 
     /**

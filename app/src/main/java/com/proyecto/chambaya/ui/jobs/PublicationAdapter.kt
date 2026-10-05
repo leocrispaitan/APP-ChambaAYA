@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.imageview.ShapeableImageView
@@ -21,6 +22,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.precioTexto
 import com.proyecto.chambaya.data.model.publicationTimeAgo
+import com.proyecto.chambaya.data.repository.ProfileRepository
 
 /**
  * FASE 6 — Adapter del feed de publicaciones reales.
@@ -45,6 +47,8 @@ class PublicationAdapter(
     private val onOpenComments: (PublicationFeedItem) -> Unit = onOpenDetail
 ) : ListAdapter<PublicationFeedItem, PublicationAdapter.VH>(Diff()) {
 
+    private val profileRepo = ProfileRepository()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val v = LayoutInflater.from(parent.context).inflate(R.layout.item_job_card, parent, false)
         return VH(v)
@@ -54,6 +58,7 @@ class PublicationAdapter(
 
     override fun onViewRecycled(holder: VH) {
         holder.stopImageCarousel()
+        holder.stopPublisherPhotoListener()
         super.onViewRecycled(holder)
     }
 
@@ -73,6 +78,7 @@ class PublicationAdapter(
         private val dotsPhotos: LinearLayout = view.findViewById(R.id.dotsJobImages)
         private val carouselHandler = Handler(Looper.getMainLooper())
         private var carouselCallback: ViewPager2.OnPageChangeCallback? = null
+        private var publisherPhotoListener: ListenerRegistration? = null
         private val advanceCarousel = object : Runnable {
             override fun run() {
                 val count = vpPhotos.adapter?.itemCount ?: 0
@@ -107,6 +113,8 @@ class PublicationAdapter(
             tvLocation.text = distrito
             tvTime.text = publicationTimeAgo(p.createdAt)
 
+            val publisherUid = p.publisher.uid.ifBlank { p.ownerUid }
+            ivAvatar.tag = publisherUid
             if (p.publisher.photoUrl.isNotBlank()) {
                 ivAvatar.load(p.publisher.photoUrl) {
                     crossfade(true)
@@ -116,6 +124,23 @@ class PublicationAdapter(
             } else {
                 ivAvatar.setImageResource(R.drawable.ic_user_circle)
             }
+            publisherPhotoListener?.remove()
+            publisherPhotoListener = if (publisherUid.isNotBlank()) {
+                profileRepo.listenPublicPhoto(
+                    uid = publisherUid,
+                    onUpdate = { photoUrl ->
+                        if (ivAvatar.tag != publisherUid || photoUrl.isBlank()) return@listenPublicPhoto
+                        ivAvatar.load(photoUrl) {
+                            crossfade(true)
+                            placeholder(R.drawable.ic_user_circle)
+                            error(R.drawable.ic_user_circle)
+                        }
+                    },
+                    onError = { error ->
+                        android.util.Log.w("PublicationAdapter", "No se pudo actualizar la foto pública", error)
+                    }
+                )
+            } else null
 
             // Perfil clicable (avatar + nombre).
             val openProfile = View.OnClickListener { onOpenProfile(item) }
@@ -222,6 +247,12 @@ class PublicationAdapter(
             carouselHandler.removeCallbacks(advanceCarousel)
             carouselCallback?.let { vpPhotos.unregisterOnPageChangeCallback(it) }
             carouselCallback = null
+        }
+
+        fun stopPublisherPhotoListener() {
+            publisherPhotoListener?.remove()
+            publisherPhotoListener = null
+            ivAvatar.tag = null
         }
 
         private fun paintCarouselDots(total: Int, selected: Int) {

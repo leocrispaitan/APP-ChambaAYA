@@ -42,6 +42,7 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
     private val chatRepo = ChatRepository()
     private val blockRepo = BlockRepository()
     private var loadedProfile: com.proyecto.chambaya.data.model.PublicProfile? = null
+    private var ratingSummaryListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.bottom_sheet_public_profile, container, false)
@@ -130,11 +131,9 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
             val pubsD = async { pubRepo.byOwner(uid, 100).getOrNull().orEmpty() }
             val jobsEmpD = async { if (esEmpresa) jobRepo.listByEmployer(uid, 100).getOrNull().orEmpty() else emptyList() }
             val jobsWorkD = async { if (!esEmpresa) jobRepo.listByWorker(uid, 100).getOrNull().orEmpty() else emptyList() }
-            val ratingsD = async { ratingRepo.receivedBy(uid, 100).getOrNull().orEmpty() }
             val pubs = pubsD.await()
             val jobsEmp = jobsEmpD.await()
             val jobsWork = jobsWorkD.await()
-            val ratings = ratingsD.await()
             if (!isAdded) return@launch
             progress.visibility = View.GONE
 
@@ -152,14 +151,28 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                 view.findViewById<TextView>(R.id.tvPublicHired).text =
                     if (perfil.worker.experienceYears > 0) getString(R.string.profile_anios_experiencia, perfil.worker.experienceYears) else "—"
             }
-            // FASE 17/19: promedio + nº de calificaciones (reputación visible).
-            view.findViewById<TextView>(R.id.tvPublicRating).text =
-                if (ratings.isNotEmpty()) {
-                    String.format("%.1f (%d)", ratings.map { it.rating }.average(), ratings.size)
-                } else "—"
+            // Reputación visible en vivo: estrella + promedio, sin mostrar la cantidad.
+            val tvRating = view.findViewById<TextView>(R.id.tvPublicRating)
+            ratingSummaryListener?.remove()
+            ratingSummaryListener = ratingRepo.listenSummary(
+                uid = uid,
+                onUpdate = { average, count ->
+                    if (!isAdded || this@PublicProfileSheet.view !== view) return@listenSummary
+                    tvRating.text = if (count > 0) {
+                        "★ ${String.format(java.util.Locale.US, "%.1f", average)}"
+                    } else "★ —"
+                },
+                onError = { e -> android.util.Log.w("PublicProfileSheet", "No se pudo cargar la calificación", e) }
+            )
 
             configurarAcciones(view, uid)
         }
+    }
+
+    override fun onDestroyView() {
+        ratingSummaryListener?.remove()
+        ratingSummaryListener = null
+        super.onDestroyView()
     }
 
     /** Mensaje + bloquear/denunciar (FASE 12/13). Se oculta viéndose a sí mismo. */

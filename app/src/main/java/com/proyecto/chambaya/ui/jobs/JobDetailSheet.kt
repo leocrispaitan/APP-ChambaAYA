@@ -58,6 +58,7 @@ class JobDetailSheet : BottomSheetDialogFragment() {
     private var currentPub: Publication? = null
     private var commentListener: com.google.firebase.firestore.ListenerRegistration? = null
     private var publisherRatingListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var publisherPhotoListener: com.google.firebase.firestore.ListenerRegistration? = null
     private var photoPageCallback: ViewPager2.OnPageChangeCallback? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -120,7 +121,20 @@ class JobDetailSheet : BottomSheetDialogFragment() {
             ivAvatar.load(pub.publisher.photoUrl) {
                 crossfade(true); placeholder(R.drawable.ic_user_circle); error(R.drawable.ic_user_circle)
             }
+        } else {
+            ivAvatar.setImageResource(R.drawable.ic_user_circle)
         }
+        publisherPhotoListener?.remove()
+        publisherPhotoListener = ProfileRepository().listenPublicPhoto(
+            uid = pub.publisher.uid.ifBlank { pub.ownerUid },
+            onUpdate = { photoUrl ->
+                if (!isAdded || this.view !== view || photoUrl.isBlank()) return@listenPublicPhoto
+                ivAvatar.load(photoUrl) {
+                    crossfade(true); placeholder(R.drawable.ic_user_circle); error(R.drawable.ic_user_circle)
+                }
+            },
+            onError = { error -> android.util.Log.w("JobDetailSheet", "No se pudo actualizar la foto pública", error) }
+        )
         view.findViewById<View>(R.id.rowPublisher).setOnClickListener {
             dismiss()
             parentFragmentManager.setFragmentResult(
@@ -533,6 +547,8 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         commentListener = null
         publisherRatingListener?.remove()
         publisherRatingListener = null
+        publisherPhotoListener?.remove()
+        publisherPhotoListener = null
         photoPageCallback?.let { cb ->
             view?.findViewById<ViewPager2>(R.id.vpDetailPhotos)?.unregisterOnPageChangeCallback(cb)
         }
