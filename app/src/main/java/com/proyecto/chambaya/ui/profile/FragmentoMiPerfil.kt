@@ -895,72 +895,10 @@ class FragmentoMiPerfil : Fragment() {
      * manda a Ajustes, que es donde están esos campos.
      */
     private fun abrirEdicionEnPasoIncompleto() {
-        // La copia del fragmento va primero: `sincronizarConCacheCompartido` la
-        // mantiene al día, y `ProfileCache` podría venir de otra pantalla.
-        val datos = perfil ?: ProfileCache.perfil ?: run {
-            abrirEdicion(EditarPerfilActivity.PASO_INICIO_EDITAR)
-            return
-        }
-
-        val completion = datos.completion()
-        if (completion.isComplete) {
-            mostrarDialogoPerfilCompleto()
-            return
-        }
-
-        val faltan = completion.missing
-        val esContratante = datos.activeRole == UserRoles.CONTRATANTE
-        val mapaPasos = EditarPerfilActivity.camposPorPaso(esContratante)
-        val paso = mapaPasos.keys.sorted()
-            .firstOrNull { p -> faltan.any { it in mapaPasos.getValue(p) } }
-        val tituloPaso = paso?.let { nombreDePaso(it, esContratante) }
-
-        // En CONTRATANTE, lo pendiente del bloque `employer` (tipo, identidad,
-        // nombre comercial) no está en este asistente: se dice dónde está en
-        // vez de prometer un paso que no contiene esos campos. El lugar SÍ
-        // está (paso 3), así que ya no cae aquí.
-        if (paso == null && esContratante) {
-            mostrarDialogoFaltaContratante(faltan)
-            return
-        }
-
-        val destino = paso ?: 4
-        val camposDelPaso = when (paso) {
-            null -> faltan
-            else -> faltan.filter { it in mapaPasos.getValue(paso) }
-        }
-        // Lo que queda para después no se oculta: el mensaje dice dónde empieza el
-        // usuario y cuánto le falta en total, no solo lo de esta fase.
-        val otros = faltan - camposDelPaso.toSet()
-
-        val mensaje = buildString {
-            append(getString(R.string.k_perfil_al_fmt, completion.percent))
-            if (camposDelPaso.size == 1) {
-                append(" " + getString(R.string.k_perfil_falta_1))
-            } else {
-                append(" " + getString(R.string.k_perfil_faltan_n, camposDelPaso.size))
-            }
-            append("\n\n")
-            camposDelPaso.forEach { append("• $it\n") }
-            if (otros.isNotEmpty()) {
-                append(getString(R.string.k_perfil_despues))
-                otros.forEach { append("• $it\n") }
-            }
-            if (tituloPaso != null) {
-                append(getString(R.string.k_perfil_llevamos_fmt, tituloPaso))
-            }
-        }
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.profile_banner_complete_title)
-            .setIcon(R.drawable.ic_home_chevron_down)
-            .setMessage(mensaje)
-            .setPositiveButton(R.string.modo_completar_ahora) { _, _ -> abrirEdicion(destino) }
-            .setNegativeButton(R.string.k_perfil_ahora_no, null)
-            .show()
+        // El asistente carga el perfil y salta al primer paso incompleto.
+        abrirEdicion(EditarPerfilActivity.PASO_INICIO_COMPLETAR)
     }
 
-    /** Nombre legible de cada fase, tal como lo anuncia el asistente. */
     private fun nombreDePaso(paso: Int, esContratante: Boolean): String = when (paso) {
         1 -> getString(R.string.k_perfil_fase_1)
         2 -> getString(R.string.k_perfil_fase_2)

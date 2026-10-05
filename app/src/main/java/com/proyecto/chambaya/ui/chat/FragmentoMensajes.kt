@@ -11,7 +11,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -38,7 +37,6 @@ class FragmentoMensajes : Fragment() {
     private lateinit var chipUnread: TextView
     private lateinit var chipFavorites: TextView
     private lateinit var chipAddFilter: FrameLayout
-    private lateinit var btnNewChat: FrameLayout
     private lateinit var headerLayout: View
 
     private var currentFilter = AdaptadorConversaciones.TipoFiltro.TODOS
@@ -65,7 +63,6 @@ class FragmentoMensajes : Fragment() {
         setupRecyclerView()
         setupSearch()
         setupFilterChips()
-        setupActions()
 
         return view
     }
@@ -77,7 +74,6 @@ class FragmentoMensajes : Fragment() {
         chipUnread = view.findViewById(R.id.chipUnread)
         chipFavorites = view.findViewById(R.id.chipFavorites)
         chipAddFilter = view.findViewById(R.id.chipAddFilter)
-        btnNewChat = view.findViewById(R.id.btnNewChat)
         headerLayout = view.findViewById(R.id.headerLayout)
     }
 
@@ -311,16 +307,6 @@ class FragmentoMensajes : Fragment() {
     private fun ocultarVacio() {
         emptyView?.visibility = View.GONE
         if (::rvChats.isInitialized) rvChats.visibility = View.VISIBLE
-    }
-
-    private fun setupActions() {
-        btnNewChat.setOnClickListener {
-            Toast.makeText(
-                requireContext(),
-                "Los chats se inician desde tus postulaciones o solicitudes.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
     }
 
     private fun dpToPx(dp: Int): Int {
