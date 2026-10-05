@@ -208,7 +208,7 @@ class FragmentoAjustesPerfil : Fragment() {
 
         root.findViewById<View>(R.id.rowLanguage)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Idioma: Español (Perú)", Toast.LENGTH_SHORT).show()
+            showLanguageDialog()
         }
 
         root.findViewById<View>(R.id.rowAppearance)?.setOnClickListener {
@@ -340,6 +340,11 @@ class FragmentoAjustesPerfil : Fragment() {
             (resources.displayMetrics.widthPixels * 0.90f).toInt(),
             android.view.WindowManager.LayoutParams.WRAP_CONTENT
         )
+    }
+
+    // ── Pantalla completa de idiomas (solo diseño). ──
+    private fun showLanguageDialog() {
+        startActivity(android.content.Intent(requireContext(), com.proyecto.chambaya.ActividadIdioma::class.java))
     }
 
     private fun gestionarDirecciones() {

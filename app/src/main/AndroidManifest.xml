@@ -80,6 +80,11 @@
             android:name=".ui.foto.RecortarFotoActivity"
             android:exported="false"
             android:theme="@style/Theme.ChambAYA.RecorteFoto" />
+
+        <!-- Pantalla completa de idiomas (solo diseño). -->
+        <activity
+            android:name=".ActividadIdioma"
+            android:exported="false" />
     </application>
 
 </manifest>
