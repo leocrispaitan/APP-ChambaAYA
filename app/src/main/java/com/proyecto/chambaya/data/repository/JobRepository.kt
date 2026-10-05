@@ -13,9 +13,13 @@ import kotlinx.coroutines.withContext
 
 /**
  * FASE 8 — Trabajos que nacen al aceptar una postulación.
+ *
+ * Cada transición avisa a la contraparte (FASE 14): al completar se habilita
+ * la calificación en ambas direcciones.
  */
 class JobRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val notifications: NotificationRepository = NotificationRepository(firestore)
 ) {
 
     suspend fun create(
@@ -159,7 +163,17 @@ class JobRepository(
                     cambios["completedAt"] = FieldValue.serverTimestamp()
                 }
                 Tasks.await(ref.update(cambios))
-                Tasks.await(ref.get()).toJob()
+                val updated = Tasks.await(ref.get()).toJob()
+                // Aviso a la contraparte (mejor esfuerzo, no bloquea).
+                val other = if (uid == updated.workerUid) updated.employerUid else updated.workerUid
+                notifications.pushJobEvent(
+                    recipientUid = other,
+                    senderUid = uid,
+                    to = to,
+                    publicationTitle = updated.publicationTitle,
+                    publicationId = updated.publicationId
+                )
+                updated
             }
         }
 

@@ -201,6 +201,29 @@
         tools:visibility="visible"
         tools:text="Empresa ayacuchana dedicada a la construcción y remodelación." />
 
+    <!-- FASE 17 — distrito y oficios/habilidades (solo datos públicos). -->
+    <TextView
+        android:id="@+id/tvPublicDistrict"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="Carmen Alto, Huamanga" />
+
+    <TextView
+        android:id="@+id/tvPublicSpecialties"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/text_primary"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="Albañilería · Pintura · Jardinería" />
+
     <LinearLayout
         android:id="@+id/rowPublicPlace"
         android:layout_width="match_parent"

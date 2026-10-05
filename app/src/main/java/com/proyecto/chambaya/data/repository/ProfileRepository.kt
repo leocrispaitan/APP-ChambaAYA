@@ -58,7 +58,9 @@ import kotlinx.coroutines.withContext
  */
 class ProfileRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
-    private val identityService: IdentityValidationService = IdentityValidationService()
+    private val identityService: IdentityValidationService = IdentityValidationService(),
+    private val reservations: IdentityReservationRepository =
+        IdentityReservationRepository(firestore)
 ) {
 
     // ═══════════════════════════════════════════════════════════════
@@ -321,6 +323,13 @@ class ProfileRepository(
             // verificada, ya está validado: no hace falta llamada HTTP.
             val documentoCoincide = actual.identity.documentType == draft.documentType &&
                 actual.identity.documentNumber == cleanDocument
+
+            // Unicidad: si el contratante declara un documento DISTINTO al de
+            // su identidad, ese documento también se reserva (otra cuenta no
+            // puede usarlo). Si coincide, ya quedó reservado en el registro.
+            if (!documentoCoincide) {
+                reservations.reserve(draft.documentType, cleanDocument, uid).getOrThrow()
+            }
 
             val identityName = if (documentoCoincide) {
                 actual.identity.identityName

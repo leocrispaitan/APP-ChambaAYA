@@ -456,6 +456,21 @@ exports.verifyEmailOtp = functions.https.onCall(async (data, context) => {
         console.warn("[verifyEmailOtp] No se pudo leer el documento previo:", readErr.message);
     }
 
+    // Unicidad global DNI/RUC: `identity_reservations/{TIPO_NUMERO}`.
+    // Si el documento ya pertenece a otra cuenta, se rechaza la verificación
+    // para que el cliente no complete un registro duplicado.
+    if (identity) {
+        const reservationId = `${identity.documentType}_${identity.documentNumber}`;
+        const reservationRef = db.collection("identity_reservations").doc(reservationId);
+        const reservationDoc = await reservationRef.get();
+        if (reservationDoc.exists && reservationDoc.data().uid !== uid) {
+            throw new functions.https.HttpsError(
+                "already-exists",
+                "Ese documento de identidad ya está registrado en otra cuenta."
+            );
+        }
+    }
+
     // 5. Código correcto: Actualización atómica en backend
     const batch = db.batch();
 
@@ -480,6 +495,19 @@ exports.verifyEmailOtp = functions.https.onCall(async (data, context) => {
         otpVerified: true
     }), { merge: true });
 
+    // Reserva del documento (misma transacción lógica que users/{uid}).
+    if (identity) {
+        const reservationRef = db.collection("identity_reservations")
+            .doc(`${identity.documentType}_${identity.documentNumber}`);
+        batch.set(reservationRef, {
+            documentType: identity.documentType,
+            documentNumber: identity.documentNumber,
+            uid: uid,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    }
+
     await batch.commit();
 
     console.log(`[OTP Success] Usuario ${uid} (${userEmail}) verificado correctamente con rol ${userRole}`);
@@ -491,4 +519,125 @@ exports.verifyEmailOtp = functions.https.onCall(async (data, context) => {
         identitySaved: identity !== null,
         message: "Código verificado exitosamente."
     };
+});
+
+// =============================================================
+//  FASE 14/16 - Functions faltantes (aditivas, no rompen OTP)
+//  - cleanupExpiredOtps: expira OTPs viejos (cada 60 min)
+//  - notifyOnApplication: notificación server-side al crear postulación
+//  - deleteCloudinaryImage: borrado firmado (el API Secret vive solo aquí,
+//    nunca en la app; se lee de env, no se hardcodea ninguna key)
+// =============================================================
+
+// Limpieza programada: invalida OTPs expirados hace >24h para no acumular
+// hashes. No borra users/ ni identity_reservations.
+try {
+    const { onSchedule } = require("firebase-functions/v2/scheduler");
+    exports.cleanupExpiredOtps = onSchedule("every 60 minutes", async () => {
+        const limite = admin.firestore.Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+        const snap = await db.collection("email_verifications")
+            .where("verified", "==", false)
+            .where("expiresAt", "<", limite)
+            .limit(200)
+            .get();
+        if (snap.empty) {
+            console.log("[cleanupExpiredOtps] Nada que limpiar.");
+            return;
+        }
+        const batch = db.batch();
+        snap.docs.forEach((d) => {
+            batch.update(d.ref, {
+                otpHash: null,
+                invalidatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        });
+        await batch.commit();
+        console.log(`[cleanupExpiredOtps] Invalidados ${snap.size} OTPs.`);
+    });
+} catch (e) {
+    console.warn("[cleanupExpiredOtps] Scheduler v2 no disponible:", e.message);
+}
+
+// Notificación server-side al crear applications/{id}.
+// El cliente ya hace push optimista; esta es la autoritativa (idempotente).
+exports.notifyOnApplication = functions.firestore
+    .document("applications/{applicationId}")
+    .onCreate(async (snap) => {
+        const app = snap.data() || {};
+        const employerUid = String(app.employerUid || "");
+        const workerUid = String(app.workerUid || "");
+        const publicationId = String(app.publicationId || "");
+        if (!employerUid || !workerUid) return null;
+        const notifRef = db.collection("notifications").doc();
+        await notifRef.set({
+            notificationId: notifRef.id,
+            recipientUid: employerUid,
+            type: "NEW_APPLICATION",
+            title: "Nueva postulación",
+            message: "Un trabajador postuló a tu oferta.",
+            senderUid: workerUid,
+            publicationId: publicationId,
+            applicationId: snap.id,
+            read: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return null;
+    });
+
+// Borrado firmado de Cloudinary. Solo el dueño del prefijo puede borrar:
+//   chambaya/fotos-perfil/{uid}/...
+//   chambaya/fotos-lugares/{uid}/...
+//   chambaya/fotos-publicaciones/{uid}/...
+// Env requerida (sin hardcodear keys):
+//   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+exports.deleteCloudinaryImage = functions.https.onCall(async (data, context) => {
+    if (!context.auth || !context.auth.uid) {
+        throw new functions.https.HttpsError("unauthenticated", "Debes estar autenticado.");
+    }
+    const uid = context.auth.uid;
+    const publicId = String((data && data.publicId) || "").trim();
+    if (!publicId) {
+        throw new functions.https.HttpsError("invalid-argument", "Falta publicId.");
+    }
+    const prefijos = [
+        `chambaya/fotos-perfil/${uid}/`,
+        `chambaya/fotos-lugares/${uid}/`,
+        `chambaya/fotos-publicaciones/${uid}/`
+    ];
+    const propio = prefijos.some((p) => publicId.startsWith(p));
+    if (!propio) {
+        throw new functions.https.HttpsError("permission-denied", "Esa imagen no te pertenece.");
+    }
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+    if (!cloudName || !apiKey || !apiSecret) {
+        throw new functions.https.HttpsError(
+            "failed-precondition",
+            "Borrado no configurado en el servidor (faltan env Cloudinary)."
+        );
+    }
+    const timestamp = Math.floor(Date.now() / 1000);
+    const firma = crypto
+        .createHash("sha1")
+        .update(`public_id=${publicId}&timestamp=${timestamp}${apiSecret}`)
+        .digest("hex");
+    const body = new URLSearchParams({
+        public_id: publicId,
+        timestamp: String(timestamp),
+        api_key: apiKey,
+        signature: firma
+    });
+    const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString()
+    });
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok || json.result === "error" || json.error) {
+        console.error("[deleteCloudinaryImage] Error:", json);
+        throw new functions.https.HttpsError("internal", "No se pudo borrar la imagen.");
+    }
+    console.log(`[deleteCloudinaryImage] ${uid} borró ${publicId}: ${json.result}`);
+    return { success: true, result: json.result || "ok" };
 });

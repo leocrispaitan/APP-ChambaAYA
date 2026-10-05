@@ -91,6 +91,29 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
             val tvBio = view.findViewById<TextView>(R.id.tvPublicBio)
             if (bio.isNotBlank()) { tvBio.visibility = View.VISIBLE; tvBio.text = bio }
 
+            // ── FASE 17: distrito + oficios (sin datos privados) ──
+            val distrito = listOf(perfil.district, perfil.province)
+                .filter { it.isNotBlank() }.joinToString(", ")
+            if (distrito.isNotBlank()) {
+                view.findViewById<TextView>(R.id.tvPublicDistrict).apply {
+                    visibility = View.VISIBLE
+                    text = distrito
+                }
+            }
+            // Trabajador: especialidades + habilidades. Contratante: sector.
+            val oficios = if (!esEmpresa) {
+                (perfil.worker.specialties + perfil.worker.skills).distinct().take(6)
+                    .joinToString(" · ")
+            } else {
+                perfil.employer.sector.trim()
+            }
+            if (oficios.isNotBlank()) {
+                view.findViewById<TextView>(R.id.tvPublicSpecialties).apply {
+                    visibility = View.VISIBLE
+                    text = oficios
+                }
+            }
+
             // ── Lugar (solo empresa con lugar) ──
             val workplaceId = perfil.employer.workplaceId.orEmpty()
             if (esEmpresa && workplaceId.isNotBlank()) {
@@ -129,9 +152,10 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                 view.findViewById<TextView>(R.id.tvPublicHired).text =
                     if (perfil.worker.experienceYears > 0) "${perfil.worker.experienceYears} años" else "—"
             }
+            // FASE 17/19: promedio + nº de calificaciones (reputación visible).
             view.findViewById<TextView>(R.id.tvPublicRating).text =
                 if (ratings.isNotEmpty()) {
-                    String.format("%.1f", ratings.map { it.rating }.average())
+                    String.format("%.1f (%d)", ratings.map { it.rating }.average(), ratings.size)
                 } else "—"
 
             configurarAcciones(view, uid)

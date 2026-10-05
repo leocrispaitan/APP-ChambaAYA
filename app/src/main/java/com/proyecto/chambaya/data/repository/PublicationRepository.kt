@@ -52,6 +52,15 @@ class PublicationRepository(
             require(uid.isNotBlank()) { "Sesión no válida." }
             require(publicationId.isNotBlank()) { "Identificador no válido." }
             require(images.size <= 3) { "Máximo 3 fotos por publicación." }
+            // Endurecido Fase 5/16: solo contratante habilitado publica.
+            require(perfil.roles.contains("CONTRATANTE")) { "Activa tu perfil contratante para publicar." }
+            require(perfil.employer.enabled) { "Activa tu perfil contratante para publicar." }
+            // Las fotos deben venir de chambaya/fotos-publicaciones/{uid}/{publicationId}/
+            // (misma carpeta que CloudinaryUploader.carpetaDePublicacion y firestore.rules).
+            val prefijo = "chambaya/fotos-publicaciones/$uid/$publicationId/"
+            require(images.all { it.url.contains(prefijo) && it.publicId.startsWith(prefijo) }) {
+                "Las fotos de la publicación no son válidas."
+            }
 
             // FASE 5.2 — Identidad del publicador: la ENTIDAD (lugar/negocio)
             // cuando existe; el nombre personal solo como respaldo si el
@@ -171,6 +180,10 @@ class PublicationRepository(
             )
             if (images != null) {
                 require(images.size <= 3) { "Máximo 3 fotos por publicación." }
+                val prefijo = "chambaya/fotos-publicaciones/$uid/$publicationId/"
+                require(images.all { it.url.contains(prefijo) && it.publicId.startsWith(prefijo) }) {
+                    "Las fotos de la publicación no son válidas."
+                }
                 cambios["images"] = images.map { mapOf("url" to it.url, "publicId" to it.publicId) }
             }
             Tasks.await(ref.update(cambios))

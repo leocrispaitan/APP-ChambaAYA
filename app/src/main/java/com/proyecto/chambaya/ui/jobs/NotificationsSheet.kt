@@ -443,14 +443,7 @@ class NotificationsSheet : DialogFragment() {
             private val tvMsg: TextView = view.findViewById(R.id.tvNotifMessage)
             private val tvTime: TextView = view.findViewById(R.id.tvNotifTime)
             fun bind(n: AppNotification) {
-                tvTitle.text = n.title.ifBlank {
-                    when (n.type) {
-                        NotificationType.NEW_APPLICATION -> "Nueva postulación"
-                        NotificationType.APPLICATION_ACCEPTED -> "¡Fuiste seleccionado!"
-                        NotificationType.APPLICATION_REJECTED -> "Postulación decidida"
-                        else -> "Aviso"
-                    }
-                }
+                tvTitle.text = n.title.ifBlank { NotificationType.defaultTitle(n.type) }
                 tvMsg.text = n.message
                 tvTime.text = publicationTimeAgo(n.createdAt)
                 dot.visibility = if (n.read) View.INVISIBLE else View.VISIBLE

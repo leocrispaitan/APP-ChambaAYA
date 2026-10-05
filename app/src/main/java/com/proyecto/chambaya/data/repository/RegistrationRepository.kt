@@ -79,7 +79,9 @@ enum class UserRegistrationState {
  * NO se guarda: contraseñas, imágenes en Base64 ni datos de FASE 2 en adelante.
  */
 class RegistrationRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val reservations: IdentityReservationRepository =
+        IdentityReservationRepository(firestore)
 ) {
 
     /**
@@ -94,6 +96,15 @@ class RegistrationRepository(
         firebaseUser: FirebaseUser? = null
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
+            // Unicidad global DNI/RUC: dos cuentas no pueden compartir documento.
+            // Idempotente para reintentos del mismo uid; lanza
+            // DocumentoYaRegistrado si el documento es de otra cuenta.
+            reservations.reserve(
+                pending.identity.documentType,
+                pending.identity.documentNumber,
+                pending.uid
+            ).getOrThrow()
+
             val userRef = firestore.collection(COLLECTION_USERS).document(pending.uid)
             val existing = Tasks.await(userRef.get())
 

@@ -10,8 +10,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Notificaciones básicas (FASE 7: se crean al postular/aceptar/rechazar;
- * la bandeja completa con push es FASE 14).
+ * FASE 14 — Bandeja de notificaciones completa.
+ *
+ * Los repositorios crean avisos con [push] (postulación, chat, calificación,
+ * comentario, like, job). La bandeja ([listenMine]) los muestra en vivo y el
+ * badge de no leídos sale de [unreadCount] / [listenUnreadCount].
+ *
+ * Sin push nativo (FCM): la app avisa en primer plano por listeners. El push
+ * remoto queda como mejora futura sin cambiar este contrato.
  */
 class NotificationRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -27,9 +33,13 @@ class NotificationRepository(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             if (recipientUid.isBlank() || recipientUid == senderUid) return@runCatching
+            // `notificationId` se guarda explícito (antes solo vivía en el id del
+            // documento): así `toAppNotification()` no depende del fallback.
+            val ref = firestore.collection(COLLECTION).document()
             Tasks.await(
-                firestore.collection(COLLECTION).add(
+                ref.set(
                     mapOf(
+                        "notificationId" to ref.id,
                         "recipientUid" to recipientUid,
                         "type" to type,
                         "title" to title.trim().take(120),
@@ -45,6 +55,38 @@ class NotificationRepository(
         }
     }
 
+    /**
+     * Aviso de cambio de estado de un trabajo (FASE 8→14).
+     * [otherUid] es la contraparte de quien ejecuta la transición.
+     */
+    suspend fun pushJobEvent(
+        recipientUid: String,
+        senderUid: String,
+        to: String,
+        publicationTitle: String,
+        publicationId: String = ""
+    ): Result<Unit> {
+        val (type, title, message) = when (to) {
+            com.proyecto.chambaya.data.model.JobStatus.IN_PROGRESS -> Triple(
+                com.proyecto.chambaya.data.model.NotificationType.JOB_IN_PROGRESS,
+                "Trabajo en curso",
+                "Empezó el trabajo de “${publicationTitle.take(60)}”."
+            )
+            com.proyecto.chambaya.data.model.JobStatus.COMPLETED -> Triple(
+                com.proyecto.chambaya.data.model.NotificationType.JOB_COMPLETED,
+                "Trabajo completado",
+                "Se marcó como completado “${publicationTitle.take(60)}”. Ya puedes calificar."
+            )
+            com.proyecto.chambaya.data.model.JobStatus.CANCELLED -> Triple(
+                com.proyecto.chambaya.data.model.NotificationType.JOB_CANCELLED,
+                "Trabajo cancelado",
+                "Se canceló el trabajo de “${publicationTitle.take(60)}”."
+            )
+            else -> return Result.success(Unit)
+        }
+        return push(recipientUid, type, title, message, senderUid, publicationId)
+    }
+
     suspend fun unreadCount(uid: String, limit: Long = 100): Int =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -56,6 +98,52 @@ class NotificationRepository(
                         .get()
                 ).size()
             }.getOrDefault(0)
+        }
+
+    /**
+     * Contador en vivo para el badge (campanita): emite el nº de no leídos
+     * cada vez que cambia la bandeja. Sin costo extra de índices (reusa
+     * recipientUid + read).
+     */
+    fun listenUnreadCount(
+        uid: String,
+        onUpdate: (Int) -> Unit,
+        onError: (Exception) -> Unit
+    ): com.google.firebase.firestore.ListenerRegistration {
+        return firestore.collection(COLLECTION)
+            .whereEqualTo("recipientUid", uid)
+            .whereEqualTo("read", false)
+            .limit(100)
+            .addSnapshotListener { snap, e ->
+                if (e != null) { onError(e); return@addSnapshotListener }
+                onUpdate(snap?.size() ?: 0)
+            }
+    }
+
+    /**
+     * Limpieza de avisos antiguos (p. ej. >90 días): evita que la bandeja
+     * crezca sin límite. Se llama al abrir la app, a mejor esfuerzo.
+     */
+    suspend fun cleanupOld(uid: String, olderThanDays: Long = 90): Result<Int> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                if (uid.isBlank()) return@runCatching 0
+                val limite = com.google.firebase.Timestamp(
+                    java.util.Date(System.currentTimeMillis() - olderThanDays * 24 * 60 * 60 * 1000)
+                )
+                val snap = Tasks.await(
+                    firestore.collection(COLLECTION)
+                        .whereEqualTo("recipientUid", uid)
+                        .whereLessThan("createdAt", limite)
+                        .limit(100)
+                        .get()
+                )
+                if (snap.isEmpty) return@runCatching 0
+                val batch = firestore.batch()
+                snap.documents.forEach { batch.delete(it.reference) }
+                Tasks.await(batch.commit())
+                snap.size()
+            }
         }
 
     fun listenMine(
@@ -141,14 +229,19 @@ class NotificationRepository(
     suspend fun restore(uid: String, n: AppNotification): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             require(uid.isNotBlank() && n.recipientUid == uid) { "Aviso no válido." }
+            val ref = firestore.collection(COLLECTION).document()
+            // senderUid nunca vacío: las reglas exigen sender y recipient no vacíos.
+            // Los avisos antiguos podían venir sin sender; se restaura como propio.
+            val remitente = n.senderUid.ifBlank { uid }
             Tasks.await(
-                firestore.collection(COLLECTION).add(
+                ref.set(
                     mapOf(
+                        "notificationId" to ref.id,
                         "recipientUid" to uid,
                         "type" to n.type,
                         "title" to n.title,
                         "message" to n.message,
-                        "senderUid" to n.senderUid,
+                        "senderUid" to remitente,
                         "publicationId" to n.publicationId,
                         "read" to n.read,
                         "createdAt" to (n.createdAt ?: FieldValue.serverTimestamp())

@@ -702,6 +702,31 @@ service cloud.firestore {
     }
 
     // =============================================================
+    //  identity_reservations/{TIPO_NUMERO} — unicidad global DNI/RUC
+    // =============================================================
+    //
+    // Un documento por documento de identidad, id determinístico
+    // `DNI_72345678` / `RUC_20123456789`. La transacción del cliente es la
+    // que garantiza que dos cuentas no tomen el mismo documento a la vez.
+    // `get` puntual para autenticados (comprobar el propio), `list` denegado
+    // (nadie enumera DNIs). Inmutable: no se actualiza ni se borra desde la
+    // app (solo el backend podría liberar en un caso de soporte).
+    match /identity_reservations/{docId} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.resource.data.get('uid', '') == request.auth.uid
+        && docId == request.resource.data.get('documentType', '') + '_'
+          + request.resource.data.get('documentNumber', '')
+        && isValidDocumentType(request.resource.data.get('documentType', ''))
+        && isValidDocumentNumber(
+          request.resource.data.get('documentType', ''),
+          request.resource.data.get('documentNumber', ''))
+        && request.resource.data.get('createdAt', null) != null;
+      allow update, delete: if false;
+    }
+
+    // =============================================================
     //  workplaces/{workplaceId} — FASE 4 Lugar / establecimiento
     // =============================================================
     //
@@ -748,9 +773,30 @@ service cloud.firestore {
         && p.get('negotiable', false) is bool;
     }
 
+    function isValidPublicationImage(img, ownerUid, pubId) {
+      return img is map
+        && img.get('url', '') is string
+        && img.get('url', '').matches(
+             '^https://res\\.cloudinary\\.com/[^/]+/image/upload/(v[0-9]+/)?chambaya/fotos-publicaciones/' + ownerUid + '/' + pubId + '/[^/]+$')
+        && img.get('publicId', '') is string
+        && img.get('publicId', '').matches(
+             '^chambaya/fotos-publicaciones/' + ownerUid + '/' + pubId + '/[^/]+$');
+    }
+
     function isValidPublicationImages(imgs, ownerUid, pubId) {
       return imgs is list
-        && imgs.size() <= 3;
+        && imgs.size() <= 3
+        && (imgs.size() < 1 || isValidPublicationImage(imgs[0], ownerUid, pubId))
+        && (imgs.size() < 2 || isValidPublicationImage(imgs[1], ownerUid, pubId))
+        && (imgs.size() < 3 || isValidPublicationImage(imgs[2], ownerUid, pubId));
+    }
+
+    // Solo contratante habilitado puede publicar. Lectura del propio perfil
+    // (1 get). Si users/{uid} no existe o no tiene el rol, se deniega.
+    function isEmployerCreator() {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return user.get('roles', []).hasAny(['CONTRATANTE'])
+        && user.get('employer', {}).get('enabled', false) == true;
     }
 
     function hasValidPublicationFields(pubId) {
@@ -800,6 +846,7 @@ service cloud.firestore {
       allow list: if request.auth != null;
 
       allow create: if request.auth != null
+        && isEmployerCreator()
         && hasValidPublicationFields(publicationId)
         && request.resource.data.get('workersHired', 0) == 0
         && request.resource.data.get('createdAt', null) != null
@@ -1247,26 +1294,35 @@ service cloud.firestore {
     }
 
     // FASE 7/14 — Notificaciones (la bandeja completa con push es FASE 14).
+    // get/delete: dueño (recipient) o remitente (sender) para que ambos roles
+    // puedan limpiar su bandeja. create: sender==yo (push normal) o
+    // recipient==yo (Deshacer/restaurar mi propio aviso).
     match /notifications/{notificationId} {
       allow get: if request.auth != null
-        && resource.data.get('recipientUid', '') == request.auth.uid;
+        && (resource.data.get('recipientUid', '') == request.auth.uid
+          || resource.data.get('senderUid', '') == request.auth.uid);
       // La app consulta por recipientUid.
       allow list: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.get('senderUid', '') == request.auth.uid
+        && (request.resource.data.get('senderUid', '') == request.auth.uid
+          || request.resource.data.get('recipientUid', '') == request.auth.uid)
+        && request.resource.data.get('notificationId', '') == notificationId
         && request.resource.data.get('recipientUid', '') is string
         && request.resource.data.get('recipientUid', '').size() > 0
+        && request.resource.data.get('senderUid', '') is string
+        && request.resource.data.get('senderUid', '').size() > 0
         && request.resource.data.get('type', '') is string
         && request.resource.data.get('title', '') is string
         && request.resource.data.get('read', true) == false
         && request.resource.data.get('createdAt', null) != null;
-      // El destinatario solo puede marcar como leída.
+      // El destinatario solo puede marcar como leída/no leída.
       allow update: if request.auth != null
         && resource.data.get('recipientUid', '') == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
         && request.resource.data.get('read', null) is bool;
       allow delete: if request.auth != null
-        && resource.data.get('recipientUid', '') == request.auth.uid;
+        && (resource.data.get('recipientUid', '') == request.auth.uid
+          || resource.data.get('senderUid', '') == request.auth.uid);
     }
   }
 }

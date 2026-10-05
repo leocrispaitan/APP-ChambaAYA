@@ -20,7 +20,8 @@ import kotlinx.coroutines.withContext
  * incrementos atómicos en publications/{id}.
  */
 class PublicationInteractionRepository(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val notifications: NotificationRepository = NotificationRepository(firestore)
 ) {
 
     private fun docId(publicationId: String, uid: String) = "${publicationId}_${uid}"
@@ -58,6 +59,22 @@ class PublicationInteractionRepository(
                         )
                     )
                     runCatching { Tasks.await(pubRef.update("statistics.likes", FieldValue.increment(1))) }
+                    // Aviso al dueño (mejor esfuerzo; push ignora si es su propio like).
+                    runCatching {
+                        val pub = Tasks.await(pubRef.get())
+                        val owner = pub.getString("ownerUid").orEmpty()
+                        val title = pub.getString("title").orEmpty()
+                        if (owner.isNotBlank()) {
+                            notifications.push(
+                                recipientUid = owner,
+                                type = com.proyecto.chambaya.data.model.NotificationType.NEW_LIKE,
+                                title = "Nuevo me gusta",
+                                message = "A alguien le gustó tu chamba “${title.take(60)}”.",
+                                senderUid = uid,
+                                publicationId = publicationId
+                            )
+                        }
+                    }
                     true
                 }
             }
