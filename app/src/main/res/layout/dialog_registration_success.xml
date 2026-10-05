@@ -114,7 +114,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                android:text="✓ Correo verificado"
+                android:text="@string/dlg_registro_correo"
                 android:textColor="#16834A"
                 android:textSize="13sp" />
 
@@ -122,7 +122,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                android:text="✓ Perfil guardado en Cloud Firestore"
+                android:text="@string/dlg_registro_guardado"
                 android:textColor="#16834A"
                 android:textSize="13sp" />
         </LinearLayout>
@@ -132,7 +132,7 @@
             android:layout_width="match_parent"
             android:layout_height="54dp"
             android:layout_marginTop="20dp"
-            android:text="Ir a ChambAYA  →"
+            android:text="@string/dlg_registro_ir"
             android:textAllCaps="false"
             android:textSize="15sp"
             android:textStyle="bold"

@@ -117,7 +117,7 @@
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Todas"
+                            android:text="@string/mistrab_todas"
                             android:textColor="@color/white"
                             android:textSize="13sp" />
 
@@ -131,7 +131,7 @@
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Pendientes"
+                            android:text="@string/mistrab_pendientes"
                             android:textColor="@color/text_primary"
                             android:textSize="13sp" />
 
@@ -144,7 +144,7 @@
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Decididas"
+                            android:text="@string/mistrab_decididas"
                             android:textColor="@color/text_primary"
                             android:textSize="13sp" />
                     </LinearLayout>
@@ -212,7 +212,7 @@
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Todos"
+                            android:text="@string/mistrab_filtro_todos"
                             android:textColor="@color/white"
                             android:textSize="13sp" />
 
@@ -226,7 +226,7 @@
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="En curso"
+                            android:text="@string/mistrab_en_curso"
                             android:textColor="@color/text_primary"
                             android:textSize="13sp" />
 
@@ -239,7 +239,7 @@
                             android:paddingStart="18dp"
                             android:paddingEnd="18dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Completados"
+                            android:text="@string/mistrab_completados"
                             android:textColor="@color/text_primary"
                             android:textSize="13sp" />
                     </LinearLayout>

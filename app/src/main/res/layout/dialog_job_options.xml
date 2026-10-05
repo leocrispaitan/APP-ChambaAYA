@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Guardar publicación"
+            android:text="@string/sheet_opciones_guardar"
             android:textColor="#1A1A1A"
             android:textSize="15sp" />
     </LinearLayout>
@@ -76,7 +76,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Compartir publicación"
+            android:text="@string/sheet_opciones_compartir"
             android:textColor="#1A1A1A"
             android:textSize="15sp" />
     </LinearLayout>
@@ -105,7 +105,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Por qué ves esto"
+            android:text="@string/sheet_opciones_porque"
             android:textColor="#1A1A1A"
             android:textSize="15sp" />
     </LinearLayout>
@@ -134,7 +134,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Calificar publicación"
+            android:text="@string/sheet_opciones_calificar"
             android:textColor="#1A1A1A"
             android:textSize="15sp" />
     </LinearLayout>
@@ -163,7 +163,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="No me interesa"
+            android:text="@string/sheet_opciones_no_interesa"
             android:textColor="#1A1A1A"
             android:textSize="15sp" />
     </LinearLayout>
@@ -192,7 +192,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Denunciar publicación"
+            android:text="@string/sheet_opciones_denunciar"
             android:textColor="#ED4956"
             android:textSize="15sp" />
     </LinearLayout>

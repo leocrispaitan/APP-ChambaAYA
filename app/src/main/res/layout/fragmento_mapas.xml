@@ -48,7 +48,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-bold"
                 android:letterSpacing="-0.01"
-                android:text="Ayacucho, Perú"
+                android:text="@string/home_location_value"
                 android:textColor="@color/map_text_title"
                 android:textSize="18.5sp" />
 
@@ -58,7 +58,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:fontFamily="sans-serif"
-                android:text="Plaza Mayor • Huamanga"
+                android:text="@string/k_mapa_plaza"
                 android:textColor="@color/map_text_sub"
                 android:textSize="13sp" />
         </LinearLayout>
@@ -216,7 +216,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Buscar en esta zona"
+                android:text="@string/mapa_buscar_zona"
                 android:textColor="@color/text_primary"
                 android:textSize="13sp" />
         </LinearLayout>
@@ -337,7 +337,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="36dp"
                     android:layout_marginTop="6dp"
-                    android:text="Cómo llegar"
+                    android:text="@string/mapa_como_llegar"
                     android:textSize="12sp"
                     android:fontFamily="sans-serif-medium"
                     app:cornerRadius="10dp"

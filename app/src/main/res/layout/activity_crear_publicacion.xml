@@ -38,7 +38,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
                 android:fontFamily="sans-serif-black"
-                android:text="Nueva chamba"
+                android:text="@string/pub_titulo_pantalla"
                 android:textColor="@color/text_primary"
                 android:textSize="19sp" />
 
@@ -61,7 +61,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Título del trabajo"
+            android:text="@string/pub_titulo_label"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -75,7 +75,7 @@
                 android:id="@+id/etTitulo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Ej. Se requiere pintor profesional"
+                android:hint="@string/pub_titulo_hint"
                 android:inputType="text"
                 android:maxLength="100" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -85,7 +85,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Descripción"
+            android:text="@string/pub_desc_label"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -100,7 +100,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="140dp"
                 android:gravity="top"
-                android:hint="Cuenta qué necesitas, materiales, horario, requisitos… (mín. 20 caracteres)"
+                android:hint="@string/pub_desc_hint"
                 android:inputType="textMultiLine"
                 android:maxLength="2000" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -110,7 +110,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="end"
-            android:text="0 / 2000"
+            android:text="@string/pub_contador_cero"
             android:textColor="@color/text_secondary"
             android:textSize="11sp" />
 
@@ -119,7 +119,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Categoría"
+            android:text="@string/pub_cat"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -147,7 +147,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Pago (S/)"
+                    android:text="@string/pub_pago"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
@@ -177,7 +177,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Por"
+                    android:text="@string/pub_por"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
@@ -192,7 +192,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="none"
-                        android:text="Día" />
+                        android:text="@string/pub_dia" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </LinearLayout>
@@ -208,7 +208,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Monto a tratar"
+                android:text="@string/pub_tratar"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -234,7 +234,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Vacantes"
+                    android:text="@string/pub_vacantes"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
@@ -264,7 +264,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Distrito"
+                    android:text="@string/pub_distrito"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp" />
 
@@ -278,7 +278,7 @@
                         android:id="@+id/actvDistrito"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Carmen Alto"
+                        android:hint="@string/pub_distrito_hint"
                         android:inputType="text" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
@@ -289,7 +289,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Horario (opcional)"
+            android:text="@string/pub_horario"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -334,7 +334,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Habilidades requeridas (opcional)"
+            android:text="@string/pub_habs"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -348,7 +348,7 @@
                 android:id="@+id/etHabilidades"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Pintura interior, Acabados (separadas por coma)"
+                android:hint="@string/pub_habs_hint"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -357,7 +357,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Fotos (máx. 3, opcional)"
+            android:text="@string/pub_fotos"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -392,7 +392,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Agregar"
+                        android:text="@string/pub_agregar"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -427,7 +427,7 @@
             android:layout_width="match_parent"
             android:layout_height="54dp"
             android:layout_marginTop="18dp"
-            android:text="Publicar chamba"
+            android:text="@string/pub_publicar_btn"
             android:textSize="15sp"
             app:cornerRadius="16dp"
             app:backgroundTint="@color/brand_color" />
@@ -437,7 +437,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:gravity="center"
-            android:text="Se publicará con tu nombre, foto y verificación actuales."
+            android:text="@string/pub_nota"
             android:textColor="@color/text_secondary"
             android:textSize="12sp" />
 

@@ -23,7 +23,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-black"
-        android:text="Filtros"
+        android:text="@string/sheet_filtros_titulo"
         android:textColor="@color/text_primary"
         android:textSize="18sp" />
 
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:fontFamily="sans-serif-medium"
-        android:text="Categoría"
+        android:text="@string/sheet_filtros_categoria"
         android:textColor="@color/text_primary"
         android:textSize="13sp" />
 
@@ -49,7 +49,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
         android:fontFamily="sans-serif-medium"
-        android:text="Distrito"
+        android:text="@string/sheet_filtros_distrito"
         android:textColor="@color/text_primary"
         android:textSize="13sp" />
 
@@ -66,7 +66,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
         android:fontFamily="sans-serif-medium"
-        android:text="Pago mínimo (S/ por día)"
+        android:text="@string/sheet_filtros_pago"
         android:textColor="@color/text_primary"
         android:textSize="13sp" />
 
@@ -83,7 +83,7 @@
         android:id="@+id/tvMinPayValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Desde S/ 0"
+        android:text="@string/sheet_filtros_desde"
         android:textColor="@color/text_secondary"
         android:textSize="12sp" />
 
@@ -98,7 +98,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Ordenar por recientes"
+            android:text="@string/sheet_filtros_orden"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -120,7 +120,7 @@
             android:layout_width="0dp"
             android:layout_height="50dp"
             android:layout_weight="1"
-            android:text="Limpiar"
+            android:text="@string/sheet_filtros_limpiar"
             style="@style/Widget.Material3.Button.OutlinedButton"
             app:cornerRadius="14dp" />
 
@@ -130,7 +130,7 @@
             android:layout_height="50dp"
             android:layout_weight="1"
             android:layout_marginStart="10dp"
-            android:text="Ver resultados"
+            android:text="@string/sheet_filtros_ver"
             app:cornerRadius="14dp"
             app:backgroundTint="@color/brand_color" />
     </LinearLayout>

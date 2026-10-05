@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -10,6 +11,7 @@ import com.proyecto.chambaya.data.model.Rating
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.toRating
 import com.proyecto.chambaya.data.model.validateRating
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.round
@@ -71,23 +73,24 @@ class RatingRepository(
         }
 
     suspend fun rate(
+        context: Context,
         rater: UserProfile,
         job: Job,
         stars: Int,
         comment: String
     ): Result<Rating> = withContext(Dispatchers.IO) {
         runCatching {
-            val errores = validateRating(stars, comment)
+            val errores = validateRating(context, stars, comment)
             require(errores.isEmpty()) { errores.first() }
             require(job.status == JobStatus.COMPLETED) {
-                "Solo puedes calificar un trabajo completado."
+                context.getString(R.string.kr_rate_solo_fin)
             }
             val fromUid = rater.uid
             require(fromUid == job.workerUid || fromUid == job.employerUid) {
-                "Ese trabajo no te involucra."
+                context.getString(R.string.kr_rate_ajeno)
             }
             require(existingFor(job.jobId, fromUid).getOrThrow() == null) {
-                "Ya calificaste este trabajo."
+                context.getString(R.string.kr_rate_hecho)
             }
             val toUid = if (fromUid == job.workerUid) job.employerUid else job.workerUid
             // El agregado lo escribe quien califica (rama isAllowedRatingUpdate):
@@ -142,8 +145,14 @@ class RatingRepository(
             notifications.push(
                 recipientUid = toUid,
                 type = com.proyecto.chambaya.data.model.NotificationType.NEW_RATING,
-                title = "Nueva calificación",
-                message = "Recibiste $stars ${if (stars == 1) "estrella" else "estrellas"} por “${job.publicationTitle.take(60)}”.",
+                title = context.getString(R.string.k_push_rating),
+                message = context.getString(
+                    R.string.k_push_rating_fmt,
+                    stars,
+                    if (stars == 1) context.getString(R.string.k_push_estrella)
+                    else context.getString(R.string.k_push_estrellas),
+                    job.publicationTitle.take(60)
+                ),
                 senderUid = fromUid,
                 publicationId = job.publicationId
             )

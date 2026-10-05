@@ -57,7 +57,7 @@
             android:layout_marginTop="12dp"
             android:fontFamily="sans-serif-medium"
             android:gravity="center"
-            android:text="Términos de uso"
+            android:text="@string/term_titulo"
             android:textColor="#111827"
             android:textSize="24sp"
             android:textStyle="bold" />
@@ -67,7 +67,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:gravity="center"
-            android:text="solo los detalles que debes saber."
+            android:text="@string/term_sub"
             android:textColor="#6B7280"
             android:textSize="13sp" />
     </LinearLayout>
@@ -111,7 +111,7 @@
                     android:layout_height="wrap_content"
                     android:lineSpacingExtra="3dp"
                     android:padding="18dp"
-                    android:text="Resumen: ChambAYA conecta trabajadores y contratantes verificados de Ayacucho para ofrecer y conseguir trabajo honesto. Verificamos tu identidad, cuidamos tus datos y sancionamos el fraude. Si continúas, prometes cumplir estos términos."
+                    android:text="@string/term_resumen"
                     android:textColor="#374151"
                     android:textSize="14sp" />
             </androidx.cardview.widget.CardView>
@@ -142,8 +142,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="🛡" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Un espacio seguro para conseguir chambas" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Solo cuentas verificadas con DNI o RUC (RENIEC/SUNAT) pueden publicar y postular." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t1" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d1" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="66dp" android:background="#F3F4F6" />
@@ -163,8 +163,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="⚠" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cero tolerancia al fraude" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Publicaciones falsas, pagos incumplidos, acoso o suplantación se sancionan con suspensión y bloqueo permanente." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t2" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d2" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="66dp" android:background="#F3F4F6" />
@@ -184,8 +184,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="🤝" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Trato con respeto" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Trata a todos con amabilidad y respeto, cumple lo pactado y preséntate a los trabajos que aceptes." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t3" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d3" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="66dp" android:background="#F3F4F6" />
@@ -205,8 +205,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="📄" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tus publicaciones, tu responsabilidad" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Describe el trabajo real, el pago en soles (PEN), el distrito y las personas necesarias. El pago se acuerda directo entre partes." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t4" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d4" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="66dp" android:background="#F3F4F6" />
@@ -226,8 +226,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="⭐" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Califica con justicia" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Solo se califica el trabajo completado, de 1 a 5 estrellas y una vez por trabajo. Las calificaciones falsas se eliminan." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t5" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d5" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="66dp" android:background="#F3F4F6" />
@@ -247,8 +247,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="🔒" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tu identidad está protegida" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Tu DNI/RUC, correo y dirección exacta nunca son públicos. Solo se muestra tu nombre, foto, distrito y reputación." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t6" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d6" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="66dp" android:background="#F3F4F6" />
@@ -268,8 +268,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="📢" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Reporta y bloquea" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Puedes denunciar publicaciones o usuarios y bloquear contactos. Cada reporte se revisa por moderación." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t7" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d7" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginStart="66dp" android:background="#F3F4F6" />
@@ -289,8 +289,8 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="📱" android:textSize="18sp" />
                     </FrameLayout>
                     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Cuida tu cuenta" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Una cuenta por persona (roles Trabajador y Contratante en el mismo usuario). No compartas tu clave ni tu código OTP." android:textColor="#6B7280" android:textSize="12sp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/term_t8" android:textColor="#111827" android:textSize="14sp" android:textStyle="bold" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/term_d8" android:textColor="#6B7280" android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -326,7 +326,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Términos y Política de Privacidad"
+                        android:text="@string/term_aceptar_titulo"
                         android:textColor="#111827"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -335,7 +335,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Acepto los términos para continuar"
+                        android:text="@string/term_aceptar_sub"
                         android:textColor="#6B7280"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -350,7 +350,7 @@
                 android:layout_marginTop="16dp"
                 android:backgroundTint="#111827"
                 android:enabled="false"
-                android:text="Continuar"
+                android:text="@string/term_continuar"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textSize="16sp"

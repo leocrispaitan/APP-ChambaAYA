@@ -24,7 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:fontFamily="sans-serif-black"
-        android:text="Mis trabajos"
+        android:text="@string/sheet_mistrabajos_titulo"
         android:textColor="@color/text_primary"
         android:textSize="18sp" />
 
@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
         android:gravity="center"
-        android:text="Aún no tienes trabajos aquí."
+        android:text="@string/sheet_mistrabajos_vacio"
         android:textColor="@color/text_secondary"
         android:textSize="13sp"
         android:visibility="gone" />

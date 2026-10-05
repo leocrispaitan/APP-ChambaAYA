@@ -34,7 +34,7 @@ class PublicationOptionsSheet : BottomSheetDialogFragment() {
                 .map { row.getChildAt(it) }
                 .filterIsInstance<TextView>()
                 .firstOrNull()
-                ?.text = if (saved) "Quitar de guardados" else "Guardar publicación"
+                ?.text = if (saved) getString(R.string.k_opt_quitar) else getString(R.string.sheet_opciones_guardar)
         }
 
         view.findViewById<View>(R.id.optionSave)?.setOnClickListener { emitir(ACTION_SAVE, publicationId); dismiss() }

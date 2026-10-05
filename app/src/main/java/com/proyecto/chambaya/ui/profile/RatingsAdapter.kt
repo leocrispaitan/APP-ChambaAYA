@@ -42,9 +42,9 @@ class RatingsAdapter : ListAdapter<RatingRow, RatingsAdapter.VH>(Diff()) {
 
         fun bind(item: RatingRow) {
             val r = item.rating
-            tvAuthor.text = item.author?.displayName() ?: "Usuario ChambAYA"
+            tvAuthor.text = item.author?.displayName() ?: itemView.context.getString(R.string.k_rat_usuario)
             val llenas = r.rating.coerceIn(0, 5)
-            tvStars.text = "★".repeat(llenas) + "☆".repeat(5 - llenas) + " ${r.rating}.0"
+            tvStars.text = "★".repeat(llenas) + "☆".repeat(5 - llenas) + " " + itemView.context.getString(R.string.k_rat_valor_fmt, r.rating)
             tvDate.text = publicationTimeAgo(r.createdAt)
             if (r.comment.isNotBlank()) {
                 tvComment.visibility = View.VISIBLE
@@ -54,7 +54,7 @@ class RatingsAdapter : ListAdapter<RatingRow, RatingsAdapter.VH>(Diff()) {
             }
             if (r.publicationTitle.isNotBlank()) {
                 tvJob.visibility = View.VISIBLE
-                tvJob.text = "En: ${r.publicationTitle}"
+                tvJob.text = itemView.context.getString(R.string.k_rat_en_fmt, r.publicationTitle)
             } else {
                 tvJob.visibility = View.GONE
             }

@@ -63,7 +63,7 @@ class LocationSearchSheet : BottomSheetDialogFragment() {
         if (granted) {
             pedirUbicacionActual()
         } else {
-            tvMyLocationHint?.text = "Permiso de ubicación denegado"
+            tvMyLocationHint?.text = getString(R.string.k_ubi_denegado)
         }
     }
 
@@ -222,17 +222,17 @@ class LocationSearchSheet : BottomSheetDialogFragment() {
     private fun pedirUbicacionActual() {
         val activity = activity ?: return
         if (!hasLocationPermission()) return
-        tvMyLocationHint?.text = "Obteniendo tu ubicación…"
+        tvMyLocationHint?.text = getString(R.string.k_ubi_obteniendo)
         runCatching {
             LocationServices.getFusedLocationProviderClient(activity)
                 .lastLocation
                 .addOnSuccessListener { location ->
                     if (location == null || !isAdded) {
-                        tvMyLocationHint?.text = "No pudimos obtener el GPS"
+                        tvMyLocationHint?.text = getString(R.string.k_ubi_no_gps)
                         return@addOnSuccessListener
                     }
                     val id = ++requestId
-                    tvMyLocationHint?.text = "Buscando tu calle…"
+                    tvMyLocationHint?.text = getString(R.string.k_ubi_buscando)
                     viewLifecycleOwner.lifecycleScope.launch {
                         val lugar = geo.reverse(location.latitude, location.longitude).getOrNull()
                         if (!isAdded || id != requestId) return@launch
@@ -240,11 +240,11 @@ class LocationSearchSheet : BottomSheetDialogFragment() {
                             elegir(lugar)
                         } else {
                             // Sin calle reconocible: al menos el punto exacto.
-                            tvMyLocationHint?.text = "Ubicación aproximada"
+                            tvMyLocationHint?.text = getString(R.string.k_ubi_aprox)
                             elegir(
                                 GeoPlace(
-                                    name = "Mi ubicación",
-                                    label = "Mi ubicación",
+                                    name = getString(R.string.k_ubi_mi),
+                                    label = getString(R.string.k_ubi_mi),
                                     latitude = location.latitude,
                                     longitude = location.longitude
                                 )
@@ -253,7 +253,7 @@ class LocationSearchSheet : BottomSheetDialogFragment() {
                     }
                 }
                 .addOnFailureListener {
-                    if (isAdded) tvMyLocationHint?.text = "No pudimos obtener el GPS"
+                    if (isAdded) tvMyLocationHint?.text = getString(R.string.k_ubi_no_gps)
                 }
         }
     }

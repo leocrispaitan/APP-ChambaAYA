@@ -41,7 +41,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:fontFamily="sans-serif-medium"
-            android:text="Centro de Ayuda"
+            android:text="@string/ayuda_titulo"
             android:textColor="#111827"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -99,7 +99,7 @@
                         android:layout_marginStart="10dp"
                         android:layout_weight="1"
                         android:background="@null"
-                        android:hint="Buscar ayuda…"
+                        android:hint="@string/ayuda_buscar_hint"
                         android:imeOptions="actionSearch"
                         android:inputType="text"
                         android:maxLines="1"
@@ -114,7 +114,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="24dp"
                 android:layout_marginTop="20dp"
-                android:text="Preguntas frecuentes"
+                android:text="@string/ayuda_faq_titulo"
                 android:textColor="#111827"
                 android:textSize="15sp"
                 android:textStyle="bold" />
@@ -134,7 +134,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:gravity="center"
-                android:text="Sin resultados. Prueba con otra palabra."
+                android:text="@string/ayuda_sin_resultados"
                 android:textColor="#9CA3AF"
                 android:textSize="13sp"
                 android:visibility="gone" />
@@ -159,7 +159,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="💬 ¿No encuentras respuesta?"
+                        android:text="@string/ayuda_contacto_titulo"
                         android:textColor="@color/white"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -168,7 +168,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Escríbenos a soporte@chambaya.pe y te ayudamos."
+                        android:text="@string/ayuda_contacto_sub"
                         android:textColor="#D1D5DB"
                         android:textSize="13sp" />
 
@@ -178,7 +178,7 @@
                         android:layout_height="48dp"
                         android:layout_marginTop="14dp"
                         android:backgroundTint="@color/white"
-                        android:text="Copiar correo"
+                        android:text="@string/ayuda_copiar"
                         android:textAllCaps="false"
                         android:textColor="#111827"
                         android:textSize="14sp"

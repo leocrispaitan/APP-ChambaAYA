@@ -30,11 +30,11 @@ data class PublicationComment(
     val updatedAt: Timestamp? = null
 )
 
-fun validateCommentText(text: String): List<String> {
+fun validateCommentText(context: android.content.Context, text: String): List<String> {
     val errores = mutableListOf<String>()
-    if (text.trim().isEmpty()) errores += "Escribe un comentario."
+    if (text.trim().isEmpty()) errores += context.getString(com.proyecto.chambaya.R.string.kv_com_vacio)
     if (text.trim().length > CommentLimits.TEXT_MAX) {
-        errores += "El comentario no puede pasar de ${CommentLimits.TEXT_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_com_max_fmt, CommentLimits.TEXT_MAX)
     }
     return errores
 }

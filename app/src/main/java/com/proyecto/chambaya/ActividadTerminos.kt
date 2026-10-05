@@ -76,7 +76,7 @@ class ActividadTerminos : AppCompatActivity() {
         }
         check?.setOnCheckedChangeListener { _, _ -> pintarBoton() }
         continuar?.setOnClickListener {
-            Toast.makeText(this, "Gracias por aceptar los términos.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.term_gracias, Toast.LENGTH_SHORT).show()
             finish()
         }
         pintarBoton()

@@ -55,8 +55,8 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
         val slider = view.findViewById<Slider>(R.id.sliderMinPay)
         val tvMin = view.findViewById<TextView>(R.id.tvMinPayValue)
         slider.value = current.minAmount.toFloat().coerceIn(0f, 500f)
-        tvMin.text = "Desde S/ ${slider.value.toInt()}"
-        slider.addOnChangeListener { _, value, _ -> tvMin.text = "Desde S/ ${value.toInt()}" }
+        tvMin.text = getString(R.string.k_filtro_desde_fmt, slider.value.toInt())
+        slider.addOnChangeListener { _, value, _ -> tvMin.text = getString(R.string.k_filtro_desde_fmt, value.toInt()) }
         view.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchNewest).isChecked =
             current.sortNewestFirst
 

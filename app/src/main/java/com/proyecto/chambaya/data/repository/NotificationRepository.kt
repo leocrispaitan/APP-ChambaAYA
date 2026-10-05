@@ -1,11 +1,13 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.proyecto.chambaya.data.model.AppNotification
 import com.proyecto.chambaya.data.model.toAppNotification
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -60,6 +62,7 @@ class NotificationRepository(
      * [otherUid] es la contraparte de quien ejecuta la transición.
      */
     suspend fun pushJobEvent(
+        context: Context,
         recipientUid: String,
         senderUid: String,
         to: String,
@@ -69,18 +72,18 @@ class NotificationRepository(
         val (type, title, message) = when (to) {
             com.proyecto.chambaya.data.model.JobStatus.IN_PROGRESS -> Triple(
                 com.proyecto.chambaya.data.model.NotificationType.JOB_IN_PROGRESS,
-                "Trabajo en curso",
-                "Empezó el trabajo de “${publicationTitle.take(60)}”."
+                context.getString(R.string.k_push_job_curso),
+                context.getString(R.string.k_push_job_curso_msg, publicationTitle.take(60))
             )
             com.proyecto.chambaya.data.model.JobStatus.COMPLETED -> Triple(
                 com.proyecto.chambaya.data.model.NotificationType.JOB_COMPLETED,
-                "Trabajo completado",
-                "Se marcó como completado “${publicationTitle.take(60)}”. Ya puedes calificar."
+                context.getString(R.string.k_push_job_fin),
+                context.getString(R.string.k_push_job_fin_msg, publicationTitle.take(60))
             )
             com.proyecto.chambaya.data.model.JobStatus.CANCELLED -> Triple(
                 com.proyecto.chambaya.data.model.NotificationType.JOB_CANCELLED,
-                "Trabajo cancelado",
-                "Se canceló el trabajo de “${publicationTitle.take(60)}”."
+                context.getString(R.string.k_push_job_cancel),
+                context.getString(R.string.k_push_job_cancel_msg, publicationTitle.take(60))
             )
             else -> return Result.success(Unit)
         }

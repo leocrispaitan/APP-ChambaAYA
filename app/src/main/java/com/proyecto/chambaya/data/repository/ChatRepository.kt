@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,6 +14,7 @@ import com.proyecto.chambaya.data.model.NotificationType
 import com.proyecto.chambaya.data.model.conversationIdFor
 import com.proyecto.chambaya.data.model.toChatMessage
 import com.proyecto.chambaya.data.model.toConversation
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -112,16 +114,16 @@ class ChatRepository(
             }
     }
 
-    suspend fun sendMessage(senderUid: String, conversationId: String, text: String): Result<Unit> =
+    suspend fun sendMessage(context: Context, senderUid: String, conversationId: String, text: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val clean = text.trim().take(ChatLimits.TEXT_MAX)
-                require(clean.isNotEmpty()) { "Escribe un mensaje." }
-                require(senderUid.isNotBlank() && conversationId.isNotBlank()) { "Sesión no válida." }
+                require(clean.isNotEmpty()) { context.getString(R.string.kr_chat_escribe) }
+                require(senderUid.isNotBlank() && conversationId.isNotBlank()) { context.getString(R.string.k_rate_sesion) }
                 val convRef = firestore.collection(COLLECTION).document(conversationId)
                 val conv = Tasks.await(convRef.get()).takeIf { it.exists() }?.toConversation()
-                    ?: throw IllegalArgumentException("La conversación ya no existe.")
-                require(conv.participants.contains(senderUid)) { "Esa conversación no es tuya." }
+                    ?: throw IllegalArgumentException(context.getString(R.string.kr_chat_gone))
+                require(conv.participants.contains(senderUid)) { context.getString(R.string.kr_chat_ajena) }
                 val msgRef = convRef.collection(SUB_MESSAGES).document()
                 val now = FieldValue.serverTimestamp()
                 Tasks.await(
@@ -151,7 +153,7 @@ class ChatRepository(
                     notifications.push(
                         recipientUid = other,
                         type = NotificationType.NEW_MESSAGE,
-                        title = "Nuevo mensaje",
+                        title = context.getString(R.string.k_push_mensaje),
                         message = clean.take(120),
                         senderUid = senderUid,
                         publicationId = conv.publicationId

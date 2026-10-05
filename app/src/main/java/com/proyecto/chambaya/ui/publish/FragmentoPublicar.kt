@@ -120,7 +120,7 @@ class FragmentoPublicar : Fragment() {
             recargarEstado()
             cargarMisPublicaciones()
             seleccionar(SECCION_PUBLICACIONES, animar = true)
-            Toast.makeText(requireContext(), "¡Chamba publicada!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_pub_exito), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -415,41 +415,41 @@ class FragmentoPublicar : Fragment() {
             else -> PublicationStatus.ACTIVE
         }
         viewLifecycleOwner.lifecycleScope.launch {
-            val r = pubRepository.changeStatus(uid, pub.publicationId, nuevo)
+            val r = pubRepository.changeStatus(requireContext(), uid, pub.publicationId, nuevo)
             if (r.isSuccess) {
                 Toast.makeText(
                     requireContext(),
                     when (nuevo) {
-                        PublicationStatus.PAUSED -> "Publicación pausada."
-                        PublicationStatus.ACTIVE -> "Publicación activa de nuevo."
-                        else -> "Estado actualizado."
+                        PublicationStatus.PAUSED -> getString(R.string.k_detalle_pausada)
+                        PublicationStatus.ACTIVE -> getString(R.string.k_pub_activa_nueva)
+                        else -> getString(R.string.k_pub_estado_ok)
                     },
                     Toast.LENGTH_SHORT
                 ).show()
                 cargarMisPublicaciones()
             } else {
-                Toast.makeText(requireContext(), r.exceptionOrNull()?.message ?: "No se pudo actualizar.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), r.exceptionOrNull()?.message ?: getString(R.string.k_comun_no_actualizar), Toast.LENGTH_LONG).show()
             }
         }
     }
 
     private fun mostrarMenu(pub: Publication, anchor: View) {
         val menu = PopupMenu(requireContext(), anchor)
-        menu.menu.add(0, 1, 0, "Editar")
-        if (pub.status == PublicationStatus.ACTIVE) menu.menu.add(0, 2, 0, "Pausar")
-        if (pub.status == PublicationStatus.PAUSED) menu.menu.add(0, 3, 0, "Reactivar")
+        menu.menu.add(0, 1, 0, getString(R.string.k_comun_editar))
+        if (pub.status == PublicationStatus.ACTIVE) menu.menu.add(0, 2, 0, getString(R.string.item_pausar))
+        if (pub.status == PublicationStatus.PAUSED) menu.menu.add(0, 3, 0, getString(R.string.k_detalle_reactivar))
         if (pub.status == PublicationStatus.FINISHED || pub.status == PublicationStatus.ARCHIVED) {
-            menu.menu.add(0, 3, 0, "Republicar")
+            menu.menu.add(0, 3, 0, getString(R.string.k_pub_republicar))
         }
-        if (pub.status != PublicationStatus.FINISHED) menu.menu.add(0, 4, 0, "Finalizar")
-        if (pub.status != PublicationStatus.ARCHIVED) menu.menu.add(0, 6, 0, "Archivar")
-        menu.menu.add(0, 5, 0, "Eliminar")
+        if (pub.status != PublicationStatus.FINISHED) menu.menu.add(0, 4, 0, getString(R.string.sheet_detalle_finalizar))
+        if (pub.status != PublicationStatus.ARCHIVED) menu.menu.add(0, 6, 0, getString(R.string.k_pub_archivar))
+        menu.menu.add(0, 5, 0, getString(R.string.k_comun_eliminar))
         menu.setOnMenuItemClickListener { item ->
             val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setOnMenuItemClickListener false
             when (item.itemId) {
                 1 -> {
                     if (pub.status !in listOf(PublicationStatus.ACTIVE, PublicationStatus.PAUSED)) {
-                        Toast.makeText(requireContext(), "Solo puedes editar activas o pausadas.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), getString(R.string.k_pub_solo_edit), Toast.LENGTH_SHORT).show()
                     } else {
                         publicarLauncher.launch(CrearPublicacionActivity.editarIntent(requireActivity(), pub.publicationId))
                     }
@@ -458,9 +458,9 @@ class FragmentoPublicar : Fragment() {
                 2, 3 -> { alternarEstado(pub); true }
                 4 -> {
                     viewLifecycleOwner.lifecycleScope.launch {
-                        val r = pubRepository.changeStatus(uid, pub.publicationId, PublicationStatus.FINISHED)
+                        val r = pubRepository.changeStatus(requireContext(), uid, pub.publicationId, PublicationStatus.FINISHED)
                         if (r.isSuccess) {
-                            Toast.makeText(requireContext(), "Publicación finalizada.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), getString(R.string.k_detalle_finalizada), Toast.LENGTH_SHORT).show()
                             cargarMisPublicaciones()
                         }
                     }
@@ -469,9 +469,9 @@ class FragmentoPublicar : Fragment() {
                 5 -> { confirmarEliminar(pub); true }
                 6 -> {
                     viewLifecycleOwner.lifecycleScope.launch {
-                        val r = pubRepository.changeStatus(uid, pub.publicationId, PublicationStatus.ARCHIVED)
+                        val r = pubRepository.changeStatus(requireContext(), uid, pub.publicationId, PublicationStatus.ARCHIVED)
                         if (r.isSuccess) {
-                            Toast.makeText(requireContext(), "Publicación archivada.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), getString(R.string.k_pub_archivada), Toast.LENGTH_SHORT).show()
                             cargarMisPublicaciones()
                         }
                     }
@@ -485,12 +485,12 @@ class FragmentoPublicar : Fragment() {
 
     private fun confirmarEliminar(pub: Publication) {
         AlertDialog.Builder(requireContext())
-            .setTitle("Eliminar publicación")
-            .setMessage("Se quitará del feed para todos. Esta acción no se puede deshacer.")
-            .setPositiveButton("Eliminar") { _, _ ->
+            .setTitle(R.string.k_pub_eliminar_titulo)
+            .setMessage(R.string.k_pub_eliminar_msg)
+            .setPositiveButton(R.string.k_comun_eliminar) { _, _ ->
                 val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return@setPositiveButton
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val r = pubRepository.delete(uid, pub.publicationId)
+                    val r = pubRepository.delete(requireContext(), uid, pub.publicationId)
                     if (r.isSuccess) {
                         // Caché en caliente: el servidor ya restó 1.
                         ProfileCache.perfil?.let { p ->
@@ -503,14 +503,14 @@ class FragmentoPublicar : Fragment() {
                                 )
                             )
                         }
-                        Toast.makeText(requireContext(), "Publicación eliminada.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), getString(R.string.k_pub_eliminada), Toast.LENGTH_SHORT).show()
                         cargarMisPublicaciones()
                     } else {
-                        Toast.makeText(requireContext(), "No se pudo eliminar.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), getString(R.string.k_comun_no_eliminar), Toast.LENGTH_LONG).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 
@@ -573,10 +573,10 @@ class FragmentoPublicar : Fragment() {
         progressSolicitudes?.visibility = View.GONE
         rvSolicitudes?.visibility = View.GONE
         emptySolicitudes?.visibility = View.VISIBLE
-        emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Solo contratantes"
+        emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = getString(R.string.k_pub_solo_contratantes)
         emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
             "Esta sección es para gestionar tus publicaciones y postulantes."
-        emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Ver publicaciones"
+        emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = getString(R.string.k_pub_ver_pubs)
     }
 
     private fun filtrarApps(apps: List<JobApplication>): List<JobApplication> = when (reqFilter) {
@@ -620,10 +620,10 @@ class FragmentoPublicar : Fragment() {
         if (filtradas.isEmpty()) {
             rvSolicitudes?.visibility = View.GONE
             emptySolicitudes?.visibility = View.VISIBLE
-            emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Solicitudes de tus chambas"
+            emptySolicitudes?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = getString(R.string.k_pub_solicitudes)
             emptySolicitudes?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
                 "Cuando un especialista se postule, verás aquí su perfil y podrás aceptar o rechazar."
-            emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = "Publicar chamba"
+            emptySolicitudes?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.text = getString(R.string.k_pub_cta)
         } else {
             emptySolicitudes?.visibility = View.GONE
             rvSolicitudes?.visibility = View.VISIBLE
@@ -659,7 +659,7 @@ class FragmentoPublicar : Fragment() {
                 .ensureConversation(me, otherUid, publicationId, publicationTitle).getOrNull()
             if (!isAdded) return@launch
             if (conv == null) {
-                Toast.makeText(requireContext(), "No se pudo abrir el chat.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.k_chat_no_abrir), Toast.LENGTH_LONG).show()
                 return@launch
             }
             var nombre = "Chat"
@@ -688,35 +688,35 @@ class FragmentoPublicar : Fragment() {
 
     private fun confirmarDecision(row: ApplicantRow, accept: Boolean) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val nombre = row.app.worker.name.ifBlank { "este especialista" }
+        val nombre = row.app.worker.name.ifBlank { getString(R.string.k_pub_especialista) }
         AlertDialog.Builder(requireContext())
-            .setTitle(if (accept) "Aceptar postulación" else "Rechazar postulación")
+            .setTitle(if (accept) getString(R.string.k_pub_aceptar_titulo) else getString(R.string.k_pub_rechazar_titulo))
             .setMessage(
-                if (accept) "¿Aceptar a $nombre? Se creará el trabajo y se le avisará."
-                else "¿Rechazar a $nombre? Se le avisará con respeto."
+                if (accept) getString(R.string.k_pub_aceptar_msg_fmt, nombre)
+                else getString(R.string.k_pub_rechazar_msg_fmt, nombre)
             )
-            .setPositiveButton(if (accept) "Aceptar" else "Rechazar") { _, _ ->
+            .setPositiveButton(if (accept) getString(R.string.item_aceptar) else getString(R.string.item_rechazar)) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val r = appRepository.decide(uid, row.app.applicationId, accept)
+                    val r = appRepository.decide(requireContext(), uid, row.app.applicationId, accept)
                     if (!isAdded) return@launch
                     if (r.isSuccess) {
                         val msg = if (accept) {
                             if (r.getOrNull()?.publicationFilled == true)
-                                "¡Contratado! Vacantes cubiertas: la chamba se finalizó."
-                            else "¡Contratado! Ya puedes coordinar el inicio."
-                        } else "Postulación rechazada."
+                                getString(R.string.k_pub_contratado_lleno)
+                            else getString(R.string.k_pub_contratado_ok)
+                        } else getString(R.string.k_pub_rechazada)
                         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                         cargarSolicitudes()
                     } else {
                         Toast.makeText(
                             requireContext(),
-                            r.exceptionOrNull()?.message ?: "No se pudo decidir.",
+                            r.exceptionOrNull()?.message ?: getString(R.string.k_pub_no_decidir),
                             Toast.LENGTH_LONG
                         ).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 
@@ -724,39 +724,39 @@ class FragmentoPublicar : Fragment() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val job = row.job ?: return
         val next = JobStatus.nextFrom(job.status).firstOrNull { it != JobStatus.CANCELLED } ?: return
-        val verbo = if (next == JobStatus.IN_PROGRESS) "iniciar" else "marcar como completado"
+        val verbo = if (next == JobStatus.IN_PROGRESS) getString(R.string.k_pub_verbo_iniciar) else getString(R.string.k_pub_verbo_completar)
         AlertDialog.Builder(requireContext())
-            .setTitle("Trabajo")
-            .setMessage("¿Deseas $verbo el trabajo de ${row.app.worker.name.ifBlank { "este especialista" }}?")
-            .setPositiveButton("Sí") { _, _ ->
+            .setTitle(R.string.k_pub_trabajo_titulo)
+            .setMessage(getString(R.string.k_pub_verbo_fmt, verbo, row.app.worker.name.ifBlank { getString(R.string.k_pub_especialista) }))
+            .setPositiveButton(R.string.k_comun_si) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val r = jobRepository.transition(uid, job.jobId, next)
+                    val r = jobRepository.transition(requireContext(), uid, job.jobId, next)
                     if (!isAdded) return@launch
                     if (r.isSuccess) {
                         if (next == JobStatus.COMPLETED) {
                             notificationRepository.push(
                                 recipientUid = job.workerUid,
                                 type = com.proyecto.chambaya.data.model.NotificationType.JOB_COMPLETED,
-                                title = "Trabajo completado",
-                                message = "“${job.publicationTitle.take(60)}” se marcó como completado. ¡Califica tu experiencia!",
+                                title = getString(R.string.k_push_job_fin),
+                                message = getString(R.string.k_pub_job_fin_msg, job.publicationTitle.take(60)),
                                 senderUid = uid,
                                 publicationId = job.publicationId
                             )
-                            Toast.makeText(requireContext(), "Completado. Ya pueden calificarse.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), getString(R.string.k_pub_completado), Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(requireContext(), "Trabajo en curso.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), getString(R.string.k_pub_en_curso), Toast.LENGTH_SHORT).show()
                         }
                         cargarSolicitudes()
                     } else {
                         Toast.makeText(
                             requireContext(),
-                            r.exceptionOrNull()?.message ?: "No se pudo actualizar.",
+                            r.exceptionOrNull()?.message ?: getString(R.string.k_comun_no_actualizar),
                             Toast.LENGTH_LONG
                         ).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 

@@ -50,8 +50,8 @@ class RateSheet : BottomSheetDialogFragment() {
             if (job == null || !isAdded) { dismiss(); return@launch }
             val soyWorker = ProfileCache.perfil?.uid == job.workerUid
             view.findViewById<TextView>(R.id.tvRateTarget).text =
-                if (soyWorker) "¿Cómo fue trabajar en “${job.publicationTitle.take(50)}”?"
-                else "¿Cómo fue el trabajo de tu contratado en “${job.publicationTitle.take(50)}”?"
+                if (soyWorker) getString(R.string.k_rate_target_worker, job.publicationTitle.take(50))
+                else getString(R.string.k_rate_target_dueno, job.publicationTitle.take(50))
             view.findViewById<View>(R.id.btnRateSend).setOnClickListener {
                 enviar(jobId)
             }
@@ -64,11 +64,11 @@ class RateSheet : BottomSheetDialogFragment() {
             btn.setImageResource(if (i < n) R.drawable.ic_star_filled else R.drawable.ic_star_outline)
         }
         view?.findViewById<TextView>(R.id.tvRateLabel)?.text = when (n) {
-            1 -> "Malo"
-            2 -> "Regular"
-            3 -> "Bueno"
-            4 -> "Muy bueno"
-            else -> "Excelente"
+            1 -> getString(R.string.k_rate_malo)
+            2 -> getString(R.string.k_rate_regular)
+            3 -> getString(R.string.k_rate_bueno)
+            4 -> getString(R.string.k_rate_muy_bueno)
+            else -> getString(R.string.k_rate_excelente)
         }
     }
 
@@ -77,13 +77,13 @@ class RateSheet : BottomSheetDialogFragment() {
         if (stars !in RatingLimits.MIN..RatingLimits.MAX) {
             view?.findViewById<TextView>(R.id.tvRateError)?.apply {
                 visibility = View.VISIBLE
-                text = "Elige de 1 a 5 estrellas."
+                text = getString(R.string.k_rate_elegir)
             }
             return
         }
         val perfil = ProfileCache.perfil
         if (perfil == null) {
-            Toast.makeText(requireContext(), "Sesión no válida.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_rate_sesion), Toast.LENGTH_SHORT).show()
             return
         }
         sending = true
@@ -91,17 +91,17 @@ class RateSheet : BottomSheetDialogFragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val job = jobRepo.getById(jobId).getOrNull()
             if (job == null) { sending = false; dismiss(); return@launch }
-            val r = ratingRepo.rate(perfil, job, stars, comentario)
+            val r = ratingRepo.rate(requireContext(), perfil, job, stars, comentario)
             sending = false
             if (!isAdded) return@launch
             if (r.isSuccess) {
-                Toast.makeText(requireContext(), "¡Gracias por calificar!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_rate_gracias), Toast.LENGTH_SHORT).show()
                 parentFragmentManager.setFragmentResult(REQUEST_RATED, bundleOf(EXTRA_JOB to jobId))
                 dismiss()
             } else {
                 view?.findViewById<TextView>(R.id.tvRateError)?.apply {
                     visibility = View.VISIBLE
-                    text = r.exceptionOrNull()?.message ?: "No se pudo calificar."
+                    text = r.exceptionOrNull()?.message ?: getString(R.string.k_rate_no_calificar)
                 }
             }
         }

@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="sans-serif-black"
-            android:text="Comentarios"
+            android:text="@string/sheet_comentarios_titulo"
             android:textColor="@color/text_primary"
             android:textSize="19sp" />
 
@@ -63,7 +63,7 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:padding="24dp"
-            android:text="Sé el primero en comentar esta chamba."
+            android:text="@string/sheet_comentarios_vacio"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
     </FrameLayout>
@@ -85,7 +85,7 @@
                 android:id="@+id/etComment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Escribe un comentario…"
+                android:hint="@string/sheet_comentarios_hint"
                 android:inputType="textCapSentences|textMultiLine"
                 android:maxLength="500"
                 android:maxLines="3" />

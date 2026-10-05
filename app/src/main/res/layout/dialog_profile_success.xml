@@ -64,7 +64,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Perfil completado"
+                android:text="@string/dlg_perfil_titulo"
                 android:textColor="#263247"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -104,7 +104,7 @@
         android:layout_width="match_parent"
         android:layout_height="54dp"
         android:layout_marginTop="22dp"
-        android:text="Continuar"
+        android:text="@string/comun_continuar"
         android:textAllCaps="false"
         android:textSize="16sp"
         android:textStyle="bold"

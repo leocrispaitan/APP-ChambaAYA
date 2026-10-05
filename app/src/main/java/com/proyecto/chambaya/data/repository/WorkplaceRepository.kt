@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,6 +9,7 @@ import com.proyecto.chambaya.data.model.WorkplaceDraft
 import com.proyecto.chambaya.data.model.toWorkplace
 import com.proyecto.chambaya.data.model.validateWorkplaceDraft
 import com.proyecto.chambaya.data.remote.CloudinaryUploader
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -101,6 +103,7 @@ class WorkplaceRepository(
      * vacíos = lugar sin foto (válido).
      */
     suspend fun create(
+        context: Context,
         uid: String,
         workplaceId: String,
         draft: WorkplaceDraft,
@@ -108,10 +111,10 @@ class WorkplaceRepository(
         photoPublicId: String = ""
     ): Result<Workplace> = withContext(Dispatchers.IO) {
         runCatching {
-            val errores = validateWorkplaceDraft(draft)
+            val errores = validateWorkplaceDraft(context, draft)
             require(errores.isEmpty()) { errores.first() }
-            require(uid.isNotBlank()) { "Sesión no válida." }
-            require(workplaceId.isNotBlank()) { "Identificador no válido." }
+            require(uid.isNotBlank()) { context.getString(R.string.k_rate_sesion) }
+            require(workplaceId.isNotBlank()) { context.getString(R.string.kr_lugar_id) }
 
             val ref = firestore.collection(COLLECTION_WORKPLACES).document(workplaceId)
             val payload = draftPayload(uid, workplaceId, draft, photoUrl, photoPublicId)
@@ -134,6 +137,7 @@ class WorkplaceRepository(
 
     /** Edita el lugar. No cambia dueño, verificación ni creación. */
     suspend fun update(
+        context: Context,
         uid: String,
         workplaceId: String,
         draft: WorkplaceDraft,
@@ -141,12 +145,12 @@ class WorkplaceRepository(
         photoPublicId: String? = null
     ): Result<Workplace> = withContext(Dispatchers.IO) {
         runCatching {
-            val errores = validateWorkplaceDraft(draft)
+            val errores = validateWorkplaceDraft(context, draft)
             require(errores.isEmpty()) { errores.first() }
             val ref = firestore.collection(COLLECTION_WORKPLACES).document(workplaceId)
             val actual = Tasks.await(ref.get())
-            require(actual.exists()) { "El lugar ya no existe." }
-            require(actual.getString("ownerUid") == uid) { "Ese lugar no te pertenece." }
+            require(actual.exists()) { context.getString(R.string.kr_lugar_gone) }
+            require(actual.getString("ownerUid") == uid) { context.getString(R.string.kr_lugar_ajeno) }
 
             val cambios = draftPayload(uid, workplaceId, draft, null, null)
                 .toMutableMap()
@@ -174,13 +178,13 @@ class WorkplaceRepository(
      * La foto de Cloudinary se deja: su borrado exige firma (API Secret) y vive
      * en el backend (Fase 16), no en la app.
      */
-    suspend fun delete(uid: String, workplaceId: String): Result<Unit> =
+    suspend fun delete(context: Context, uid: String, workplaceId: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COLLECTION_WORKPLACES).document(workplaceId)
                 val actual = Tasks.await(ref.get())
                 if (actual.exists()) {
-                    require(actual.getString("ownerUid") == uid) { "Ese lugar no te pertenece." }
+                    require(actual.getString("ownerUid") == uid) { context.getString(R.string.kr_lugar_ajeno) }
                     Tasks.await(ref.delete())
                 }
                 desvincularSiApunta(uid, workplaceId)
@@ -254,7 +258,7 @@ class WorkplaceRepository(
         return payload
     }
 
-    fun validate(draft: WorkplaceDraft): List<String> = validateWorkplaceDraft(draft)
+    fun validate(context: Context, draft: WorkplaceDraft): List<String> = validateWorkplaceDraft(context, draft)
 
     companion object {
         const val COLLECTION_WORKPLACES = "workplaces"

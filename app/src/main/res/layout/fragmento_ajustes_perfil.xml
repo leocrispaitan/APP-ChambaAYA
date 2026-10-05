@@ -231,7 +231,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Modo trabajador"
+                            android:text="@string/modo_trabajador_titulo"
                             android:textColor="#1F2937"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -242,7 +242,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:fontFamily="sans-serif"
-                            android:text="Activa también el modo contratante"
+                            android:text="@string/modo_rol_fijo_trabajador"
                             android:textColor="#64748B"
                             android:textSize="12sp" />
                     </LinearLayout>

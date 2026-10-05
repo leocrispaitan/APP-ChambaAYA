@@ -157,10 +157,10 @@ class FragmentoAjustesPerfil : Fragment() {
         // La fila solo informa el rol actual de la cuenta.
         root.findViewById<View>(R.id.btnCambiarModo)?.setOnClickListener {
             animateTap(it)
-            val rol = if (perfil?.activeRole == UserRoles.CONTRATANTE) "Contratante" else "Trabajador"
+            val rol = if (perfil?.activeRole == UserRoles.CONTRATANTE) getString(R.string.k_rol_contratante) else getString(R.string.k_rol_trabajador)
             Toast.makeText(
                 requireContext(),
-                "Tu rol es $rol y se definió al registrarte.",
+                getString(R.string.k_aj_rol_fmt, rol),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -184,7 +184,7 @@ class FragmentoAjustesPerfil : Fragment() {
 
         root.findViewById<View>(R.id.rowPasswordManager)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Seguridad y contraseñas", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_aj_seguridad), Toast.LENGTH_SHORT).show()
         }
 
         root.findViewById<View>(R.id.rowGuardados)?.setOnClickListener {
@@ -197,12 +197,12 @@ class FragmentoAjustesPerfil : Fragment() {
         root.findViewById<View>(R.id.rowNotifications)?.setOnClickListener {
             switchNotif?.let { s ->
                 s.isChecked = !s.isChecked
-                val msg = if (s.isChecked) "Notificaciones activadas" else "Notificaciones desactivadas"
+                val msg = if (s.isChecked) getString(R.string.k_aj_notif_on) else getString(R.string.k_aj_notif_off)
                 Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
             }
         }
         switchNotif?.setOnCheckedChangeListener { _, isChecked ->
-            val msg = if (isChecked) "Notificaciones activadas" else "Notificaciones desactivadas"
+            val msg = if (isChecked) getString(R.string.k_aj_notif_on) else getString(R.string.k_aj_notif_off)
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -213,7 +213,7 @@ class FragmentoAjustesPerfil : Fragment() {
 
         root.findViewById<View>(R.id.rowAppearance)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Tema: Modo Claro", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_aj_tema), Toast.LENGTH_SHORT).show()
         }
 
         root.findViewById<View>(R.id.rowPrivacy)?.setOnClickListener {

@@ -48,11 +48,11 @@ object EmployerTypes {
     fun requiresRuc(employerType: String?): Boolean =
         employerType == EMPRESA || employerType == NEGOCIO
 
-    fun label(employerType: String?): String = when (employerType) {
-        PERSONA -> "Persona"
-        EMPRESA -> "Empresa"
-        NEGOCIO -> "Negocio"
-        INDEPENDIENTE -> "Independiente"
+    fun label(context: android.content.Context, employerType: String?): String = when (employerType) {
+        PERSONA -> context.getString(com.proyecto.chambaya.R.string.k_emp_persona)
+        EMPRESA -> context.getString(com.proyecto.chambaya.R.string.k_emp_empresa)
+        NEGOCIO -> context.getString(com.proyecto.chambaya.R.string.k_emp_negocio)
+        INDEPENDIENTE -> context.getString(com.proyecto.chambaya.R.string.k_emp_independiente)
         else -> ""
     }
 }

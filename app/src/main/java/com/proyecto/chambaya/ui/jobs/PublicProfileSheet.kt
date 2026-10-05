@@ -61,7 +61,7 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                 progress.visibility = View.GONE
                 if (perfil == null) {
                     error.visibility = View.VISIBLE
-                    error.text = "No se pudo cargar el perfil."
+                    error.text = getString(R.string.k_pub_no_cargar)
                 }
                 return@launch
             }
@@ -139,18 +139,18 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
             progress.visibility = View.GONE
 
             if (esEmpresa) {
-                view.findViewById<TextView>(R.id.tvStatLabel1).text = "Publicadas"
-                view.findViewById<TextView>(R.id.tvStatLabel2).text = "Contrataciones"
+                view.findViewById<TextView>(R.id.tvStatLabel1).text = getString(R.string.sheet_perfpublic_publicadas)
+                view.findViewById<TextView>(R.id.tvStatLabel2).text = getString(R.string.sheet_perfpublic_contrataciones)
                 view.findViewById<TextView>(R.id.tvPublicPublished).text = pubs.size.toString()
                 view.findViewById<TextView>(R.id.tvPublicHired).text =
                     jobsEmp.count { it.status != JobStatus.CANCELLED }.toString()
             } else {
-                view.findViewById<TextView>(R.id.tvStatLabel1).text = "Trabajos"
-                view.findViewById<TextView>(R.id.tvStatLabel2).text = "Experiencia"
+                view.findViewById<TextView>(R.id.tvStatLabel1).text = getString(R.string.k_pub_trabajos)
+                view.findViewById<TextView>(R.id.tvStatLabel2).text = getString(R.string.profile_experience_label)
                 view.findViewById<TextView>(R.id.tvPublicPublished).text =
                     jobsWork.count { it.status == JobStatus.COMPLETED }.toString()
                 view.findViewById<TextView>(R.id.tvPublicHired).text =
-                    if (perfil.worker.experienceYears > 0) "${perfil.worker.experienceYears} años" else "—"
+                    if (perfil.worker.experienceYears > 0) getString(R.string.profile_anios_experiencia, perfil.worker.experienceYears) else "—"
             }
             // FASE 17/19: promedio + nº de calificaciones (reputación visible).
             view.findViewById<TextView>(R.id.tvPublicRating).text =
@@ -213,7 +213,7 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                 } else {
                     android.widget.Toast.makeText(
                         requireContext(),
-                        r.exceptionOrNull()?.message ?: "No se pudo abrir el chat.",
+                        r.exceptionOrNull()?.message ?: getString(R.string.k_chat_no_abrir),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -221,8 +221,8 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
         }
         btnMore.setOnClickListener { anchor ->
             val menu = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
-            menu.menu.add(0, 1, 0, "Bloquear")
-            menu.menu.add(0, 2, 0, "Denunciar")
+            menu.menu.add(0, 1, 0, getString(R.string.k_comun_bloquear))
+            menu.menu.add(0, 2, 0, getString(R.string.k_comun_denunciar))
             menu.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     1 -> confirmarBloqueo(uid)
@@ -237,9 +237,9 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
     private fun confirmarBloqueo(uid: String) {
         val me = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Bloquear usuario")
-            .setMessage("No verás sus chambas ni podrán escribirse.")
-            .setPositiveButton("Bloquear") { _, _ ->
+            .setTitle(R.string.k_pub_bloquear_titulo)
+            .setMessage(R.string.k_pub_bloquear_msg)
+            .setPositiveButton(R.string.k_comun_bloquear) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val ya = blockRepo.isBlocked(me, uid)
                     val r = if (ya) blockRepo.unblock(me, uid) else blockRepo.block(me, uid)
@@ -247,38 +247,38 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                     android.widget.Toast.makeText(
                         requireContext(),
                         when {
-                            r.isFailure -> "No se pudo completar."
-                            ya -> "Usuario desbloqueado."
-                            else -> "Usuario bloqueado."
+                            r.isFailure -> getString(R.string.k_pub_no_completar)
+                            ya -> getString(R.string.k_pub_desbloqueado_ok)
+                            else -> getString(R.string.k_pub_bloqueado_ok)
                         },
                         Toast.LENGTH_SHORT
                     ).show()
                     if (r.isSuccess && !ya) dismiss()
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 
     private fun denunciar(uid: String) {
         val me = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         if (me.isBlank()) return
-        val motivos = arrayOf("Spam", "Acoso", "Fraude o estafa", "Contenido inapropiado", "Otro")
+        val motivos = arrayOf(getString(R.string.k_razon_spam), getString(R.string.k_razon_acoso), getString(R.string.k_razon_fraude_estafa), getString(R.string.k_razon_inapropiado), getString(R.string.k_razon_otro))
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Denunciar usuario")
+            .setTitle(R.string.k_pub_denunciar_titulo)
             .setItems(motivos) { _, cual ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val r = blockRepo.reportUser(me, uid, motivos[cual])
                     if (isAdded) {
                         android.widget.Toast.makeText(
                             requireContext(),
-                            if (r.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar.",
+                            if (r.isSuccess) getString(R.string.k_com_denunciar_enviar) else getString(R.string.k_comun_no_enviar),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 

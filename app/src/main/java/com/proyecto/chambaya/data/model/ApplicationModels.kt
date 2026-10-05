@@ -17,12 +17,12 @@ object ApplicationStatus {
     const val CANCELLED = "CANCELLED"
     const val WITHDRAWN = "WITHDRAWN"
 
-    fun label(status: String): String = when (status) {
-        PENDING -> "Pendiente"
-        ACCEPTED -> "Aceptado"
-        REJECTED -> "Rechazado"
-        CANCELLED -> "Cancelado"
-        WITHDRAWN -> "Retirado"
+    fun label(context: android.content.Context, status: String): String = when (status) {
+        PENDING -> context.getString(com.proyecto.chambaya.R.string.k_est_apl_pendiente)
+        ACCEPTED -> context.getString(com.proyecto.chambaya.R.string.k_est_apl_aceptado)
+        REJECTED -> context.getString(com.proyecto.chambaya.R.string.k_est_apl_rechazado)
+        CANCELLED -> context.getString(com.proyecto.chambaya.R.string.k_est_apl_cancelado)
+        WITHDRAWN -> context.getString(com.proyecto.chambaya.R.string.k_est_apl_retirado)
         else -> status
     }
 
@@ -57,10 +57,10 @@ object ApplicationLimits {
     const val MESSAGE_MAX = 500
 }
 
-fun validateApplicationMessage(message: String): List<String> {
+fun validateApplicationMessage(context: android.content.Context, message: String): List<String> {
     val errores = mutableListOf<String>()
     if (message.trim().length > ApplicationLimits.MESSAGE_MAX) {
-        errores += "El mensaje no puede pasar de ${ApplicationLimits.MESSAGE_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_apl_msg_fmt, ApplicationLimits.MESSAGE_MAX)
     }
     return errores
 }

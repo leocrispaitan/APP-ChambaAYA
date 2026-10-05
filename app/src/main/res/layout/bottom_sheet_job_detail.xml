@@ -195,7 +195,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pago ofrecido"
+                        android:text="@string/sheet_detalle_pago"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
@@ -230,7 +230,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ubicación"
+                        android:text="@string/sheet_detalle_ubicacion"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
 
@@ -252,7 +252,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Detalles del trabajo"
+                android:text="@string/sheet_detalle_titulo"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -273,7 +273,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Horario"
+                        android:text="@string/sheet_detalle_horario"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
@@ -298,7 +298,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Vacantes"
+                        android:text="@string/sheet_detalle_vacantes"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
@@ -323,7 +323,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Publicado"
+                        android:text="@string/sheet_detalle_publicado"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
@@ -349,7 +349,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Lugar"
+                        android:text="@string/sheet_detalle_lugar"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
@@ -370,7 +370,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Descripción"
+                android:text="@string/sheet_detalle_descripcion"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -413,7 +413,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Comentarios"
+                android:text="@string/sheet_comentarios_titulo"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -429,7 +429,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Sé el primero en comentar esta chamba."
+                android:text="@string/sheet_comentarios_vacio"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
@@ -451,7 +451,7 @@
                         android:id="@+id/etComment"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Escribe un comentario…"
+                        android:hint="@string/sheet_comentarios_hint"
                         android:inputType="text"
                         android:maxLength="500"
                         android:maxLines="3" />
@@ -517,7 +517,7 @@
                     android:layout_height="52dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:text="Postularme"
+                    android:text="@string/sheet_postular_titulo"
                     android:textColor="@color/white"
                     android:textSize="15sp"
                     app:cornerRadius="16dp"
@@ -536,7 +536,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Esta es tu publicación"
+                    android:text="@string/sheet_detalle_propia"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp" />
 
@@ -551,7 +551,7 @@
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
-                        android:text="Pausar"
+                        android:text="@string/item_pausar"
                         android:textSize="13sp"
                         app:cornerRadius="14dp"
                         style="@style/Widget.Material3.Button.OutlinedButton" />
@@ -562,7 +562,7 @@
                         android:layout_height="48dp"
                         android:layout_weight="1"
                         android:layout_marginStart="8dp"
-                        android:text="Finalizar"
+                        android:text="@string/sheet_detalle_finalizar"
                         android:textColor="@color/white"
                         android:textSize="13sp"
                         app:cornerRadius="14dp"

@@ -246,9 +246,9 @@ class FragmentoMisTrabajos : Fragment() {
         if (filtradas.isEmpty()) {
             rvSolicitudes?.visibility = View.GONE
             emptySol?.visibility = View.VISIBLE
-            emptySol?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Tus postulaciones"
+            emptySol?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = getString(R.string.k_mistrab_titulo)
             emptySol?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
-                "Cuando te postules a una chamba, seguirás aquí su estado."
+                getString(R.string.k_mistrab_sub)
         } else {
             emptySol?.visibility = View.GONE
             rvSolicitudes?.visibility = View.VISIBLE
@@ -268,22 +268,22 @@ class FragmentoMisTrabajos : Fragment() {
         when {
             app.status == ApplicationStatus.PENDING -> {
                 AlertDialog.Builder(requireContext())
-                    .setTitle("Retirar postulación")
-                    .setMessage("¿Retirar tu postulación a “${app.publicationTitle.take(50)}”?")
-                    .setPositiveButton("Retirar") { _, _ ->
+                    .setTitle(R.string.sheet_postular_retirar)
+                    .setMessage(getString(R.string.k_mistrab_retirar_fmt, app.publicationTitle.take(50)))
+                    .setPositiveButton(R.string.item_retirar) { _, _ ->
                         viewLifecycleOwner.lifecycleScope.launch {
-                            val r = appRepository.withdraw(uid, app.applicationId)
+                            val r = appRepository.withdraw(requireContext(), uid, app.applicationId)
                             if (!isAdded) return@launch
                             Toast.makeText(
                                 requireContext(),
-                                if (r.isSuccess) "Postulación retirada." else "No se pudo retirar.",
+                                if (r.isSuccess) getString(R.string.k_apl_retirada) else getString(R.string.k_apl_no_retirar),
                                 Toast.LENGTH_SHORT
                             ).show()
                             cargarSolicitudes()
                             cargarHistorial()
                         }
                     }
-                    .setNegativeButton("Cancelar", null)
+                    .setNegativeButton(R.string.k_comun_cancelar, null)
                     .show()
             }
             job?.status == JobStatus.COMPLETED && !row.ratedByMe -> {
@@ -304,7 +304,7 @@ class FragmentoMisTrabajos : Fragment() {
             val perfil = profileRepository.loadPublicProfile(otherUid).getOrNull()
             if (!isAdded) return@launch
             if (conv == null) {
-                Toast.makeText(requireContext(), "No se pudo abrir el chat.", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.k_chat_no_abrir), Toast.LENGTH_LONG).show()
                 return@launch
             }
             val intent = Intent(
@@ -313,7 +313,7 @@ class FragmentoMisTrabajos : Fragment() {
             ).apply {
                 putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_CONV_ID, conv.conversationId)
                 putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_OTHER_UID, otherUid)
-                putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_NOMBRE, perfil?.displayName() ?: "Chat")
+                putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_NOMBRE, perfil?.displayName() ?: getString(R.string.k_chat_default))
                 putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_FOTO, perfil?.photoUrl.orEmpty())
                 putExtra(com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_PUB_TITULO, publicationTitle)
             }
@@ -400,9 +400,9 @@ class FragmentoMisTrabajos : Fragment() {
         if (filtrados.isEmpty()) {
             rvHistorial?.visibility = View.GONE
             emptyHist?.visibility = View.VISIBLE
-            emptyHist?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = "Tu recorrido"
+            emptyHist?.findViewById<TextView>(R.id.tvVacioTitulo)?.text = getString(R.string.k_mistrab_recorrido)
             emptyHist?.findViewById<TextView>(R.id.tvVacioSubtitulo)?.text =
-                "Aquí verás en qué trabajos participaste: contratación, inicio y fin."
+                getString(R.string.k_mistrab_hist_sub)
         } else {
             emptyHist?.visibility = View.GONE
             rvHistorial?.visibility = View.VISIBLE

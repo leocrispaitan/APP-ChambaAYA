@@ -47,14 +47,14 @@ class JobHistoryAdapter(
 
         fun bind(item: JobHistoryRow) {
             val job = item.job
-            tvTitle.text = job.publicationTitle.ifBlank { "Trabajo" }
-            val nombre = item.other?.displayName() ?: "Usuario ChambAYA"
-            tvOther.text = "con $nombre"
-            tvStatus.text = JobStatus.label(job.status)
+            tvTitle.text = job.publicationTitle.ifBlank { itemView.context.getString(R.string.k_hist_trabajo) }
+            val nombre = item.other?.displayName() ?: itemView.context.getString(R.string.k_rat_usuario)
+            tvOther.text = itemView.context.getString(R.string.k_hist_con_fmt, nombre)
+            tvStatus.text = JobStatus.label(itemView.context, job.status)
             val monto = job.agreedPayment.amount.let {
                 if (it % 1.0 == 0.0) it.toInt().toString() else String.format("%.2f", it)
             }
-            tvMeta.text = "S/ $monto · ${publicationTimeAgo(job.createdAt)}"
+            tvMeta.text = itemView.context.getString(R.string.k_hist_monto_fmt, monto, publicationTimeAgo(job.createdAt))
             val foto = item.other?.photoUrl.orEmpty()
             if (foto.isNotBlank()) {
                 ivAvatar.load(foto) {

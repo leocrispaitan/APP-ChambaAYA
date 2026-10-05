@@ -318,7 +318,7 @@ class LoginActivity : AppCompatActivity() {
                             accountStatus == AccountStatuses.ACTIVE
 
                     if (registrationComplete) {
-                        Toast.makeText(this@LoginActivity, "¡Bienvenido de nuevo!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@LoginActivity, getString(R.string.k_login_bienvenido), Toast.LENGTH_SHORT).show()
 
                         // Registrar el último ingreso (solo `updatedAt` / `lastLoginAt`)
                         lifecycleScope.launch {
@@ -327,7 +327,7 @@ class LoginActivity : AppCompatActivity() {
 
                         navigateToMainActivity()
                     } else {
-                        showToast("Tu registro no está completo. Completa el proceso de registro primero.")
+                        showToast(getString(R.string.k_login_incompleto))
                         auth.signOut()
                     }
                 } else {
@@ -405,7 +405,7 @@ class LoginActivity : AppCompatActivity() {
 
         // Mostrar indicador de carga en el botón
         if (loading) {
-            btnSignIn.text = "Iniciando sesión..."
+            btnSignIn.text = getString(R.string.k_login_iniciando)
         } else {
             btnSignIn.text = getString(R.string.auth_signin)
         }

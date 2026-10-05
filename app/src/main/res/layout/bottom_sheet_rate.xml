@@ -23,7 +23,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-black"
-        android:text="Calificar trabajo"
+        android:text="@string/sheet_calificar_titulo"
         android:textColor="@color/text_primary"
         android:textSize="19sp" />
 
@@ -92,7 +92,7 @@
         android:layout_marginTop="6dp"
         android:gravity="center"
         android:fontFamily="sans-serif-medium"
-        android:text="Toca las estrellas"
+        android:text="@string/sheet_calificar_estrellas"
         android:textColor="@color/brand_color"
         android:textSize="14sp" />
 
@@ -107,7 +107,7 @@
             android:layout_width="match_parent"
             android:layout_height="100dp"
             android:gravity="top"
-            android:hint="Cuenta cómo fue la experiencia (opcional)"
+            android:hint="@string/sheet_calificar_hint"
             android:inputType="textMultiLine"
             android:maxLength="500" />
     </com.google.android.material.textfield.TextInputLayout>
@@ -126,7 +126,7 @@
         android:layout_width="match_parent"
         android:layout_height="52dp"
         android:layout_marginTop="14dp"
-        android:text="Enviar calificación"
+        android:text="@string/sheet_calificar_enviar"
         android:textColor="@android:color/white"
         android:textSize="15sp"
         app:cornerRadius="16dp"

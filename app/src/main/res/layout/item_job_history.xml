@@ -98,7 +98,7 @@
                 android:id="@+id/btnJobRate"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:text="Calificar"
+                android:text="@string/item_calificar"
                 android:textSize="12sp"
                 app:cornerRadius="12dp"
                 app:backgroundTint="@color/brand_color"

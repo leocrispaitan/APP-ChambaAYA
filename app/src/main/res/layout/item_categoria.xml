@@ -39,7 +39,7 @@
             android:minHeight="38dp"
             android:paddingHorizontal="9dp"
             android:paddingVertical="5dp"
-            android:text="Limpieza"
+            android:text="@string/home_cat_limpieza"
             android:textColor="@color/white"
             android:textSize="11sp" />
     </FrameLayout>

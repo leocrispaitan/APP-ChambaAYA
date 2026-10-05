@@ -59,7 +59,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri == null) return@registerForActivityResult
         if (fotosUris.size >= 3) {
-            Toast.makeText(this, "Máximo 3 fotos.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.k_crear_max_fotos), Toast.LENGTH_SHORT).show()
             return@registerForActivityResult
         }
         fotosUris += uri
@@ -76,16 +76,16 @@ class CrearPublicacionActivity : AppCompatActivity() {
         configurarCampos()
 
         if (editId.isNotBlank()) {
-            findViewById<TextView>(R.id.tvWorkplaceChip)?.text = "Editando"
-            (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.text = "Guardar cambios"
-            findViewById<TextView>(android.R.id.title)?.text = "Editar chamba"
+            findViewById<TextView>(R.id.tvWorkplaceChip)?.text = getString(R.string.k_crear_editando)
+            (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.text = getString(R.string.k_crear_guardar)
+            findViewById<TextView>(android.R.id.title)?.text = getString(R.string.k_crear_editar)
             cargarParaEditar(editId)
         } else {
             cargarContexto()
         }
 
         findViewById<View>(R.id.cardAddPhoto).setOnClickListener {
-            if (fotosUris.size >= 3) Toast.makeText(this, "Máximo 3 fotos.", Toast.LENGTH_SHORT).show()
+            if (fotosUris.size >= 3) Toast.makeText(this, getString(R.string.k_crear_max_fotos), Toast.LENGTH_SHORT).show()
             else pickPhoto.launch("image/*")
         }
         findViewById<View>(R.id.btnPublicar).setOnClickListener { publicar() }
@@ -93,9 +93,9 @@ class CrearPublicacionActivity : AppCompatActivity() {
 
     private fun configurarCampos() {
         findViewById<TextInputEditText>(R.id.etDescripcion)?.doAfterTextChanged {
-            findViewById<TextView>(R.id.tvDescCount)?.text = "${it?.length ?: 0} / 2000"
+            findViewById<TextView>(R.id.tvDescCount)?.text = getString(R.string.k_crear_contador_fmt, it?.length ?: 0)
         }
-        val periodos = mapOf("Hora" to PaymentPeriod.HOUR, "Día" to PaymentPeriod.DAY, "Semana" to PaymentPeriod.WEEK, "Mes" to PaymentPeriod.MONTH, "Por trabajo" to PaymentPeriod.JOB)
+        val periodos = mapOf(getString(R.string.k_pern_hora) to PaymentPeriod.HOUR, getString(R.string.k_pern_dia) to PaymentPeriod.DAY, getString(R.string.k_pern_semana) to PaymentPeriod.WEEK, getString(R.string.k_pern_mes) to PaymentPeriod.MONTH, getString(R.string.k_pern_trabajo) to PaymentPeriod.JOB)
         findViewById<MaterialAutoCompleteTextView>(R.id.actvPeriodo)?.apply {
             setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, periodos.keys.toList()))
             setOnClickListener { showDropDown() }
@@ -155,7 +155,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val pub = pubRepo.getById(publicationId).getOrNull()
             if (pub == null) {
-                Toast.makeText(this@CrearPublicacionActivity, "La publicación ya no existe.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@CrearPublicacionActivity, getString(R.string.k_crear_no_existe), Toast.LENGTH_SHORT).show()
                 finish(); return@launch
             }
             editando = pub
@@ -165,9 +165,9 @@ class CrearPublicacionActivity : AppCompatActivity() {
             findViewById<TextInputEditText>(R.id.etMonto)?.setText(if (pub.payment.amount % 1.0 == 0.0) pub.payment.amount.toInt().toString() else pub.payment.amount.toString())
             findViewById<MaterialAutoCompleteTextView>(R.id.actvPeriodo)?.setText(
                 when (pub.payment.period) {
-                    PaymentPeriod.HOUR -> "Hora"; PaymentPeriod.WEEK -> "Semana"
-                    PaymentPeriod.MONTH -> "Mes"; PaymentPeriod.JOB -> "Por trabajo"
-                    else -> "Día"
+                    PaymentPeriod.HOUR -> getString(R.string.k_pern_hora); PaymentPeriod.WEEK -> getString(R.string.k_pern_semana)
+                    PaymentPeriod.MONTH -> getString(R.string.k_pern_mes); PaymentPeriod.JOB -> getString(R.string.k_pern_trabajo)
+                    else -> getString(R.string.k_pern_dia)
                 }, false
             )
             findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchNegociable)?.isChecked = pub.payment.negotiable
@@ -210,7 +210,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
     private fun publicar() {
         if (publicando) return
         val draft = armarDraft()
-        val errores = validatePublicationDraft(draft)
+        val errores = validatePublicationDraft(this, draft)
         val tvError = findViewById<TextView>(R.id.tvFormError)
         if (errores.isNotEmpty()) {
             tvError.visibility = View.VISIBLE
@@ -224,13 +224,13 @@ class CrearPublicacionActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
-                require(uid.isNotBlank()) { "Sesión no válida." }
+                require(uid.isNotBlank()) { getString(R.string.k_rate_sesion) }
                 var perfil = ProfileCache.perfil
                 if (perfil == null) {
                     perfil = profileRepo.loadProfile(uid).getOrNull()
                     if (perfil != null) ProfileCache.perfil = perfil
                 }
-                require(perfil != null) { "No se pudo cargar tu perfil." }
+                require(perfil != null) { getString(R.string.k_pub_no_perfil) }
                 val lugar = placeRepo.loadByOwner(uid).getOrNull()
 
                 val existente = editando
@@ -241,9 +241,9 @@ class CrearPublicacionActivity : AppCompatActivity() {
                         val actuales = existente.images.take(3 - nuevas.size)
                         actuales + nuevas
                     }
-                    val r = pubRepo.update(uid, existente.publicationId, draft, imagenes)
-                    if (r.isFailure) throw r.exceptionOrNull() ?: Exception("No se pudo guardar.")
-                    Toast.makeText(this@CrearPublicacionActivity, "Cambios guardados.", Toast.LENGTH_SHORT).show()
+                    val r = pubRepo.update(this@CrearPublicacionActivity, uid, existente.publicationId, draft, imagenes)
+                    if (r.isFailure) throw r.exceptionOrNull() ?: Exception(getString(R.string.k_crear_no_guardar))
+                    Toast.makeText(this@CrearPublicacionActivity, getString(R.string.k_crear_guardado), Toast.LENGTH_SHORT).show()
                     setResult(Activity.RESULT_OK)
                     finish()
                     return@launch
@@ -252,6 +252,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
                 val publicationId = pubRepo.newPublicationId()
                 val imagenes = subirFotos(uid, publicationId)
                 val r = pubRepo.create(
+                    context = this@CrearPublicacionActivity,
                     uid = uid,
                     publicationId = publicationId,
                     draft = draft,
@@ -263,7 +264,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
                     workplaceLng = lugar?.location?.longitude,
                     images = imagenes
                 )
-                if (r.isFailure) throw r.exceptionOrNull() ?: Exception("No se pudo publicar.")
+                if (r.isFailure) throw r.exceptionOrNull() ?: Exception(getString(R.string.k_crear_no_publicar_corto))
                 // Caché en caliente: el servidor ya sumó +1 a los contadores.
                 ProfileCache.perfil = perfil.copy(
                     employer = perfil.employer.copy(
@@ -273,15 +274,15 @@ class CrearPublicacionActivity : AppCompatActivity() {
                         publicationsCount = perfil.statistics.publicationsCount + 1
                     )
                 )
-                Toast.makeText(this@CrearPublicacionActivity, "¡Chamba publicada!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@CrearPublicacionActivity, getString(R.string.k_pub_exito), Toast.LENGTH_SHORT).show()
                 setResult(Activity.RESULT_OK)
                 finish()
             } catch (e: Exception) {
                 tvError.visibility = View.VISIBLE
-                tvError.text = e.message ?: "No se pudo publicar. Inténtalo de nuevo."
+                tvError.text = e.message ?: getString(R.string.k_crear_no_publicar)
             } finally {
                 publicando = false
-                (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply { isEnabled = true; text = if (editando != null) "Guardar cambios" else "Publicar chamba" }
+                (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply { isEnabled = true; text = if (editando != null) getString(R.string.k_crear_guardar) else getString(R.string.k_pub_cta) }
             }
         }
     }
@@ -292,7 +293,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
             when (val r = uploader.uploadPublicationPhoto(this, uid, publicationId, uri)) {
                 is PhotoUploadResult.Success -> resultado += PublicationImage(r.image.url, r.image.publicId)
                 is PhotoUploadResult.Rejected -> throw IllegalArgumentException(r.message)
-                is PhotoUploadResult.NetworkError -> throw IllegalArgumentException("Sin conexión para subir fotos.")
+                is PhotoUploadResult.NetworkError -> throw IllegalArgumentException(getString(R.string.k_crear_sin_conexion))
             }
         }
         return resultado
@@ -316,7 +317,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
             img.setOnClickListener {
                 fotosUris.removeAt(index)
                 pintarFotos()
-                Toast.makeText(this, "Foto quitada.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.k_crear_foto_quitada), Toast.LENGTH_SHORT).show()
             }
             card.addView(img)
             cont.addView(card)

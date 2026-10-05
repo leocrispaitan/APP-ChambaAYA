@@ -27,13 +27,13 @@ data class Rating(
     val createdAt: Timestamp? = null
 )
 
-fun validateRating(rating: Int, comment: String): List<String> {
+fun validateRating(context: android.content.Context, rating: Int, comment: String): List<String> {
     val errores = mutableListOf<String>()
     if (rating !in RatingLimits.MIN..RatingLimits.MAX) {
-        errores += "Elige de 1 a 5 estrellas."
+        errores += context.getString(com.proyecto.chambaya.R.string.k_rate_elegir)
     }
     if (comment.trim().length > RatingLimits.COMMENT_MAX) {
-        errores += "El comentario no puede pasar de ${RatingLimits.COMMENT_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_rate_coment_fmt, RatingLimits.COMMENT_MAX)
     }
     return errores
 }

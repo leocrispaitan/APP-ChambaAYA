@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,6 +9,7 @@ import com.proyecto.chambaya.data.model.Job
 import com.proyecto.chambaya.data.model.JobApplication
 import com.proyecto.chambaya.data.model.JobStatus
 import com.proyecto.chambaya.data.model.toJob
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -139,18 +141,18 @@ class JobRepository(
      * Avanza el estado respetando [JobStatus.nextFrom].
      * Solo participantes; al completar se sella completedAt.
      */
-    suspend fun transition(uid: String, jobId: String, to: String): Result<Job> =
+    suspend fun transition(context: Context, uid: String, jobId: String, to: String): Result<Job> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COLLECTION).document(jobId)
                 val snap = Tasks.await(ref.get())
-                require(snap.exists()) { "El trabajo ya no existe." }
+                require(snap.exists()) { context.getString(R.string.kr_job_gone) }
                 val job = snap.toJob()
                 require(uid == job.workerUid || uid == job.employerUid) {
-                    "Ese trabajo no te involucra."
+                    context.getString(R.string.kr_job_ajeno)
                 }
                 require(to in JobStatus.nextFrom(job.status)) {
-                    "Ese cambio de estado no es válido."
+                    context.getString(R.string.kr_job_transicion)
                 }
                 val cambios = mutableMapOf<String, Any?>(
                     "status" to to,
@@ -167,6 +169,7 @@ class JobRepository(
                 // Aviso a la contraparte (mejor esfuerzo, no bloquea).
                 val other = if (uid == updated.workerUid) updated.employerUid else updated.workerUid
                 notifications.pushJobEvent(
+                    context,
                     recipientUid = other,
                     senderUid = uid,
                     to = to,

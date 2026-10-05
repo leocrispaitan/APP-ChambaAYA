@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -23,6 +24,7 @@ import com.proyecto.chambaya.data.model.toUserProfile
 import com.proyecto.chambaya.data.remote.CloudinaryUploader
 import com.proyecto.chambaya.data.remote.IdentityValidationResult
 import com.proyecto.chambaya.data.remote.IdentityValidationService
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -780,59 +782,57 @@ class ProfileRepository(
     // ═══════════════════════════════════════════════════════════════
 
     /** Errores de validación de un borrador. Vacío = válido. */
-    fun validate(draft: ProfileDraft): List<String> {
+    fun validate(context: Context, draft: ProfileDraft): List<String> {
         val errores = mutableListOf<String>()
 
         if (draft.fullName.trim().length < 3) {
-            errores += "Ingresa tu nombre completo (mínimo 3 caracteres)."
+            errores += context.getString(R.string.kv_perfil_nombre)
         }
 
         val username = normalizarUsername(draft.username)
         if (username.length !in ProfileLimits.USERNAME_MIN..ProfileLimits.USERNAME_MAX) {
-            errores += "El @usuario debe tener entre ${ProfileLimits.USERNAME_MIN} y " +
-                "${ProfileLimits.USERNAME_MAX} caracteres."
+            errores += context.getString(R.string.kv_perfil_username_fmt, ProfileLimits.USERNAME_MIN, ProfileLimits.USERNAME_MAX)
         }
 
         // El teléfono es opcional (el registro no lo pide): si se escribe, tiene que
         // ser válido. Es la misma regla que `isValidPhone` en las Rules.
         val digitos = draft.phone.filter { it.isDigit() }
         if (digitos.isNotEmpty() && digitos.length !in ProfileLimits.PHONE_MIN..ProfileLimits.PHONE_MAX) {
-            errores += "El teléfono debe tener entre ${ProfileLimits.PHONE_MIN} y " +
-                "${ProfileLimits.PHONE_MAX} dígitos."
+            errores += context.getString(R.string.kv_perfil_tel_fmt, ProfileLimits.PHONE_MIN, ProfileLimits.PHONE_MAX)
         }
 
         if (draft.bio.trim().length > ProfileLimits.BIO_MAX) {
-            errores += "La descripción no puede pasar de ${ProfileLimits.BIO_MAX} caracteres."
+            errores += context.getString(R.string.kv_perfil_bio_fmt, ProfileLimits.BIO_MAX)
         }
 
         if (draft.gender.isNotBlank() && draft.gender !in Genders.ALL) {
-            errores += "El género seleccionado no es válido."
+            errores += context.getString(R.string.kv_perfil_genero)
         }
 
         if (draft.experienceYears !in 0..ProfileLimits.EXPERIENCE_MAX) {
-            errores += "Los años de experiencia no son válidos."
+            errores += context.getString(R.string.kv_perfil_exp)
         }
 
         if (draft.specialties.size > ProfileLimits.SPECIALTY_MAX) {
-            errores += "Solo puedes elegir ${ProfileLimits.SPECIALTY_MAX} especialidades."
+            errores += context.getString(R.string.kv_perfil_especs_fmt, ProfileLimits.SPECIALTY_MAX)
         }
 
         if (draft.skills.size > ProfileLimits.SKILL_MAX_COUNT) {
-            errores += "Máximo ${ProfileLimits.SKILL_MAX_COUNT} habilidades."
+            errores += context.getString(R.string.kv_perfil_habs_fmt, ProfileLimits.SKILL_MAX_COUNT)
         }
 
         if (draft.department.isNotBlank() && !PeruLocations.esDepartamentoValido(draft.department)) {
-            errores += "El departamento seleccionado no existe."
+            errores += context.getString(R.string.kv_perfil_depto)
         }
         if (draft.province.isNotBlank() &&
             !PeruLocations.esProvinciaValida(draft.department, draft.province)
         ) {
-            errores += "La provincia no pertenece al departamento elegido."
+            errores += context.getString(R.string.kv_perfil_prov)
         }
         if (draft.district.isNotBlank() &&
             !PeruLocations.esDistritoValido(draft.department, draft.province, draft.district)
         ) {
-            errores += "El distrito no es válido."
+            errores += context.getString(R.string.kv_perfil_dist)
         }
 
         return errores

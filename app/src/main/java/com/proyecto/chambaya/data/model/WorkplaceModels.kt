@@ -174,43 +174,42 @@ internal fun DocumentSnapshot.toWorkplace(): Workplace {
 }
 
 /** Errores de validación del borrador. Vacío = válido. */
-fun validateWorkplaceDraft(draft: WorkplaceDraft): List<String> {
+fun validateWorkplaceDraft(context: android.content.Context, draft: WorkplaceDraft): List<String> {
     val errores = mutableListOf<String>()
     val nombre = draft.name.trim()
     if (nombre.length !in WorkplaceLimits.NAME_MIN..WorkplaceLimits.NAME_MAX) {
-        errores += "El nombre del lugar debe tener entre ${WorkplaceLimits.NAME_MIN} y " +
-            "${WorkplaceLimits.NAME_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_nombre_fmt, WorkplaceLimits.NAME_MIN, WorkplaceLimits.NAME_MAX)
     }
     if (!WorkplaceTypes.isValid(draft.type)) {
-        errores += "El tipo de lugar no es válido."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_tipo)
     }
     if (draft.sector.trim().length > WorkplaceLimits.SECTOR_MAX) {
-        errores += "El sector no puede pasar de ${WorkplaceLimits.SECTOR_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_sector_fmt, WorkplaceLimits.SECTOR_MAX)
     }
     if (draft.description.trim().length > WorkplaceLimits.DESCRIPTION_MAX) {
-        errores += "La descripción no puede pasar de ${WorkplaceLimits.DESCRIPTION_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_desc_fmt, WorkplaceLimits.DESCRIPTION_MAX)
     }
     if (draft.address.trim().length > WorkplaceLimits.ADDRESS_MAX) {
-        errores += "La dirección no puede pasar de ${WorkplaceLimits.ADDRESS_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_dir_fmt, WorkplaceLimits.ADDRESS_MAX)
     }
     listOf(
-        "distrito" to draft.district,
-        "provincia" to draft.province,
-        "departamento" to draft.department
+        context.getString(com.proyecto.chambaya.R.string.kv_lugar_distrito) to draft.district,
+        context.getString(com.proyecto.chambaya.R.string.kv_lugar_provincia) to draft.province,
+        context.getString(com.proyecto.chambaya.R.string.kv_lugar_departamento) to draft.department
     ).forEach { (campo, valor) ->
         if (valor.trim().length > WorkplaceLimits.DISTRICT_MAX) {
-            errores += "El $campo no puede pasar de ${WorkplaceLimits.DISTRICT_MAX} caracteres."
+            errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_campo_fmt, campo, WorkplaceLimits.DISTRICT_MAX)
         }
     }
     // Ubicación GPS: o vienen las dos coordenadas válidas, o ninguna.
     val lat = draft.latitude
     val lng = draft.longitude
     if ((lat == null) != (lng == null)) {
-        errores += "La ubicación GPS está incompleta."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_gps_mitad)
     } else if (lat != null && lng != null &&
         (lat !in -90.0..90.0 || lng !in -180.0..180.0)
     ) {
-        errores += "Las coordenadas GPS no son válidas."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_lugar_gps_malo)
     }
     return errores
 }

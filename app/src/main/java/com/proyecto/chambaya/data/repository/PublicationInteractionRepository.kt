@@ -1,8 +1,10 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -38,7 +40,7 @@ class PublicationInteractionRepository(
         }
 
     /** Alterna el like. Devuelve el estado final (true = con like). */
-    suspend fun toggleLike(publicationId: String, uid: String): Result<Boolean> =
+    suspend fun toggleLike(context: Context, publicationId: String, uid: String): Result<Boolean> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COL_LIKES).document(docId(publicationId, uid))
@@ -68,8 +70,8 @@ class PublicationInteractionRepository(
                             notifications.push(
                                 recipientUid = owner,
                                 type = com.proyecto.chambaya.data.model.NotificationType.NEW_LIKE,
-                                title = "Nuevo me gusta",
-                                message = "A alguien le gustó tu chamba “${title.take(60)}”.",
+                                title = context.getString(R.string.k_push_like),
+                                message = context.getString(R.string.k_push_like_fmt, title.take(60)),
                                 senderUid = uid,
                                 publicationId = publicationId
                             )

@@ -427,9 +427,9 @@ class FragmentoMiPerfil : Fragment() {
 
     private fun pintarEstadisticas(root: View, datos: UserProfile) {
         if (datos.activeRole == com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE) {
-            root.findViewById<TextView>(R.id.tvStatsLabel1).text = "Publicaciones"
-            root.findViewById<TextView>(R.id.tvStatsLabel2).text = "Contratados"
-            root.findViewById<TextView>(R.id.tvStatsLabel3).text = "Calificación"
+            root.findViewById<TextView>(R.id.tvStatsLabel1).text = getString(R.string.k_perfil_pubs)
+            root.findViewById<TextView>(R.id.tvStatsLabel2).text = getString(R.string.k_perfil_contratados)
+            root.findViewById<TextView>(R.id.tvStatsLabel3).text = getString(R.string.k_perfil_calif)
             root.findViewById<TextView>(R.id.tvPostsCount).text = datos.employer.publishedCount.toString()
             root.findViewById<TextView>(R.id.tvFollowingCount).text = datos.employer.hiredCount.toString()
             root.findViewById<TextView>(R.id.tvFollowersCount).text =
@@ -780,41 +780,41 @@ class FragmentoMiPerfil : Fragment() {
         val otros = faltan - camposDelPaso.toSet()
 
         val mensaje = buildString {
-            append("Tu perfil está al ${completion.percent}%.")
+            append(getString(R.string.k_perfil_al_fmt, completion.percent))
             if (camposDelPaso.size == 1) {
-                append(" Para llegar al 100% te falta un campo:")
+                append(" " + getString(R.string.k_perfil_falta_1))
             } else {
-                append(" Para llegar al 100% te faltan ${camposDelPaso.size} campos:")
+                append(" " + getString(R.string.k_perfil_faltan_n, camposDelPaso.size))
             }
             append("\n\n")
             camposDelPaso.forEach { append("• $it\n") }
             if (otros.isNotEmpty()) {
-                append("\nDespués de esta fase, quedará pendiente:\n")
+                append(getString(R.string.k_perfil_despues))
                 otros.forEach { append("• $it\n") }
             }
             if (tituloPaso != null) {
-                append("\nTe llevamos a: $tituloPaso")
+                append(getString(R.string.k_perfil_llevamos_fmt, tituloPaso))
             }
         }
 
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Completa tu perfil")
+            .setTitle(R.string.profile_banner_complete_title)
             .setIcon(R.drawable.ic_home_chevron_down)
             .setMessage(mensaje)
-            .setPositiveButton("Completar ahora") { _, _ -> abrirEdicion(destino) }
-            .setNegativeButton("Ahora no", null)
+            .setPositiveButton(R.string.modo_completar_ahora) { _, _ -> abrirEdicion(destino) }
+            .setNegativeButton(R.string.k_perfil_ahora_no, null)
             .show()
     }
 
     /** Nombre legible de cada fase, tal como lo anuncia el asistente. */
     private fun nombreDePaso(paso: Int, esContratante: Boolean): String = when (paso) {
-        1 -> "Fase 1 · Información básica"
-        2 -> "Fase 2 · Información personal"
-        3 -> if (esContratante) "Fase 3 · Mi lugar" else "Fase 3 · Experiencia profesional"
+        1 -> getString(R.string.k_perfil_fase_1)
+        2 -> getString(R.string.k_perfil_fase_2)
+        3 -> if (esContratante) getString(R.string.k_perfil_fase_3_lugar) else getString(R.string.k_perfil_fase_3)
         else -> if (esContratante) {
-            "Fase 4 · Datos de contratante"
+            getString(R.string.k_perfil_fase_4_cont)
         } else {
-            "Fase 4 · Privacidad y resumen"
+            getString(R.string.k_perfil_fase_4)
         }
     }
 
@@ -826,25 +826,25 @@ class FragmentoMiPerfil : Fragment() {
      */
     private fun mostrarDialogoFaltaContratante(faltan: List<String>) {
         val mensaje = buildString {
-            append("Tu perfil de contratante todavía está incompleto. Te falta:\n\n")
+            append(getString(R.string.k_perfil_cont_msg1))
             faltan.forEach { append("• $it\n") }
-            append("\nEstos datos se completan en Ajustes → Datos de contratante.")
+            append(getString(R.string.k_perfil_cont_msg2))
         }
 
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Completa tu perfil de contratante")
+            .setTitle(R.string.k_perfil_cont_titulo)
             .setMessage(mensaje)
-            .setPositiveButton("Ir a Ajustes") { _, _ -> abrirAjustes() }
-            .setNegativeButton("Ahora no", null)
+            .setPositiveButton(R.string.k_perfil_ir_ajustes) { _, _ -> abrirAjustes() }
+            .setNegativeButton(R.string.k_perfil_ahora_no, null)
             .show()
     }
 
     private fun mostrarDialogoPerfilCompleto() {
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("¡Perfil completo!")
-            .setMessage("Ya tienes el 100%. Tu perfil está listo para que otros usuarios lo vean y te contacten.")
-            .setPositiveButton("Ver perfil") { _, _ -> abrirEdicion(EditarPerfilActivity.PASO_INICIO_EDITAR) }
-            .setNegativeButton("Entendido", null)
+            .setTitle(R.string.k_perfil_completo)
+            .setMessage(R.string.k_perfil_completo_msg)
+            .setPositiveButton(R.string.k_perfil_ver) { _, _ -> abrirEdicion(EditarPerfilActivity.PASO_INICIO_EDITAR) }
+            .setNegativeButton(R.string.k_comun_entendido, null)
             .show()
     }
 

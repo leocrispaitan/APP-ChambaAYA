@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,6 +14,7 @@ import com.proyecto.chambaya.data.model.PublicationStatus
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.toJobApplication
 import com.proyecto.chambaya.data.model.validateApplicationMessage
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -72,21 +74,22 @@ class ApplicationRepository(
         }
 
     suspend fun apply(
+        context: Context,
         workerUid: String,
         publication: Publication,
         perfil: UserProfile,
         message: String
     ): Result<JobApplication> = withContext(Dispatchers.IO) {
         runCatching {
-            val errores = validateApplicationMessage(message)
+            val errores = validateApplicationMessage(context, message)
             require(errores.isEmpty()) { errores.first() }
-            require(workerUid.isNotBlank()) { "Sesión no válida." }
-            require(workerUid != publication.ownerUid) { "No puedes postularte a tu propia chamba." }
+            require(workerUid.isNotBlank()) { context.getString(R.string.k_rate_sesion) }
+            require(workerUid != publication.ownerUid) { context.getString(R.string.kr_propia) }
             require(publication.status == PublicationStatus.ACTIVE) {
-                "Esta chamba ya no acepta postulaciones."
+                context.getString(R.string.kr_no_acepta)
             }
             require(pendingFor(publication.publicationId, workerUid).getOrThrow() == null) {
-                "Ya te postulaste a esta chamba."
+                context.getString(R.string.kr_ya_postulado)
             }
             val ref = firestore.collection(COLLECTION).document()
             val now = FieldValue.serverTimestamp()
@@ -124,8 +127,12 @@ class ApplicationRepository(
             notifications.push(
                 recipientUid = publication.ownerUid,
                 type = NotificationType.NEW_APPLICATION,
-                title = "Nueva postulación",
-                message = "${perfil.profile.fullName.ifBlank { "Un trabajador" }} se postuló a “${publication.title.take(60)}”.",
+                title = context.getString(R.string.k_push_nueva_postulacion),
+                message = context.getString(
+                    R.string.k_push_postulacion_fmt,
+                    perfil.profile.fullName.ifBlank { context.getString(R.string.k_push_trabajador) },
+                    publication.title.take(60)
+                ),
                 senderUid = workerUid,
                 publicationId = publication.publicationId
             )
@@ -133,16 +140,16 @@ class ApplicationRepository(
         }
     }
 
-    suspend fun withdraw(workerUid: String, applicationId: String): Result<JobApplication> =
+    suspend fun withdraw(context: Context, workerUid: String, applicationId: String): Result<JobApplication> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COLLECTION).document(applicationId)
                 val snap = Tasks.await(ref.get())
-                require(snap.exists()) { "La postulación ya no existe." }
+                require(snap.exists()) { context.getString(R.string.kr_solicitud_gone) }
                 val app = snap.toJobApplication()
-                require(app.workerUid == workerUid) { "Esa postulación no es tuya." }
+                require(app.workerUid == workerUid) { context.getString(R.string.kr_solicitud_tuya) }
                 require(app.status == ApplicationStatus.PENDING) {
-                    "Solo puedes retirar una postulación pendiente."
+                    context.getString(R.string.kr_solicitud_retiro)
                 }
                 Tasks.await(
                     ref.update(
@@ -160,15 +167,15 @@ class ApplicationRepository(
      * Acepta o rechaza. Al aceptar: crea (o reutiliza) el job, suma el
      * contratado y finaliza la publicación si se cubrieron las vacantes.
      */
-    suspend fun decide(employerUid: String, applicationId: String, accept: Boolean): Result<DecideResult> =
+    suspend fun decide(context: Context, employerUid: String, applicationId: String, accept: Boolean): Result<DecideResult> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COLLECTION).document(applicationId)
                 val snap = Tasks.await(ref.get())
-                require(snap.exists()) { "La postulación ya no existe." }
+                require(snap.exists()) { context.getString(R.string.kr_solicitud_gone) }
                 var app = snap.toJobApplication()
-                require(app.employerUid == employerUid) { "Esa solicitud no es para ti." }
-                require(app.status == ApplicationStatus.PENDING) { "Esta solicitud ya fue decidida." }
+                require(app.employerUid == employerUid) { context.getString(R.string.kr_solicitud_ajena) }
+                require(app.status == ApplicationStatus.PENDING) { context.getString(R.string.kr_solicitud_hecha) }
 
                 if (!accept) {
                     Tasks.await(
@@ -183,8 +190,8 @@ class ApplicationRepository(
                     notifications.push(
                         recipientUid = app.workerUid,
                         type = NotificationType.APPLICATION_REJECTED,
-                        title = "Postulación no seleccionada",
-                        message = "El contratante eligió a otro especialista para “${app.publicationTitle.take(60)}”.",
+                        title = context.getString(R.string.k_push_no_seleccionado),
+                        message = context.getString(R.string.k_push_no_seleccionado_msg, app.publicationTitle.take(60)),
                         senderUid = employerUid,
                         publicationId = app.publicationId
                     )
@@ -192,8 +199,8 @@ class ApplicationRepository(
                 }
 
                 val pub = publications.getById(app.publicationId).getOrNull()
-                require(pub != null) { "La publicación ya no existe." }
-                require(pub.ownerUid == employerUid) { "Esa chamba no te pertenece." }
+                require(pub != null) { context.getString(R.string.kr_pub_gone) }
+                require(pub.ownerUid == employerUid) { context.getString(R.string.kr_pub_ajena) }
 
                 // Idempotente: si el job ya existe (reintento), se reutiliza.
                 val job = jobs.findByApplication(app.applicationId).getOrNull()
@@ -224,14 +231,14 @@ class ApplicationRepository(
                 }
                 var filled = false
                 if (hired >= pub.workersNeeded) {
-                    filled = publications.changeStatus(employerUid, pub.publicationId, PublicationStatus.FINISHED)
+                    filled = publications.changeStatus(context, employerUid, pub.publicationId, PublicationStatus.FINISHED)
                         .isSuccess
                 }
                 notifications.push(
                     recipientUid = app.workerUid,
                     type = NotificationType.APPLICATION_ACCEPTED,
-                    title = "¡Fuiste seleccionado!",
-                    message = "Te eligieron para “${app.publicationTitle.take(60)}”. Ponte en contacto para coordinar.",
+                    title = context.getString(R.string.k_push_seleccionado),
+                    message = context.getString(R.string.k_push_seleccionado_msg, app.publicationTitle.take(60)),
                     senderUid = employerUid,
                     publicationId = app.publicationId
                 )

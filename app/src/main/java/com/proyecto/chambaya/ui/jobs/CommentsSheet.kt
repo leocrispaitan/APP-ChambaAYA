@@ -56,7 +56,7 @@ class CommentsSheet : BottomSheetDialogFragment() {
             val pub = publicationRepo.getById(publicationId).getOrNull()
             if (!isAdded) return@launch
             if (pub == null) {
-                Toast.makeText(requireContext(), "La publicación ya no está disponible.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_com_no_disponible), Toast.LENGTH_SHORT).show()
                 dismiss()
                 return@launch
             }
@@ -67,13 +67,13 @@ class CommentsSheet : BottomSheetDialogFragment() {
                 onUpdate = { comments ->
                     if (!isAdded) return@listen
                     view.findViewById<TextView>(R.id.tvCommentsTitle).text =
-                        if (comments.isEmpty()) "Comentarios" else "Comentarios (${comments.size})"
+                        if (comments.isEmpty()) getString(R.string.sheet_comentarios_titulo) else getString(R.string.k_comentarios_conteo, comments.size)
                     empty.visibility = if (comments.isEmpty()) View.VISIBLE else View.GONE
                     commentsAdapter.submitList(comments)
                 },
                 onError = {
                     if (isAdded) {
-                        empty.text = "No se pudieron cargar los comentarios."
+                        empty.text = getString(R.string.k_com_cargar_error)
                         empty.visibility = View.VISIBLE
                     }
                 }
@@ -84,7 +84,7 @@ class CommentsSheet : BottomSheetDialogFragment() {
             val input = view.findViewById<TextInputEditText>(R.id.etComment)
             val text = input.text?.toString().orEmpty().trim()
             if (uid.isBlank()) {
-                Toast.makeText(requireContext(), "Inicia sesión para comentar.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_com_login), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (text.isBlank()) return@setOnClickListener
@@ -101,7 +101,7 @@ class CommentsSheet : BottomSheetDialogFragment() {
                     button.isEnabled = true
                     return@launch
                 }
-                val result = commentRepo.add(uid, publicationId, profile, text)
+                val result = commentRepo.add(requireContext(), uid, publicationId, profile, text)
                 if (!isAdded) return@launch
                 button.isEnabled = true
                 if (result.isSuccess) {
@@ -111,8 +111,8 @@ class CommentsSheet : BottomSheetDialogFragment() {
                         NotificationRepository().push(
                             recipientUid = ownerUid,
                             type = NotificationType.NEW_COMMENT,
-                            title = "Nuevo comentario",
-                            message = "Comentaron tu chamba: ${currentPublication.title.take(60)}",
+                            title = getString(R.string.k_push_comentario),
+                            message = getString(R.string.k_push_comentario_fmt, currentPublication.title.take(60)),
                             senderUid = uid,
                             publicationId = publicationId
                         )
@@ -120,7 +120,7 @@ class CommentsSheet : BottomSheetDialogFragment() {
                 } else {
                     Toast.makeText(
                         requireContext(),
-                        result.exceptionOrNull()?.message ?: "No se pudo comentar.",
+                        result.exceptionOrNull()?.message ?: getString(R.string.k_com_no_comentar),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -136,26 +136,26 @@ class CommentsSheet : BottomSheetDialogFragment() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         val menu = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         if (uid.isNotBlank() && comment.authorUid == uid) {
-            menu.menu.add(0, 1, 0, "Editar")
-            menu.menu.add(0, 2, 0, "Eliminar")
+            menu.menu.add(0, 1, 0, getString(R.string.k_comun_editar))
+            menu.menu.add(0, 2, 0, getString(R.string.k_comun_eliminar))
         } else {
-            menu.menu.add(0, 3, 0, "Denunciar")
+            menu.menu.add(0, 3, 0, getString(R.string.k_comun_denunciar))
         }
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> editarComentario(comment)
                 2 -> androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                    .setTitle("Eliminar comentario")
-                    .setMessage("Se quitará de la publicación.")
-                    .setPositiveButton("Eliminar") { _, _ ->
+                    .setTitle(R.string.k_com_eliminar_titulo)
+                    .setMessage(R.string.k_com_eliminar_msg)
+                    .setPositiveButton(R.string.k_comun_eliminar) { _, _ ->
                         viewLifecycleOwner.lifecycleScope.launch {
-                            val result = commentRepo.delete(uid, comment)
+                            val result = commentRepo.delete(requireContext(), uid, comment)
                             if (isAdded && result.isFailure) {
-                                Toast.makeText(requireContext(), "No se pudo eliminar.", Toast.LENGTH_LONG).show()
+                                Toast.makeText(requireContext(), getString(R.string.k_comun_no_eliminar), Toast.LENGTH_LONG).show()
                             }
                         }
                     }
-                    .setNegativeButton("Cancelar", null)
+                    .setNegativeButton(R.string.k_comun_cancelar, null)
                     .show()
                 3 -> denunciarComentario(comment, publicationId, uid)
             }
@@ -167,21 +167,21 @@ class CommentsSheet : BottomSheetDialogFragment() {
     private fun editarComentario(comment: com.proyecto.chambaya.data.model.PublicationComment) {
         val input = TextInputEditText(requireContext()).apply { setText(comment.text) }
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Editar comentario")
+            .setTitle(R.string.k_com_editar_titulo)
             .setView(input)
-            .setPositiveButton("Guardar") { _, _ ->
+            .setPositiveButton(R.string.k_comun_guardar) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val result = commentRepo.edit(comment.authorUid, comment.commentId, input.text?.toString().orEmpty())
+                    val result = commentRepo.edit(requireContext(), comment.authorUid, comment.commentId, input.text?.toString().orEmpty())
                     if (isAdded && result.isFailure) {
                         Toast.makeText(
                             requireContext(),
-                            result.exceptionOrNull()?.message ?: "No se pudo editar.",
+                            result.exceptionOrNull()?.message ?: getString(R.string.k_com_no_editar),
                             Toast.LENGTH_LONG
                         ).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 
@@ -191,25 +191,25 @@ class CommentsSheet : BottomSheetDialogFragment() {
         uid: String
     ) {
         if (uid.isBlank()) {
-            Toast.makeText(requireContext(), "Inicia sesión para denunciar.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_com_denunciar_login), Toast.LENGTH_SHORT).show()
             return
         }
-        val reasons = arrayOf("Spam", "Contenido inapropiado", "Acoso", "Fraude", "Otro")
+        val reasons = arrayOf(getString(R.string.k_razon_spam), getString(R.string.k_razon_inapropiado), getString(R.string.k_razon_acoso), getString(R.string.k_razon_fraude), getString(R.string.k_razon_otro))
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Denunciar comentario")
+            .setTitle(R.string.k_com_denunciar_titulo)
             .setItems(reasons) { _, index ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val result = commentRepo.report(publicationId, comment.commentId, uid, reasons[index])
                     if (isAdded) {
                         Toast.makeText(
                             requireContext(),
-                            if (result.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar.",
+                            if (result.isSuccess) getString(R.string.k_com_denunciar_enviar) else getString(R.string.k_comun_no_enviar),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 

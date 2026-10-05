@@ -1360,7 +1360,7 @@ class EditarPerfilActivity : AppCompatActivity() {
         }
 
         val borrador = construirBorrador()
-        val errores = repository.validate(borrador)
+        val errores = repository.validate(this@EditarPerfilActivity, borrador)
         if (errores.isNotEmpty()) {
             showErrores(errores)
             return

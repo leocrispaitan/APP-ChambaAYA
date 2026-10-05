@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,6 +13,7 @@ import com.proyecto.chambaya.data.model.PublicationVisibility
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.toPublication
 import com.proyecto.chambaya.data.model.validatePublicationDraft
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -35,6 +37,7 @@ class PublicationRepository(
         firestore.collection(COLLECTION).document().id
 
     suspend fun create(
+        context: Context,
         uid: String,
         publicationId: String,
         draft: PublicationDraft,
@@ -47,19 +50,19 @@ class PublicationRepository(
         images: List<PublicationImage> = emptyList()
     ): Result<Publication> = withContext(Dispatchers.IO) {
         runCatching {
-            val errores = validatePublicationDraft(draft)
+            val errores = validatePublicationDraft(context, draft)
             require(errores.isEmpty()) { errores.first() }
-            require(uid.isNotBlank()) { "Sesión no válida." }
-            require(publicationId.isNotBlank()) { "Identificador no válido." }
-            require(images.size <= 3) { "Máximo 3 fotos por publicación." }
+            require(uid.isNotBlank()) { context.getString(R.string.k_rate_sesion) }
+            require(publicationId.isNotBlank()) { context.getString(R.string.kr_pub_id) }
+            require(images.size <= 3) { context.getString(R.string.kr_pub_fotos_max) }
             // Endurecido Fase 5/16: solo contratante habilitado publica.
-            require(perfil.roles.contains("CONTRATANTE")) { "Activa tu perfil contratante para publicar." }
-            require(perfil.employer.enabled) { "Activa tu perfil contratante para publicar." }
+            require(perfil.roles.contains("CONTRATANTE")) { context.getString(R.string.kr_pub_empleador) }
+            require(perfil.employer.enabled) { context.getString(R.string.kr_pub_empleador) }
             // Las fotos deben venir de chambaya/fotos-publicaciones/{uid}/{publicationId}/
             // (misma carpeta que CloudinaryUploader.carpetaDePublicacion y firestore.rules).
             val prefijo = "chambaya/fotos-publicaciones/$uid/$publicationId/"
             require(images.all { it.url.contains(prefijo) && it.publicId.startsWith(prefijo) }) {
-                "Las fotos de la publicación no son válidas."
+                context.getString(R.string.kr_pub_fotos_malas)
             }
 
             // FASE 5.2 — Identidad del publicador: la ENTIDAD (lugar/negocio)
@@ -147,21 +150,22 @@ class PublicationRepository(
     }
 
     suspend fun update(
+        context: Context,
         uid: String,
         publicationId: String,
         draft: PublicationDraft,
         images: List<PublicationImage>? = null
     ): Result<Publication> = withContext(Dispatchers.IO) {
         runCatching {
-            val errores = validatePublicationDraft(draft)
+            val errores = validatePublicationDraft(context, draft)
             require(errores.isEmpty()) { errores.first() }
             val ref = firestore.collection(COLLECTION).document(publicationId)
             val actual = Tasks.await(ref.get())
-            require(actual.exists()) { "La publicación ya no existe." }
-            require(actual.getString("ownerUid") == uid) { "Esa publicación no te pertenece." }
+            require(actual.exists()) { context.getString(R.string.kr_pub_gone) }
+            require(actual.getString("ownerUid") == uid) { context.getString(R.string.kr_pub_ajena) }
             val status = actual.getString("status").orEmpty()
             require(status in listOf(PublicationStatus.ACTIVE, PublicationStatus.PAUSED)) {
-                "Solo puedes editar publicaciones activas o pausadas."
+                context.getString(R.string.kr_pub_editar)
             }
             val cambios = mutableMapOf<String, Any?>(
                 "title" to draft.title.trim(),
@@ -179,7 +183,7 @@ class PublicationRepository(
                 "updatedAt" to FieldValue.serverTimestamp()
             )
             if (images != null) {
-                require(images.size <= 3) { "Máximo 3 fotos por publicación." }
+                require(images.size <= 3) { context.getString(R.string.kr_pub_fotos_max) }
                 val prefijo = "chambaya/fotos-publicaciones/$uid/$publicationId/"
                 require(images.all { it.url.contains(prefijo) && it.publicId.startsWith(prefijo) }) {
                     "Las fotos de la publicación no son válidas."
@@ -191,26 +195,26 @@ class PublicationRepository(
         }
     }
 
-    suspend fun changeStatus(uid: String, publicationId: String, nuevo: String): Result<Publication> =
+    suspend fun changeStatus(context: Context, uid: String, publicationId: String, nuevo: String): Result<Publication> =
         withContext(Dispatchers.IO) {
             runCatching {
-                require(nuevo in PublicationStatus.ALL) { "Estado no válido." }
+                require(nuevo in PublicationStatus.ALL) { context.getString(R.string.kr_pub_estado) }
                 val ref = firestore.collection(COLLECTION).document(publicationId)
                 val actual = Tasks.await(ref.get())
-                require(actual.exists()) { "La publicación ya no existe." }
-                require(actual.getString("ownerUid") == uid) { "Esa publicación no te pertenece." }
+                require(actual.exists()) { context.getString(R.string.kr_pub_gone) }
+                require(actual.getString("ownerUid") == uid) { context.getString(R.string.kr_pub_ajena) }
                 Tasks.await(ref.update(mapOf("status" to nuevo, "updatedAt" to FieldValue.serverTimestamp())))
                 Tasks.await(ref.get()).toPublication()
             }
         }
 
-    suspend fun delete(uid: String, publicationId: String): Result<Unit> =
+    suspend fun delete(context: Context, uid: String, publicationId: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COLLECTION).document(publicationId)
                 val actual = Tasks.await(ref.get())
                 if (actual.exists()) {
-                    require(actual.getString("ownerUid") == uid) { "Esa publicación no te pertenece." }
+                    require(actual.getString("ownerUid") == uid) { context.getString(R.string.kr_pub_ajena) }
                     Tasks.await(ref.delete())
                     // Contadores denormalizados (mejor esfuerzo; la rama
                     // isAllowedPublicationCounterUpdate los autoriza en ±1).

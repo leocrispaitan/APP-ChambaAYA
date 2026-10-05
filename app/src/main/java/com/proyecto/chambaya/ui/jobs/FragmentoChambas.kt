@@ -346,19 +346,19 @@ class FragmentoChambas : Fragment() {
         if (estado == Estado.VACIO) {
             when (detalle) {
                 "sin_resultados" -> {
-                    tvEmptyTitle?.text = "Sin resultados"
-                    tvEmptySub?.text = "Prueba con otra palabra o ajusta los filtros."
-                    view?.findViewById<Button>(R.id.btnFeedEmptyAction)?.text = "Limpiar filtros"
+                    tvEmptyTitle?.text = getString(R.string.k_feed_sin)
+                    tvEmptySub?.text = getString(R.string.k_feed_sin_sub)
+                    view?.findViewById<Button>(R.id.btnFeedEmptyAction)?.text = getString(R.string.k_feed_limpiar)
                 }
                 else -> {
-                    tvEmptyTitle?.text = "Aún no hay chambas aquí"
-                    tvEmptySub?.text = "Cuando un contratante publique una chamba, la verás en este feed."
-                    view?.findViewById<Button>(R.id.btnFeedEmptyAction)?.text = "Recargar"
+                    tvEmptyTitle?.text = getString(R.string.home_feed_vacio_titulo)
+                    tvEmptySub?.text = getString(R.string.home_feed_vacio_sub)
+                    view?.findViewById<Button>(R.id.btnFeedEmptyAction)?.text = getString(R.string.home_feed_recargar)
                 }
             }
         }
         if (estado == Estado.ERROR) {
-            tvErrorDetail?.text = detalle?.take(120) ?: "Revisa tu conexión e inténtalo de nuevo."
+            tvErrorDetail?.text = detalle?.take(120) ?: getString(R.string.home_feed_error_sub)
         }
     }
 
@@ -413,7 +413,7 @@ class FragmentoChambas : Fragment() {
     private fun setupHeaderActions(view: View) {
         view.findViewById<View>(R.id.btnNotifications)?.setOnClickListener {
             if (FirebaseAuth.getInstance().currentUser?.uid.isNullOrBlank()) {
-                Toast.makeText(requireContext(), "Inicia sesión para ver avisos.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_avisos_login), Toast.LENGTH_SHORT).show()
             } else {
                 NotificationsSheet().show(parentFragmentManager, "notif")
             }
@@ -461,7 +461,7 @@ class FragmentoChambas : Fragment() {
             selectedCategory = if (elegida.equals("Todas", ignoreCase = true)) "" else elegida
             aplicarFiltros()
             if (selectedCategory.isNotBlank()) {
-                Toast.makeText(requireContext(), "Filtrando: $selectedCategory", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_filtrando_fmt, selectedCategory), Toast.LENGTH_SHORT).show()
             }
         }
         rvCategories?.adapter = categoriaAdapter
@@ -472,7 +472,7 @@ class FragmentoChambas : Fragment() {
     private fun toggleLike(item: PublicationFeedItem) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid.isNullOrBlank()) {
-            Toast.makeText(requireContext(), "Inicia sesión para dar me gusta.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_like_login), Toast.LENGTH_SHORT).show()
             return
         }
         // Optimista.
@@ -481,13 +481,13 @@ class FragmentoChambas : Fragment() {
         stateCache[item.publication.publicationId] = item.liked to item.saved
         adapter?.notifyDataSetChanged()
         viewLifecycleOwner.lifecycleScope.launch {
-            val r = interRepo.toggleLike(item.publication.publicationId, uid)
+            val r = interRepo.toggleLike(requireContext(), item.publication.publicationId, uid)
             if (r.isFailure) {
                 item.liked = !item.liked
                 item.likesCount += if (item.liked) 1 else -1
                 stateCache[item.publication.publicationId] = item.liked to item.saved
                 adapter?.notifyDataSetChanged()
-                Toast.makeText(requireContext(), "No se pudo registrar el me gusta.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_like_error), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -495,7 +495,7 @@ class FragmentoChambas : Fragment() {
     private fun toggleSave(item: PublicationFeedItem) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid.isNullOrBlank()) {
-            Toast.makeText(requireContext(), "Inicia sesión para guardar.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_guardar_login), Toast.LENGTH_SHORT).show()
             return
         }
         item.saved = !item.saved
@@ -521,13 +521,13 @@ class FragmentoChambas : Fragment() {
 
     private fun compartir(item: PublicationFeedItem) {
         val p = item.publication
-        val texto = "📢 ${p.title}\n\n💰 S/ ${p.payment.amount} / ${p.payment.period}\n📍 ${p.location.district}\n\n${p.description.take(280)}\n\n🔗 Compartido desde ChambAYA"
+        val texto = getString(R.string.k_compartir_texto, p.title, p.payment.amount.toString(), p.payment.period, p.location.district, p.description.take(280))
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "Chamba: ${p.title}")
+            putExtra(Intent.EXTRA_SUBJECT, getString(R.string.k_compartir_asunto, p.title))
             putExtra(Intent.EXTRA_TEXT, texto)
         }
-        startActivity(Intent.createChooser(intent, "Compartir chamba"))
+        startActivity(Intent.createChooser(intent, getString(R.string.k_compartir_titulo)))
         viewLifecycleOwner.lifecycleScope.launch { pubRepo.registerShare(p.publicationId) }
     }
 
@@ -537,14 +537,15 @@ class FragmentoChambas : Fragment() {
             PublicationOptionsSheet.ACTION_SAVE -> toggleSave(item)
             PublicationOptionsSheet.ACTION_SHARE -> compartir(item)
             PublicationOptionsSheet.ACTION_WHY -> AlertDialog.Builder(requireContext())
-                .setTitle("Por qué ves esto")
+                .setTitle(R.string.sheet_opciones_porque)
                 .setMessage(
-                    "Ves esta chamba porque está activa en tu zona y coincide con las categorías que exploras.\n\n" +
-                        "• Publicada por ${item.publication.publisher.name.ifBlank { "un contratante verificado" }}\n" +
-                        "• ${item.publication.location.district.ifBlank { "Ayacucho" }}\n\n" +
-                        "Toca “No me interesa” si prefieres ver menos como esta."
+                    getString(
+                        R.string.k_porque_msg,
+                        item.publication.publisher.name.ifBlank { getString(R.string.k_porque_contratante) },
+                        item.publication.location.district.ifBlank { "Ayacucho" }
+                    )
                 )
-                .setPositiveButton("Entendido", null)
+                .setPositiveButton(R.string.k_comun_entendido, null)
                 .show()
             PublicationOptionsSheet.ACTION_RATE -> calificarPublicacion(item)
             PublicationOptionsSheet.ACTION_HIDE -> ocultar(item)
@@ -559,12 +560,12 @@ class FragmentoChambas : Fragment() {
     private fun calificarPublicacion(item: PublicationFeedItem) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         if (uid.isBlank()) {
-            Toast.makeText(requireContext(), "Inicia sesión para calificar.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_calificar_login), Toast.LENGTH_SHORT).show()
             return
         }
         val ownerUid = item.publication.publisher.uid.ifBlank { item.publication.ownerUid }
         if (ownerUid.isBlank() || ownerUid == uid) {
-            Toast.makeText(requireContext(), "Tus propias chambas no se califican.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_calificar_propias), Toast.LENGTH_SHORT).show()
             return
         }
         viewLifecycleOwner.lifecycleScope.launch {
@@ -575,14 +576,14 @@ class FragmentoChambas : Fragment() {
             if (job == null) {
                 Toast.makeText(
                     requireContext(),
-                    "Podrás calificar cuando completes un trabajo con este contratante.",
+                    getString(R.string.k_calificar_pendiente),
                     Toast.LENGTH_LONG
                 ).show()
                 return@launch
             }
             val ya = RatingRepository().existingFor(job.jobId, uid).getOrNull() != null
             if (ya) {
-                Toast.makeText(requireContext(), "Ya calificaste ese trabajo. ¡Gracias!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_ya_calificaste), Toast.LENGTH_SHORT).show()
             } else {
                 RateSheet.newInstance(job.jobId).show(parentFragmentManager, "rate")
             }
@@ -598,30 +599,30 @@ class FragmentoChambas : Fragment() {
             stateCache.remove(item.publication.publicationId)
             allItems = allItems.filter { it.publication.publicationId != item.publication.publicationId }
             aplicarFiltros()
-            Toast.makeText(requireContext(), "Verás menos chambas como esta.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_menos_chambas), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun mostrarDenuncia(item: PublicationFeedItem) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
         if (uid.isBlank()) {
-            Toast.makeText(requireContext(), "Inicia sesión para denunciar.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_com_denunciar_login), Toast.LENGTH_SHORT).show()
             return
         }
-        val motivos = arrayOf("Fraude o estafa", "Contenido inapropiado", "Información falsa", "Spam", "Otro")
+        val motivos = arrayOf(getString(R.string.k_razon_fraude_estafa), getString(R.string.k_razon_inapropiado), getString(R.string.k_razon_info_falsa), getString(R.string.k_razon_spam), getString(R.string.k_razon_otro))
         AlertDialog.Builder(requireContext())
-            .setTitle("Denunciar publicación")
+            .setTitle(R.string.sheet_opciones_denunciar)
             .setItems(motivos) { _, cual ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val r = interRepo.report(item.publication.publicationId, uid, motivos[cual])
                     Toast.makeText(
                         requireContext(),
-                        if (r.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar la denuncia.",
+                        if (r.isSuccess) getString(R.string.k_com_denunciar_enviar) else getString(R.string.k_denuncia_pub_no),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 

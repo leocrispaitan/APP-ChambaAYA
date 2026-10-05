@@ -57,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:fontFamily="sans-serif"
-                android:text="Galería"
+                android:text="@string/sheet_adjuntos_galeria"
                 android:textColor="@color/chat_title"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -93,7 +93,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:fontFamily="sans-serif"
-                android:text="Cámara"
+                android:text="@string/sheet_adjuntos_camara"
                 android:textColor="@color/chat_title"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -129,7 +129,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:fontFamily="sans-serif"
-                android:text="Ubicación"
+                android:text="@string/sheet_detalle_ubicacion"
                 android:textColor="@color/chat_title"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -165,7 +165,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:fontFamily="sans-serif"
-                android:text="Documento"
+                android:text="@string/sheet_adjuntos_documento"
                 android:textColor="@color/chat_title"
                 android:textSize="12sp" />
         </LinearLayout>

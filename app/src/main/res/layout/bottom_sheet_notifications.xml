@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="sans-serif-black"
-            android:text="Notificaciones"
+            android:text="@string/sheet_notif_titulo"
             android:textColor="@color/text_primary"
             android:textSize="18sp" />
 
@@ -39,7 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
-            android:text="Marcar leídas"
+            android:text="@string/sheet_notif_leidas"
             android:textColor="@color/brand_color"
             android:textSize="13sp"
             android:padding="8dp" />
@@ -93,7 +93,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
-            android:text="Todo"
+            android:text="@string/sheet_notif_todo"
             android:textColor="@color/brand_color"
             android:textSize="14sp"
             android:padding="10dp" />
@@ -144,7 +144,7 @@
         android:layout_marginTop="20dp"
         android:layout_marginBottom="16dp"
         android:gravity="center"
-        android:text="Sin notificaciones por ahora."
+        android:text="@string/sheet_notif_vacio1"
         android:textColor="@color/text_secondary"
         android:textSize="13sp"
         android:visibility="gone" />

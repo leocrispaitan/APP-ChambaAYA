@@ -50,14 +50,14 @@ class ApplySheet : BottomSheetDialogFragment() {
             val pub = pubRepo.getById(publicationId).getOrNull()
             if (pub == null || !isAdded) { dismiss(); return@launch }
             view.findViewById<TextView>(R.id.tvApplyJobTitle).text = pub.title
-            val entidad = pub.publisher.name.ifBlank { "Contratante" }
+            val entidad = pub.publisher.name.ifBlank { getString(R.string.k_rol_contratante) }
             view.findViewById<TextView>(R.id.tvApplyJobMeta).text =
-                "$entidad · ${pub.precioTexto()} · ${pub.location.district.ifBlank { "Ayacucho" }}"
+                "$entidad · ${pub.precioTexto(requireContext())} · ${pub.location.district.ifBlank { "Ayacucho" }}"
 
             val pendiente = appRepo.pendingFor(publicationId, uid).getOrNull()
             if (!isAdded) return@launch
             if (pendiente != null) {
-                view.findViewById<TextView>(R.id.tvApplyTitle).text = "Postulación enviada"
+                view.findViewById<TextView>(R.id.tvApplyTitle).text = getString(R.string.k_apl_enviada_titulo)
                 view.findViewById<LinearLayout>(R.id.layoutApplyForm).visibility = View.GONE
                 view.findViewById<LinearLayout>(R.id.layoutApplySent).visibility = View.VISIBLE
             } else {
@@ -71,17 +71,17 @@ class ApplySheet : BottomSheetDialogFragment() {
     private fun enviar(publicationId: String, uid: String) {
         if (sending) return
         if (uid.isBlank()) {
-            Toast.makeText(requireContext(), "Inicia sesión para postularte.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_apl_login), Toast.LENGTH_SHORT).show()
             return
         }
         val cached = ProfileCache.perfil
         if (cached != null && !cached.roles.contains(UserRoles.TRABAJADOR)) {
-            Toast.makeText(requireContext(), "Activa el modo trabajador para postularte.", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), getString(R.string.k_apl_modo), Toast.LENGTH_LONG).show()
             return
         }
         sending = true
         val btn = view?.findViewById<MaterialButton>(R.id.btnApplyConfirm)
-        btn?.apply { isEnabled = false; text = "Enviando…" }
+        btn?.apply { isEnabled = false; text = getString(R.string.k_apl_enviando) }
         val mensaje = view?.findViewById<TextInputEditText>(R.id.etApplyMessage)?.text?.toString().orEmpty()
         viewLifecycleOwner.lifecycleScope.launch {
             var perfil = ProfileCache.perfil
@@ -93,57 +93,57 @@ class ApplySheet : BottomSheetDialogFragment() {
             if (perfil == null || !perfil.roles.contains(UserRoles.TRABAJADOR)) {
                 sending = false
                 if (!isAdded) return@launch
-                btn?.apply { isEnabled = true; text = "Enviar" }
+                btn?.apply { isEnabled = true; text = getString(R.string.sheet_postular_enviar) }
                 view?.findViewById<TextView>(R.id.tvApplyError)?.apply {
                     visibility = View.VISIBLE
-                    text = "Activa el modo trabajador para postularte."
+                    text = getString(R.string.k_apl_modo)
                 }
                 return@launch
             }
             val pub = pubRepo.getById(publicationId).getOrNull()
             if (pub == null) {
                 sending = false
-                btn?.apply { isEnabled = true; text = "Enviar" }
-                Toast.makeText(requireContext(), "La chamba ya no está disponible.", Toast.LENGTH_SHORT).show()
+                btn?.apply { isEnabled = true; text = getString(R.string.sheet_postular_enviar) }
+                Toast.makeText(requireContext(), getString(R.string.k_apl_no_disponible), Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            val r = appRepo.apply(uid, pub, perfil, mensaje)
+            val r = appRepo.apply(requireContext(), uid, pub, perfil, mensaje)
             sending = false
             if (!isAdded) return@launch
             if (r.isSuccess) {
-                Toast.makeText(requireContext(), "¡Postulación enviada!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_apl_exito), Toast.LENGTH_SHORT).show()
                 parentFragmentManager.setFragmentResult(REQUEST_APPLIED, bundleOf(EXTRA_ID to publicationId))
                 dismiss()
             } else {
                 view?.findViewById<TextView>(R.id.tvApplyError)?.apply {
                     visibility = View.VISIBLE
-                    text = r.exceptionOrNull()?.message ?: "No se pudo postular."
+                    text = r.exceptionOrNull()?.message ?: getString(R.string.k_apl_no_postular)
                 }
-                btn?.apply { isEnabled = true; text = "Enviar" }
+                btn?.apply { isEnabled = true; text = getString(R.string.sheet_postular_enviar) }
             }
         }
     }
 
     private fun confirmarRetiro(publicationId: String, uid: String) {
         AlertDialog.Builder(requireContext())
-            .setTitle("Retirar postulación")
-            .setMessage("El contratante ya no verá tu solicitud. Podrás postularte de nuevo más tarde.")
-            .setPositiveButton("Retirar") { _, _ ->
+            .setTitle(R.string.sheet_postular_retirar)
+            .setMessage(R.string.k_apl_retirar_msg)
+            .setPositiveButton(R.string.item_retirar) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val pendiente = appRepo.pendingFor(publicationId, uid).getOrNull()
                     if (pendiente == null) { dismiss(); return@launch }
-                    val r = appRepo.withdraw(uid, pendiente.applicationId)
+                    val r = appRepo.withdraw(requireContext(), uid, pendiente.applicationId)
                     if (!isAdded) return@launch
                     if (r.isSuccess) {
-                        Toast.makeText(requireContext(), "Postulación retirada.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), getString(R.string.k_apl_retirada), Toast.LENGTH_SHORT).show()
                         parentFragmentManager.setFragmentResult(REQUEST_APPLIED, bundleOf(EXTRA_ID to publicationId))
                         dismiss()
                     } else {
-                        Toast.makeText(requireContext(), "No se pudo retirar.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), getString(R.string.k_apl_no_retirar), Toast.LENGTH_LONG).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 

@@ -1,5 +1,6 @@
 package com.proyecto.chambaya.data.repository
 
+import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -9,6 +10,7 @@ import com.proyecto.chambaya.data.model.PublicationComment
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.toPublicationComment
 import com.proyecto.chambaya.data.model.validateCommentText
+import com.proyecto.chambaya.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -56,15 +58,16 @@ class CommentRepository(
     }
 
     suspend fun add(
+        context: Context,
         authorUid: String,
         publicationId: String,
         perfil: UserProfile,
         text: String
     ): Result<PublicationComment> = withContext(Dispatchers.IO) {
         runCatching {
-            val errores = validateCommentText(text)
+            val errores = validateCommentText(context, text)
             require(errores.isEmpty()) { errores.first() }
-            require(authorUid.isNotBlank() && publicationId.isNotBlank()) { "Sesión no válida." }
+            require(authorUid.isNotBlank() && publicationId.isNotBlank()) { context.getString(R.string.k_rate_sesion) }
             val ref = firestore.collection(COLLECTION).document()
             val now = FieldValue.serverTimestamp()
             Tasks.await(
@@ -94,15 +97,15 @@ class CommentRepository(
         }
     }
 
-    suspend fun edit(authorUid: String, commentId: String, newText: String): Result<PublicationComment> =
+    suspend fun edit(context: Context, authorUid: String, commentId: String, newText: String): Result<PublicationComment> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val errores = validateCommentText(newText)
+                val errores = validateCommentText(context, newText)
                 require(errores.isEmpty()) { errores.first() }
                 val ref = firestore.collection(COLLECTION).document(commentId)
                 val snap = Tasks.await(ref.get())
-                require(snap.exists()) { "El comentario ya no existe." }
-                require(snap.getString("authorUid") == authorUid) { "Ese comentario no es tuyo." }
+                require(snap.exists()) { context.getString(R.string.kr_com_gone) }
+                require(snap.getString("authorUid") == authorUid) { context.getString(R.string.kr_com_ajeno) }
                 Tasks.await(
                     ref.update(
                         mapOf(
@@ -115,10 +118,10 @@ class CommentRepository(
             }
         }
 
-    suspend fun delete(authorUid: String, comment: PublicationComment): Result<Unit> =
+    suspend fun delete(context: Context, authorUid: String, comment: PublicationComment): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
-                require(comment.authorUid == authorUid) { "Ese comentario no es tuyo." }
+                require(comment.authorUid == authorUid) { context.getString(R.string.kr_com_ajeno) }
                 Tasks.await(firestore.collection(COLLECTION).document(comment.commentId).delete())
                 runCatching {
                     Tasks.await(

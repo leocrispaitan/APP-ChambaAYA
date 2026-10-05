@@ -72,7 +72,7 @@ class ActividadPrivacidad : AppCompatActivity() {
     ) {
         val id = uid
         if (id == null) {
-            Toast.makeText(this, "Sesión no válida.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.priv_sesion, Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -89,7 +89,7 @@ class ActividadPrivacidad : AppCompatActivity() {
                     swDir.setOnCheckedChangeListener { _, _ -> guardar() }
                 }
                 .onFailure {
-                    Toast.makeText(this@ActividadPrivacidad, "No se pudo cargar tu privacidad.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ActividadPrivacidad, R.string.priv_error_cargar, Toast.LENGTH_SHORT).show()
                 }
         }
     }
@@ -105,7 +105,7 @@ class ActividadPrivacidad : AppCompatActivity() {
             val r = repo.updatePrivacy(id, tel, mail, dir)
             guardando = false
             if (r.isFailure) {
-                Toast.makeText(this@ActividadPrivacidad, "No se pudo guardar. Revisa tu conexión.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@ActividadPrivacidad, R.string.priv_error_guardar, Toast.LENGTH_SHORT).show()
             } else {
                 pintarNivel(animar = true)
             }
@@ -119,7 +119,7 @@ class ActividadPrivacidad : AppCompatActivity() {
             findViewById<SwitchMaterial>(R.id.switchDireccion).isChecked
         ).count { !it }
         val pct = ocultos * 100 / 3
-        findViewById<TextView>(R.id.tvNivelPrivacidad)?.text = "$ocultos de 3 datos ocultos"
+        findViewById<TextView>(R.id.tvNivelPrivacidad)?.text = getString(R.string.k_priv_nivel_fmt, ocultos)
         val barra = findViewById<ProgressBar>(R.id.barraNivel) ?: return
         if (animar) {
             ObjectAnimator.ofInt(barra.progress, pct).apply {
@@ -141,11 +141,11 @@ class ActividadPrivacidad : AppCompatActivity() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
         findViewById<TextView>(R.id.tvEstadoCamara)?.apply {
-            text = if (cam) "Concedido · Foto de perfil y publicaciones" else "Denegado · Toca para activarlo"
+            text = if (cam) getString(R.string.priv_perm_ok_camara) else getString(R.string.priv_perm_no_camara)
             setTextColor(ContextCompat.getColor(this@ActividadPrivacidad, if (cam) android.R.color.holo_green_dark else android.R.color.holo_red_dark))
         }
         findViewById<TextView>(R.id.tvEstadoUbicacion)?.apply {
-            text = if (ubi) "Concedido · Chambas cercanas a ti" else "Denegado · Toca para activarlo"
+            text = if (ubi) getString(R.string.priv_perm_ok_ubi) else getString(R.string.priv_perm_no_ubi)
             setTextColor(ContextCompat.getColor(this@ActividadPrivacidad, if (ubi) android.R.color.holo_green_dark else android.R.color.holo_red_dark))
         }
     }

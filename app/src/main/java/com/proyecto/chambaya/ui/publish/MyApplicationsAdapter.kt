@@ -54,9 +54,9 @@ class MyApplicationsAdapter(
         fun bind(item: MyAppRow) {
             val app = item.app
             val job = item.job
-            tvStatus.text = ApplicationStatus.label(app.status)
+            tvStatus.text = ApplicationStatus.label(itemView.context, app.status)
             tvDate.text = publicationTimeAgo(app.createdAt)
-            tvTitle.text = app.publicationTitle.ifBlank { "Chamba" }
+            tvTitle.text = app.publicationTitle.ifBlank { itemView.context.getString(R.string.k_detalle_chamba) }
 
             if (job != null) {
                 tvJob.visibility = View.VISIBLE
@@ -64,11 +64,11 @@ class MyApplicationsAdapter(
                     if (it % 1.0 == 0.0) it.toInt().toString() else String.format("%.2f", it)
                 }
                 tvJob.text = when (job.status) {
-                    JobStatus.ACCEPTED -> "Seleccionado · S/ $monto por cobrar"
-                    JobStatus.IN_PROGRESS -> "Trabajo en curso · S/ $monto"
-                    JobStatus.COMPLETED -> if (item.ratedByMe) "Completado · Calificado ✓ · S/ $monto"
-                    else "Completado · S/ $monto"
-                    else -> JobStatus.label(job.status)
+                    JobStatus.ACCEPTED -> itemView.context.getString(R.string.k_misapl_sel_monto, monto)
+                    JobStatus.IN_PROGRESS -> itemView.context.getString(R.string.k_misapl_curso_monto, monto)
+                    JobStatus.COMPLETED -> if (item.ratedByMe) itemView.context.getString(R.string.k_misapl_fin_calif, monto)
+                    else itemView.context.getString(R.string.k_misapl_fin_monto, monto)
+                    else -> JobStatus.label(itemView.context, job.status)
                 }
             } else {
                 tvJob.visibility = View.GONE
@@ -76,8 +76,8 @@ class MyApplicationsAdapter(
 
             // Acción principal según estado.
             val primary: Pair<String, Boolean>? = when {
-                app.status == ApplicationStatus.PENDING -> "Retirar" to true
-                job?.status == JobStatus.COMPLETED && !item.ratedByMe -> "Calificar" to true
+                app.status == ApplicationStatus.PENDING -> itemView.context.getString(R.string.item_retirar) to true
+                job?.status == JobStatus.COMPLETED && !item.ratedByMe -> itemView.context.getString(R.string.item_calificar) to true
                 else -> null
             }
             if (primary != null) {
@@ -90,7 +90,7 @@ class MyApplicationsAdapter(
             // Con trabajo activo, el secundario contacta al contratante.
             val chateable = job != null &&
                 (job.status == JobStatus.ACCEPTED || job.status == JobStatus.IN_PROGRESS)
-            btnSecondary.text = if (chateable) "Contactar" else "Ver chamba"
+            btnSecondary.text = if (chateable) itemView.context.getString(R.string.k_misapl_contactar) else itemView.context.getString(R.string.item_ver_chamba)
             btnSecondary.setOnClickListener {
                 if (chateable) onContact(item) else onOpenDetail(item)
             }

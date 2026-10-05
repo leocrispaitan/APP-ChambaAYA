@@ -36,13 +36,13 @@ object PaymentPeriod {
     const val WEEK = "WEEK"
     const val MONTH = "MONTH"
 
-    fun label(period: String): String = when (period) {
-        HOUR -> "hora"
-        DAY -> "día"
-        WEEK -> "semana"
-        MONTH -> "mes"
-        JOB -> "trabajo"
-        else -> "día"
+    fun label(context: android.content.Context, period: String): String = when (period) {
+        HOUR -> context.getString(com.proyecto.chambaya.R.string.k_per_hora)
+        DAY -> context.getString(com.proyecto.chambaya.R.string.k_per_dia)
+        WEEK -> context.getString(com.proyecto.chambaya.R.string.k_per_semana)
+        MONTH -> context.getString(com.proyecto.chambaya.R.string.k_per_mes)
+        JOB -> context.getString(com.proyecto.chambaya.R.string.k_per_trabajo)
+        else -> context.getString(com.proyecto.chambaya.R.string.k_per_dia)
     }
 }
 
@@ -149,31 +149,31 @@ object PublicationLimits {
 }
 
 /** Errores de validación. Vacío = válido. */
-fun validatePublicationDraft(draft: PublicationDraft): List<String> {
+fun validatePublicationDraft(context: android.content.Context, draft: PublicationDraft): List<String> {
     val errores = mutableListOf<String>()
     val title = draft.title.trim()
     if (title.length < PublicationLimits.TITLE_MIN) {
-        errores += "El título debe tener al menos ${PublicationLimits.TITLE_MIN} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_titulo_min_fmt, PublicationLimits.TITLE_MIN)
     }
     if (title.length > PublicationLimits.TITLE_MAX) {
-        errores += "El título no puede pasar de ${PublicationLimits.TITLE_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_titulo_max_fmt, PublicationLimits.TITLE_MAX)
     }
     val desc = draft.description.trim()
     if (desc.length < PublicationLimits.DESC_MIN) {
-        errores += "Describe el trabajo con al menos ${PublicationLimits.DESC_MIN} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_desc_min_fmt, PublicationLimits.DESC_MIN)
     }
     if (desc.length > PublicationLimits.DESC_MAX) {
-        errores += "La descripción no puede pasar de ${PublicationLimits.DESC_MAX} caracteres."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_desc_max_fmt, PublicationLimits.DESC_MAX)
     }
-    if (draft.category.isBlank()) errores += "Elige una categoría."
-    if (draft.amount <= 0) errores += "Indica el pago ofrecido."
-    if (draft.amount > PublicationLimits.AMOUNT_MAX) errores += "El monto es demasiado alto."
+    if (draft.category.isBlank()) errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_cat)
+    if (draft.amount <= 0) errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_pago)
+    if (draft.amount > PublicationLimits.AMOUNT_MAX) errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_monto)
     if (draft.workersNeeded !in PublicationLimits.WORKERS_MIN..PublicationLimits.WORKERS_MAX) {
-        errores += "Indica cuántas personas necesitas (1 a ${PublicationLimits.WORKERS_MAX})."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_vacantes_fmt, PublicationLimits.WORKERS_MAX)
     }
-    if (draft.district.isBlank()) errores += "Indica el distrito del trabajo."
+    if (draft.district.isBlank()) errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_distrito)
     if (draft.skillsRequired.size > PublicationLimits.SKILLS_MAX) {
-        errores += "Máximo ${PublicationLimits.SKILLS_MAX} habilidades requeridas."
+        errores += context.getString(com.proyecto.chambaya.R.string.kv_pub_habs_fmt, PublicationLimits.SKILLS_MAX)
     }
     return errores
 }
@@ -268,9 +268,9 @@ fun publicationTimeAgo(ts: Timestamp?): String {
 }
 
 /** "S/ 80 / día" o "S/ 80 · A tratar". */
-fun Publication.precioTexto(): String {
+fun Publication.precioTexto(context: android.content.Context): String {
     val entero = if (payment.amount % 1.0 == 0.0) payment.amount.toInt().toString()
     else String.format("%.2f", payment.amount)
-    val base = "S/ $entero / ${PaymentPeriod.label(payment.period)}"
-    return if (payment.negotiable) "$base · A tratar" else base
+    val base = "S/ $entero / ${PaymentPeriod.label(context, payment.period)}"
+    return if (payment.negotiable) "$base · ${context.getString(com.proyecto.chambaya.R.string.k_precio_tratar)}" else base
 }

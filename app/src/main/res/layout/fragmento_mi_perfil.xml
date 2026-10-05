@@ -482,7 +482,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="6dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Sobre Mí"
+                                android:text="@string/mi_sobre"
                                 android:textColor="#5B67F7"
                                 android:textSize="13sp"
                                 android:textStyle="bold" />
@@ -521,7 +521,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="6dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Fotos"
+                                android:text="@string/mi_fotos"
                                 android:textColor="#64748B"
                                 android:textSize="13sp" />
                         </LinearLayout>
@@ -559,7 +559,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="6dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Reseñas"
+                                android:text="@string/mi_resenas"
                                 android:textColor="#64748B"
                                 android:textSize="13sp" />
                         </LinearLayout>
@@ -616,7 +616,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="14dp"
                             android:fontFamily="sans-serif-bold"
-                            android:text="Sobre Mí"
+                            android:text="@string/mi_sobre"
                             android:textColor="#111827"
                             android:textSize="17sp"
                             android:textStyle="bold" />
@@ -642,7 +642,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
                         android:fontFamily="sans-serif"
-                        android:text="Este usuario aún no ha agregado una descripción"
+                        android:text="@string/mi_sin_desc"
                         android:textColor="#9CA3AF"
                         android:textSize="13sp"
                         android:visibility="gone" />
@@ -907,7 +907,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-bold"
-                                android:text="Información de Contacto"
+                                android:text="@string/mi_contacto_titulo"
                                 android:textColor="#111827"
                                 android:textSize="17sp"
                                 android:textStyle="bold" />
@@ -917,7 +917,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="sans-serif"
-                                android:text="Formas de contactarte"
+                                android:text="@string/mi_contacto_sub"
                                 android:textColor="#6B7280"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -961,7 +961,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif"
-                                android:text="Teléfono"
+                                android:text="@string/mi_telefono"
                                 android:textColor="#6B7280"
                                 android:textSize="12sp" />
 
@@ -1023,7 +1023,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif"
-                                android:text="Correo Electrónico"
+                                android:text="@string/mi_correo"
                                 android:textColor="#6B7280"
                                 android:textSize="12sp" />
 
@@ -1073,7 +1073,7 @@
                             android:layout_marginStart="10dp"
                             android:layout_weight="1"
                             android:fontFamily="sans-serif"
-                            android:text="Este usuario ha ocultado su información de contacto"
+                            android:text="@string/mi_sin_contacto"
                             android:textColor="#92400E"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -1119,7 +1119,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-bold"
-                            android:text="Identidad Verificada"
+                            android:text="@string/mi_identidad"
                             android:textColor="#111827"
                             android:textSize="15sp"
                             android:textStyle="bold" />
@@ -1204,7 +1204,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="20dp"
                             android:fontFamily="sans-serif-bold"
-                            android:text="Fotos"
+                            android:text="@string/mi_fotos"
                             android:textColor="#111827"
                             android:textSize="20sp"
                             android:textStyle="bold" />
@@ -1218,7 +1218,7 @@
                             android:fontFamily="sans-serif"
                             android:gravity="center"
                             android:lineSpacingExtra="2dp"
-                            android:text="Aquí se mostrarán las fotos que subas.\nComparte imágenes de tus trabajos para que más personas confíen en ti."
+                            android:text="@string/mi_fotos_vacio"
                             android:textColor="#6B7280"
                             android:textSize="14sp" />
 
@@ -1235,7 +1235,7 @@
                             android:fontFamily="sans-serif-medium"
                             android:paddingHorizontal="24dp"
                             android:stateListAnimator="@null"
-                            android:text="Subir foto"
+                            android:text="@string/mi_subir_foto"
                             android:textAllCaps="false"
                             android:textColor="@color/white"
                             android:textSize="15sp"
@@ -1302,7 +1302,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="20dp"
                             android:fontFamily="sans-serif-bold"
-                            android:text="Calificaciones y Reseñas"
+                            android:text="@string/mi_calif_titulo"
                             android:textColor="#111827"
                             android:textSize="20sp"
                             android:textStyle="bold" />
@@ -1316,7 +1316,7 @@
                             android:fontFamily="sans-serif"
                             android:gravity="center"
                             android:lineSpacingExtra="2dp"
-                            android:text="Aquí aparecerán las calificaciones y comentarios que recibas de tus clientes después de completar trabajos."
+                            android:text="@string/mi_calif_vacio"
                             android:textColor="#6B7280"
                             android:textSize="14sp" />
 
@@ -1343,7 +1343,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Completa trabajos para recibir reseñas"
+                                android:text="@string/mi_calif_cta"
                                 android:textColor="#92400E"
                                 android:textSize="12sp"
                                 android:textStyle="bold" />

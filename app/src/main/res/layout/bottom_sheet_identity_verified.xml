@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-black"
         android:gravity="center"
-        android:text="Identidad Verificada"
+        android:text="@string/sheet_identidad_titulo"
         android:textColor="#0F172A"
         android:textSize="22sp" />
 
@@ -59,7 +59,7 @@
         android:fontFamily="sans-serif"
         android:gravity="center"
         android:lineSpacingExtra="2dp"
-        android:text="Hemos confirmado tu identidad exitosamente"
+        android:text="@string/sheet_identidad_sub"
         android:textColor="#64748B"
         android:textSize="14sp" />
 
@@ -82,7 +82,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
-                android:text="Nombre completo"
+                android:text="@string/sheet_identidad_nombre"
                 android:textColor="#64748B"
                 android:textSize="11sp" />
 
@@ -121,7 +121,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Documento"
+                    android:text="@string/sheet_identidad_documento"
                     android:textColor="#64748B"
                     android:textSize="11sp" />
 
@@ -147,7 +147,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Fecha de nacimiento"
+                    android:text="@string/sheet_identidad_fecha"
                     android:textColor="#64748B"
                     android:textSize="11sp" />
 
@@ -180,7 +180,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
-                android:text="Sexo"
+                android:text="@string/sheet_identidad_sexo"
                 android:textColor="#64748B"
                 android:textSize="11sp" />
 
@@ -218,7 +218,7 @@
             android:layout_marginStart="10dp"
             android:layout_weight="1"
             android:fontFamily="sans-serif-bold"
-            android:text="Identidad verificada oficialmente"
+            android:text="@string/sheet_identidad_oficial"
             android:textColor="#047857"
             android:textSize="12sp" />
     </LinearLayout>
@@ -233,7 +233,7 @@
         android:fontFamily="sans-serif-bold"
         android:insetTop="0dp"
         android:insetBottom="0dp"
-        android:text="Continuar con el registro"
+        android:text="@string/sheet_identidad_continuar"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="15sp"
@@ -246,7 +246,7 @@
         android:layout_marginTop="12dp"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:text="Tus datos están protegidos y solo se usan para verificación"
+        android:text="@string/sheet_identidad_nota"
         android:textColor="#94A3B8"
         android:textSize="11sp" />
 

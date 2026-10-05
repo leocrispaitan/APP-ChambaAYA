@@ -73,7 +73,7 @@ class ApplicantsAdapter(
     class HeaderVH(view: View) : RecyclerView.ViewHolder(view) {
         private val tv: TextView = view.findViewById(android.R.id.text1)
         fun bind(h: RequestItem.Header) {
-            tv.text = "${h.title} · ${h.pending} pendientes de ${h.total}"
+            tv.text = itemView.context.getString(R.string.k_apl_header_fmt, h.title, h.pending, h.total)
             tv.setTextColor(itemView.context.getColor(R.color.text_secondary))
             tv.textSize = 13f
             tv.setPadding(32, 16, 32, 4)
@@ -99,11 +99,11 @@ class ApplicantsAdapter(
         fun bind(item: ApplicantRow) {
             val app = item.app
             val w = app.worker
-            tvName.text = w.name.ifBlank { "@${w.username}".ifBlank { "Trabajador" } }
-            val ratingTxt = if (w.ratingCount > 0) "★ ${String.format("%.1f", w.ratingAverage)}" else "Sin calificar"
-            val expTxt = if (w.experienceYears > 0) "${w.experienceYears} años exp." else "Empezando"
+            tvName.text = w.name.ifBlank { "@${w.username}".ifBlank { itemView.context.getString(R.string.k_rol_trabajador) } }
+            val ratingTxt = if (w.ratingCount > 0) "★ ${String.format("%.1f", w.ratingAverage)}" else itemView.context.getString(R.string.k_apl_sin_calificar)
+            val expTxt = if (w.experienceYears > 0) itemView.context.getString(R.string.k_apl_exp_fmt, w.experienceYears) else itemView.context.getString(R.string.k_apl_empezando)
             tvMeta.text = "@${w.username.ifBlank { "chambaya" }} · $ratingTxt · $expTxt"
-            tvStatus.text = ApplicationStatus.label(app.status)
+            tvStatus.text = ApplicationStatus.label(itemView.context, app.status)
             if (app.message.isNotBlank()) {
                 tvMessage.visibility = View.VISIBLE
                 tvMessage.text = "“${app.message}”"
@@ -133,15 +133,15 @@ class ApplicantsAdapter(
             if (app.status == ApplicationStatus.ACCEPTED && job != null) {
                 layoutJob.visibility = View.VISIBLE
                 tvJobStatus.text = when (job.status) {
-                    JobStatus.ACCEPTED -> "Seleccionado · pendiente de inicio"
-                    JobStatus.IN_PROGRESS -> "Trabajo en curso · S/ ${monto(job)}"
-                    JobStatus.COMPLETED -> "Trabajo completado · S/ ${monto(job)}"
-                    else -> JobStatus.label(job.status)
+                    JobStatus.ACCEPTED -> itemView.context.getString(R.string.k_apl_sel_pendiente)
+                    JobStatus.IN_PROGRESS -> itemView.context.getString(R.string.k_apl_curso_monto, monto(job))
+                    JobStatus.COMPLETED -> itemView.context.getString(R.string.k_apl_fin_monto, monto(job))
+                    else -> JobStatus.label(itemView.context, job.status)
                 }
                 val next = JobStatus.nextFrom(job.status).firstOrNull { it != JobStatus.CANCELLED }
                 if (next != null) {
                     btnJobAction.visibility = View.VISIBLE
-                    btnJobAction.text = if (next == JobStatus.IN_PROGRESS) "Iniciar" else "Completar"
+                    btnJobAction.text = if (next == JobStatus.IN_PROGRESS) itemView.context.getString(R.string.item_iniciar) else itemView.context.getString(R.string.k_apl_completar)
                     btnJobAction.setOnClickListener { onJobAction(item) }
                 } else {
                     btnJobAction.visibility = View.GONE

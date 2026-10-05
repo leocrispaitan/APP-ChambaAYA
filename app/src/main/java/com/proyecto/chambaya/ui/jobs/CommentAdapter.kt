@@ -37,7 +37,7 @@ class CommentAdapter(
         private val btnMenu: ImageButton = view.findViewById(R.id.btnCommentMenu)
 
         fun bind(c: PublicationComment) {
-            tvAuthor.text = c.authorName.ifBlank { "@${c.authorUsername}".ifBlank { "Usuario" } }
+            tvAuthor.text = c.authorName.ifBlank { "@${c.authorUsername}".ifBlank { itemView.context.getString(R.string.k_com_usuario) } }
             tvTime.text = publicationTimeAgo(c.createdAt)
             tvText.text = c.text
             if (c.authorPhotoUrl.isNotBlank()) {

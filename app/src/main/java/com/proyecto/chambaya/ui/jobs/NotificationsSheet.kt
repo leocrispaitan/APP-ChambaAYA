@@ -114,7 +114,7 @@ class NotificationsSheet : DialogFragment() {
                 if (!isAdded) return@launch
                 v.isEnabled = true
                 if (result.isFailure) {
-                    Toast.makeText(requireContext(), "No se pudieron marcar como leídas.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.k_notif_no_leidas), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -127,9 +127,9 @@ class NotificationsSheet : DialogFragment() {
     /** Menú de pulsación larga: leído/no leído, eliminar y seleccionar. */
     private fun mostrarMenuPulsacion(uid: String, n: AppNotification, anchor: View) {
         val menu = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
-        menu.menu.add(0, 1, 0, if (n.read) "Marcar como no leído" else "Marcar como leído")
-        menu.menu.add(0, 2, 0, "Eliminar")
-        menu.menu.add(0, 3, 0, "Seleccionar")
+        menu.menu.add(0, 1, 0, if (n.read) getString(R.string.k_notif_no_leer) else getString(R.string.k_notif_leer))
+        menu.menu.add(0, 2, 0, getString(R.string.k_comun_eliminar))
+        menu.menu.add(0, 3, 0, getString(R.string.k_notif_seleccionar))
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> {
@@ -139,9 +139,9 @@ class NotificationsSheet : DialogFragment() {
                         Toast.makeText(
                             requireContext(),
                             when {
-                                result.isFailure -> "No se pudo actualizar la notificación."
-                                n.read -> "Notificación marcada como no leída."
-                                else -> "Notificación marcada como leída."
+                                result.isFailure -> getString(R.string.k_notif_no_actualizar)
+                                n.read -> getString(R.string.k_notif_no_leida_ok)
+                                else -> getString(R.string.k_notif_leida_ok)
                             },
                             Toast.LENGTH_SHORT
                         ).show()
@@ -168,8 +168,8 @@ class NotificationsSheet : DialogFragment() {
             val r = repo.deleteOne(uid, n.notificationId)
             if (!isAdded) return@launch
             if (r.isSuccess) {
-                Snackbar.make(requireView(), "Notificación eliminada", Snackbar.LENGTH_LONG)
-                    .setAction("Deshacer") {
+                Snackbar.make(requireView(), getString(R.string.k_notif_eliminada), Snackbar.LENGTH_LONG)
+                    .setAction(getString(R.string.k_notif_deshacer)) {
                         viewLifecycleOwner.lifecycleScope.launch {
                             repo.restore(uid, n)
                         }
@@ -177,7 +177,7 @@ class NotificationsSheet : DialogFragment() {
                     .show()
             } else {
                 if (pos != null) adapter?.notifyItemChanged(pos)
-                Toast.makeText(requireContext(), "No se pudo eliminar.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_comun_no_eliminar), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -205,9 +205,9 @@ class NotificationsSheet : DialogFragment() {
     private fun actualizarBarraSeleccion() {
         val n = adapter?.seleccionados?.size ?: 0
         view?.findViewById<TextView>(R.id.tvSelCount)?.text =
-            if (n == 1) "1 seleccionada" else "$n seleccionadas"
+            if (n == 1) getString(R.string.k_notif_sel_1) else getString(R.string.k_notif_sel_n_fmt, n)
         view?.findViewById<TextView>(R.id.btnSelAll)?.text =
-            if (n > 0 && n == adapter?.itemCount) "Ninguna" else "Todo"
+            if (n > 0 && n == adapter?.itemCount) getString(R.string.k_notif_sel_ninguna) else getString(R.string.k_notif_sel_todo)
     }
 
     private fun salirSeleccion() {
@@ -244,7 +244,7 @@ class NotificationsSheet : DialogFragment() {
                 if (!isAdded) return@launch
                 Toast.makeText(
                     requireContext(),
-                    if (r.isSuccess) "Marcadas como leídas." else "No se pudo actualizar.",
+                    if (r.isSuccess) getString(R.string.k_notif_sel_leidas) else getString(R.string.k_notif_sel_no),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -261,18 +261,18 @@ class NotificationsSheet : DialogFragment() {
                 if (fallidas > 0) {
                     Toast.makeText(
                         requireContext(),
-                        "$fallidas notificación(es) no se pudieron eliminar.",
+                        getString(R.string.k_notif_multi_fallo_fmt, fallidas),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
                 if (eliminadas.isEmpty()) return@launch
                 Snackbar.make(
                     requireView(),
-                    if (lista.size == 1) "1 notificación eliminada"
-                    else "${lista.size} notificaciones eliminadas",
+                    if (lista.size == 1) getString(R.string.k_notif_multi_1)
+                    else getString(R.string.k_notif_multi_n_fmt, lista.size),
                     Snackbar.LENGTH_LONG
                 )
-                    .setAction("Deshacer") {
+                    .setAction(getString(R.string.k_notif_deshacer)) {
                         viewLifecycleOwner.lifecycleScope.launch {
                             eliminadas.forEach { repo.restore(uid, it) }
                         }
@@ -285,24 +285,24 @@ class NotificationsSheet : DialogFragment() {
     /** Papelera superior: borra todo con confirmación previa. */
     private fun confirmarBorrarTodas(uid: String) {
         if (adapter?.itemCount == 0) {
-            Toast.makeText(requireContext(), "No hay notificaciones.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.k_notif_vacias), Toast.LENGTH_SHORT).show()
             return
         }
         AlertDialog.Builder(requireContext())
-            .setTitle("Eliminar notificaciones")
-            .setMessage("Se borrarán todas tus notificaciones. Esta acción no se puede deshacer.")
-            .setPositiveButton("Eliminar todo") { _, _ ->
+            .setTitle(R.string.k_notif_eliminar_titulo)
+            .setMessage(R.string.k_notif_eliminar_msg)
+            .setPositiveButton(R.string.k_notif_eliminar_todo) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val r = repo.deleteAll(uid)
                     if (!isAdded) return@launch
                     Toast.makeText(
                         requireContext(),
-                        if (r.isSuccess) "Notificaciones eliminadas." else "No se pudo eliminar.",
+                        if (r.isSuccess) getString(R.string.k_notif_borradas) else getString(R.string.k_comun_no_eliminar),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 

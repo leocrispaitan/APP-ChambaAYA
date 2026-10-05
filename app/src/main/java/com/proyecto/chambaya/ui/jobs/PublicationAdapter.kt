@@ -126,7 +126,7 @@ class PublicationAdapter(
             tvDesc.text = p.description.ifBlank { p.title }
             tvDesc.maxLines = 2
             var expanded = false
-            btnVerMas.text = "Ver más"
+            btnVerMas.text = ctx.getString(R.string.item_ver_mas)
             tvDesc.post {
                 btnVerMas.visibility =
                     if (tvDesc.lineCount > 2 || tvDesc.text.length > 90) View.VISIBLE else View.GONE
@@ -134,7 +134,7 @@ class PublicationAdapter(
             btnVerMas.setOnClickListener {
                 expanded = !expanded
                 tvDesc.maxLines = if (expanded) Int.MAX_VALUE else 2
-                btnVerMas.text = if (expanded) "Ver menos" else "Ver más"
+                btnVerMas.text = if (expanded) ctx.getString(R.string.k_card_ver_menos) else ctx.getString(R.string.item_ver_mas)
             }
 
             // ── Foto o tarjeta de info ──
@@ -177,15 +177,15 @@ class PublicationAdapter(
                 frameImage.setBackgroundColor(0xFF1E293B.toInt())
                 ivCatIcon.setImageResource(R.drawable.ic_cat_construccion)
                 tvTitle.text = p.title
-                tvCategory.text = p.category.ifBlank { "Chamba" }
-                tvPrice.text = p.precioTexto()
+                tvCategory.text = p.category.ifBlank { ctx.getString(R.string.k_detalle_chamba) }
+                tvPrice.text = p.precioTexto(ctx)
             }
 
             // ── Guardar (bookmark superpuesto) ──
             btnFav.setImageResource(
                 if (item.saved) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark_outline
             )
-            btnFav.contentDescription = if (item.saved) "Guardado" else "Guardar"
+            btnFav.contentDescription = if (item.saved) ctx.getString(R.string.k_pub_guardado) else ctx.getString(R.string.k_pub_guardar)
             btnFav.setOnClickListener { onToggleSave(item) }
 
             // ── Barra inferior: Me gusta + comentarios + ver ──
@@ -196,11 +196,11 @@ class PublicationAdapter(
             btnLike.setOnClickListener { onToggleLike(item) }
             tvComments.text = formatCount(p.statistics.comments)
             btnComment.setOnClickListener { onOpenComments(item) }
-            tvRating.text = "${formatCount(item.savesCount)} guardados · ${publicationTimeAgo(p.createdAt)}"
+            tvRating.text = ctx.getString(R.string.k_pub_stats_fmt, formatCount(item.savesCount), publicationTimeAgo(p.createdAt))
 
             // ── Apertura del detalle ──
             card.setOnClickListener { onOpenDetail(item) }
-            btnVer.text = "Ver chamba"
+            btnVer.text = ctx.getString(R.string.item_ver_chamba)
             btnVer.setOnClickListener { onOpenDetail(item) }
 
             btnMore.setOnClickListener {

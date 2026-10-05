@@ -86,7 +86,7 @@
                 android:layout_width="0dp"
                 android:layout_height="44dp"
                 android:layout_weight="1"
-                android:text="Ver chamba"
+                android:text="@string/item_ver_chamba"
                 android:textSize="13sp"
                 app:cornerRadius="12dp"
                 style="@style/Widget.Material3.Button.OutlinedButton" />
@@ -97,7 +97,7 @@
                 android:layout_height="44dp"
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:text="Retirar"
+                android:text="@string/item_retirar"
                 android:textSize="13sp"
                 app:cornerRadius="12dp"
                 app:backgroundTint="@color/brand_color" />

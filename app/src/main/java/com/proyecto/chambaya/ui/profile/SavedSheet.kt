@@ -112,7 +112,7 @@ class SavedSheet : BottomSheetDialogFragment() {
         item.likesCount += if (item.liked) 1 else -1
         adapter?.notifyDataSetChanged()
         viewLifecycleOwner.lifecycleScope.launch {
-            if (interRepo.toggleLike(item.publication.publicationId, uid).isFailure) {
+            if (interRepo.toggleLike(requireContext(), item.publication.publicationId, uid).isFailure) {
                 item.liked = !item.liked
                 item.likesCount += if (item.liked) 1 else -1
                 adapter?.notifyDataSetChanged()
@@ -127,22 +127,22 @@ class SavedSheet : BottomSheetDialogFragment() {
             if (r.isSuccess && !r.getOrDefault(true)) {
                 // Se quitó: desaparece de esta lista.
                 cargar(uid)
-                Toast.makeText(requireContext(), "Quitado de guardados.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_save_quitado), Toast.LENGTH_SHORT).show()
             } else if (r.isFailure) {
-                Toast.makeText(requireContext(), "No se pudo guardar.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_save_no_guardar), Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun compartir(item: PublicationFeedItem) {
         val p = item.publication
-        val texto = "📢 ${p.title}\n\n📍 ${p.location.district}\n\n${p.description.take(280)}\n\n🔗 Compartido desde ChambAYA"
+        val texto = getString(R.string.k_compartir_texto_simple, p.title, p.location.district, p.description.take(280))
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "Chamba: ${p.title}")
+            putExtra(Intent.EXTRA_SUBJECT, getString(R.string.k_compartir_asunto, p.title))
             putExtra(Intent.EXTRA_TEXT, texto)
         }
-        startActivity(Intent.createChooser(intent, "Compartir chamba"))
+        startActivity(Intent.createChooser(intent, getString(R.string.k_compartir_titulo)))
         viewLifecycleOwner.lifecycleScope.launch { pubRepo.registerShare(p.publicationId) }
     }
 
@@ -160,32 +160,32 @@ class SavedSheet : BottomSheetDialogFragment() {
             }
             PublicationOptionsSheet.ACTION_REPORT -> mostrarDenuncia(uid, item)
             PublicationOptionsSheet.ACTION_WHY -> AlertDialog.Builder(requireContext())
-                .setTitle("Por qué ves esto")
-                .setMessage("Ves esta chamba por tu ubicación (Ayacucho) y las categorías que exploras. Guárdala si te interesa o toca “No me interesa”.")
-                .setPositiveButton("Entendido", null)
+                .setTitle(R.string.sheet_opciones_porque)
+                .setMessage(R.string.k_save_porque_msg)
+                .setPositiveButton(R.string.k_comun_entendido, null)
                 .show()
             PublicationOptionsSheet.ACTION_RATE ->
-                Toast.makeText(requireContext(), "Podrás calificar al completar un trabajo (Fase 9).", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.k_save_fase9), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun mostrarDenuncia(uid: String, item: PublicationFeedItem) {
-        val motivos = arrayOf("Fraude o estafa", "Contenido inapropiado", "Información falsa", "Spam", "Otro")
+        val motivos = arrayOf(getString(R.string.k_razon_fraude_estafa), getString(R.string.k_razon_inapropiado), getString(R.string.k_razon_info_falsa), getString(R.string.k_razon_spam), getString(R.string.k_razon_otro))
         AlertDialog.Builder(requireContext())
-            .setTitle("Denunciar publicación")
+            .setTitle(R.string.sheet_opciones_denunciar)
             .setItems(motivos) { _, cual ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val r = interRepo.report(item.publication.publicationId, uid, motivos[cual])
                     if (isAdded) {
                         Toast.makeText(
                             requireContext(),
-                            if (r.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar.",
+                            if (r.isSuccess) getString(R.string.k_com_denunciar_enviar) else getString(R.string.k_comun_no_enviar),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 

@@ -84,18 +84,18 @@ class JobCardAdapter(
             }
             ivProfilePhoto.setImageResource(avatarResource)
             
-            tvProfileName.text = jobCard.empleador.ifEmpty { "Empleador ChambAYA" }
+            tvProfileName.text = jobCard.empleador.ifEmpty { itemView.context.getString(R.string.k_card_empleador) }
             tvLocation.text = jobCard.distrito.ifEmpty { "Ayacucho" }
             tvTimeAgo.text = jobCard.tiempoPublicado.ifEmpty { "Hace 2h" }
 
             // ── Descripción del trabajo + "Ver más" ───────
             val fullDescription = jobCard.descripcion.ifEmpty {
-                "${jobCard.empleador.ifEmpty { "Se busca" }} para ${jobCard.titulo}"
+                itemView.context.getString(R.string.k_card_busca_fmt, jobCard.empleador.ifBlank { itemView.context.getString(R.string.k_card_se_busca) }, jobCard.titulo)
             }
             tvJobDescription.text = fullDescription
             tvJobDescription.maxLines = 2
             var isExpanded = false
-            btnVerMas.text = "Ver más"
+            btnVerMas.text = itemView.context.getString(R.string.item_ver_mas)
 
             // Mostrar "Ver más" si la descripción es extensa (> 75 caracteres o > 2 líneas)
             tvJobDescription.post {
@@ -110,10 +110,10 @@ class JobCardAdapter(
                 isExpanded = !isExpanded
                 if (isExpanded) {
                     tvJobDescription.maxLines = Int.MAX_VALUE
-                    btnVerMas.text = "Ver menos"
+                    btnVerMas.text = itemView.context.getString(R.string.k_card_ver_menos)
                 } else {
                     tvJobDescription.maxLines = 2
-                    btnVerMas.text = "Ver más"
+                    btnVerMas.text = itemView.context.getString(R.string.item_ver_mas)
                 }
             }
             btnVerMas.setOnClickListener(toggleExpand)
@@ -182,7 +182,7 @@ class JobCardAdapter(
             dialogView.findViewById<View>(R.id.optionSave)?.setOnClickListener {
                 // Cambiar el estado de guardado
                 jobCard.isFavorito = !jobCard.isFavorito
-                val mensaje = if (jobCard.isFavorito) "Publicación guardada" else "Guardado eliminado"
+                val mensaje = if (jobCard.isFavorito) context.getString(R.string.k_card_guardada) else context.getString(R.string.k_card_no_guardada)
                 android.widget.Toast.makeText(context, mensaje, android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
@@ -195,25 +195,25 @@ class JobCardAdapter(
 
             // 3. Por qué ves esto
             dialogView.findViewById<View>(R.id.optionWhy)?.setOnClickListener {
-                android.widget.Toast.makeText(context, "Por qué ves esta publicación de ${jobCard.empleador}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, context.getString(R.string.k_card_porque_fmt, jobCard.empleador), android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
             // 4. Calificar publicación
             dialogView.findViewById<View>(R.id.optionRate)?.setOnClickListener {
-                android.widget.Toast.makeText(context, "Calificando publicación: ${jobCard.titulo}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, context.getString(R.string.k_card_calificando_fmt, jobCard.titulo), android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
             // 5. No me interesa
             dialogView.findViewById<View>(R.id.optionNotInterested)?.setOnClickListener {
-                android.widget.Toast.makeText(context, "Marcar 'No me interesa'", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, context.getString(R.string.k_card_no_interesa), android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 
             // 6. Denunciar publicación
             dialogView.findViewById<View>(R.id.optionReport)?.setOnClickListener {
-                android.widget.Toast.makeText(context, "Denunciar publicación", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, context.getString(R.string.sheet_opciones_denunciar), android.widget.Toast.LENGTH_SHORT).show()
                 bottomSheetDialog.dismiss()
             }
 

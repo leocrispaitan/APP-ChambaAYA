@@ -39,7 +39,7 @@ class MapPlaceAdapter(
         fun bind(pin: MapPin) {
             val pub = pin.publication
             tvTitle.text = pub.title
-            tvMeta.text = "${pub.category.ifBlank { "Chamba" }} · ${pub.precioTexto()}"
+            tvMeta.text = "${pub.category.ifBlank { itemView.context.getString(R.string.k_detalle_chamba) }} · ${pub.precioTexto(itemView.context)}"
             tvDist.text = MapGeo.formatDistance(pin.distanceKm)
 
             val photo = pub.images.firstOrNull()?.url.orEmpty()

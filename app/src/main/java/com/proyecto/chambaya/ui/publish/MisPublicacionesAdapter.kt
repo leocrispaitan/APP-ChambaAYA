@@ -44,21 +44,21 @@ class MisPublicacionesAdapter(
 
         fun bind(p: Publication) {
             tvStatus.text = when (p.status) {
-                PublicationStatus.ACTIVE -> "Activa"
-                PublicationStatus.PAUSED -> "Pausada"
-                PublicationStatus.FINISHED -> "Finalizada"
-                else -> "Archivada"
+                PublicationStatus.ACTIVE -> itemView.context.getString(R.string.k_mispub_activa)
+                PublicationStatus.PAUSED -> itemView.context.getString(R.string.k_mispub_pausada)
+                PublicationStatus.FINISHED -> itemView.context.getString(R.string.k_mispub_fin)
+                else -> itemView.context.getString(R.string.k_mispub_archivada)
             }
             tvDate.text = publicationTimeAgo(p.createdAt)
             tvTitle.text = p.title
-            tvMeta.text = "${p.precioTexto()} · ${p.location.district.ifBlank { "Ayacucho" }} · ${p.workersNeeded} vac."
-            tvStats.text = "${formatCount(p.statistics.views)} vistas · ${formatCount(p.statistics.likes)} me gusta · ${formatCount(p.statistics.applications)} postulaciones"
+            tvMeta.text = itemView.context.getString(R.string.k_mispub_meta_fmt, p.precioTexto(itemView.context), p.location.district.ifBlank { "Ayacucho" }, p.workersNeeded)
+            tvStats.text = itemView.context.getString(R.string.k_mispub_stats_fmt, formatCount(p.statistics.views), formatCount(p.statistics.likes), formatCount(p.statistics.applications))
 
             btnToggle.text = when (p.status) {
-                PublicationStatus.ACTIVE -> "Pausar"
-                PublicationStatus.PAUSED -> "Reactivar"
-                PublicationStatus.FINISHED -> "Republicar"
-                else -> "Reactivar"
+                PublicationStatus.ACTIVE -> itemView.context.getString(R.string.item_pausar)
+                PublicationStatus.PAUSED -> itemView.context.getString(R.string.k_detalle_reactivar)
+                PublicationStatus.FINISHED -> itemView.context.getString(R.string.k_pub_republicar)
+                else -> itemView.context.getString(R.string.k_detalle_reactivar)
             }
             btnToggle.visibility =
                 if (p.status == PublicationStatus.ARCHIVED) View.GONE else View.VISIBLE

@@ -398,7 +398,7 @@
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginTop="18dp"
                 android:fontFamily="sans-serif-black"
-                android:text="Explora por categoría"
+                android:text="@string/home_explora_titulo"
                 android:textColor="@color/text_primary"
                 android:textSize="17sp" />
 
@@ -407,7 +407,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginTop="2dp"
-                android:text="Elige el tipo de chamba que buscas"
+                android:text="@string/home_explora_sub"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
@@ -515,7 +515,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Buscando chambas…"
+                    android:text="@string/home_feed_cargando"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
             </LinearLayout>
@@ -546,7 +546,7 @@
                     android:layout_marginTop="14dp"
                     android:fontFamily="sans-serif-medium"
                     android:gravity="center"
-                    android:text="Aún no hay chambas aquí"
+                    android:text="@string/home_feed_vacio_titulo"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
@@ -556,7 +556,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:gravity="center"
-                    android:text="Cuando un contratante publique una chamba, la verás en este feed."
+                    android:text="@string/home_feed_vacio_sub"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
 
@@ -565,7 +565,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="Recargar"
+                    android:text="@string/home_feed_recargar"
                     android:textSize="13sp" />
             </LinearLayout>
 
@@ -587,7 +587,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
                     android:gravity="center"
-                    android:text="No pudimos cargar las chambas"
+                    android:text="@string/home_feed_error_titulo"
                     android:textColor="@color/text_primary"
                     android:textSize="16sp" />
 
@@ -597,7 +597,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:gravity="center"
-                    android:text="Revisa tu conexión e inténtalo de nuevo."
+                    android:text="@string/home_feed_error_sub"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
 
@@ -606,7 +606,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="Reintentar"
+                    android:text="@string/home_feed_reintentar"
                     android:textSize="13sp" />
             </LinearLayout>
 

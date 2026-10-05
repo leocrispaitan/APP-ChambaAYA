@@ -53,20 +53,20 @@ class TimelineAdapter(
 
         fun bind(item: TimelineRow) {
             val job = item.job
-            tvTitle.text = job.publicationTitle.ifBlank { "Trabajo" }
-            tvEntity.text = item.entityName.ifBlank { "Contratante ChambAYA" }
-            tvStatus.text = JobStatus.label(job.status)
+            tvTitle.text = job.publicationTitle.ifBlank { itemView.context.getString(R.string.k_hist_trabajo) }
+            tvEntity.text = item.entityName.ifBlank { itemView.context.getString(R.string.k_time_contratante) }
+            tvStatus.text = JobStatus.label(itemView.context, job.status)
             tvHired.text = job.createdAt.fechaCorta()
-            tvStart.text = if (job.startedAt != null) job.startedAt.fechaCorta() else "Por iniciar"
+            tvStart.text = if (job.startedAt != null) job.startedAt.fechaCorta() else itemView.context.getString(R.string.k_time_por_iniciar)
             tvEnd.text = when {
                 job.completedAt != null -> job.completedAt.fechaCorta()
-                job.status == JobStatus.CANCELLED -> "Cancelado"
-                else -> "En curso"
+                job.status == JobStatus.CANCELLED -> itemView.context.getString(R.string.k_est_job_cancel)
+                else -> itemView.context.getString(R.string.k_est_job_curso)
             }
             val monto = job.agreedPayment.amount.let {
                 if (it % 1.0 == 0.0) it.toInt().toString() else String.format("%.2f", it)
             }
-            tvPay.text = "S/ $monto"
+            tvPay.text = itemView.context.getString(R.string.k_time_monto_fmt, monto)
             val puede = job.status == JobStatus.COMPLETED && !item.ratedByMe
             btnRate.visibility = if (puede) View.VISIBLE else View.GONE
             if (puede) btnRate.setOnClickListener { onRate(item) }

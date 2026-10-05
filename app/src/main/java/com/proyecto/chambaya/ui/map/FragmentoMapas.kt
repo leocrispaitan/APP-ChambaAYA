@@ -158,7 +158,7 @@ class FragmentoMapas : Fragment() {
         } else {
             Toast.makeText(
                 requireContext(),
-                "Ubicación por GPS desactivada. Mostrando Ayacucho, Perú.",
+                getString(R.string.k_mapa_gps_off),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -186,8 +186,8 @@ class FragmentoMapas : Fragment() {
         // Header Views
         tvHeaderTitle = view.findViewById(R.id.tvHeaderTitle)
         tvHeaderSubtitle = view.findViewById(R.id.tvHeaderSubtitle)
-        tvHeaderTitle?.text = "Ayacucho, Perú"
-        tvHeaderSubtitle?.text = "Plaza Mayor • Huamanga"
+        tvHeaderTitle?.text = getString(R.string.home_location_value)
+        tvHeaderSubtitle?.text = getString(R.string.k_mapa_plaza)
 
         // Adjust topBar padding for status bar window insets
         val topBarContainer = view.findViewById<View>(R.id.topBarContainer)
@@ -520,7 +520,7 @@ class FragmentoMapas : Fragment() {
         placeMarker = null
         activeRoutePolyline?.let { p -> maplibreMap?.let { runCatching { it.removePolyline(p) } } }
         activeRoutePolyline = null
-        tvHeaderTitle?.text = "Ayacucho, Perú"
+        tvHeaderTitle?.text = getString(R.string.home_location_value)
         refreshPinsAndList()
     }
 
@@ -547,7 +547,7 @@ class FragmentoMapas : Fragment() {
                     MarkerOptions()
                         .position(pin.position)
                         .title(pin.publication.title)
-                        .snippet("${pin.publication.category} · ${pin.publication.precioTexto()}")
+                        .snippet("${pin.publication.category} · ${pin.publication.precioTexto(requireContext())}")
                         .icon(icon)
                 )
                 mapMarkers += marker
@@ -706,7 +706,7 @@ class FragmentoMapas : Fragment() {
         val iconoLocal = categoriaCatalogo?.let { OficioIcons.local(it.categoria) }
             ?: OficioIcons.local(categoria)
         tvName.text = nombre
-        tvCount.text = if (conteo == 1) "1 chamba" else "$conteo chambas"
+        tvCount.text = if (conteo == 1) getString(R.string.k_mapa_1) else getString(R.string.k_mapa_n_fmt, conteo)
         if (iconoUrl.isNotBlank()) {
             iv.setImageResource(iconoLocal)
             val req = ImageRequest.Builder(requireContext())
@@ -784,7 +784,7 @@ class FragmentoMapas : Fragment() {
         overlayContainer?.visibility = View.VISIBLE
         view?.findViewById<TextView>(R.id.tvOverlayTitle)?.text = pub.title
         view?.findViewById<TextView>(R.id.tvOverlayMeta)?.text =
-            "${pub.precioTexto()} · ${MapGeo.formatDistance(pin.distanceKm)}"
+            "${pub.precioTexto(requireContext())} · ${MapGeo.formatDistance(pin.distanceKm)}"
         val thumb = view?.findViewById<ShapeableImageView>(R.id.ivVillaThumb)
         val photo = pub.images.firstOrNull()?.url.orEmpty()
         if (thumb != null) {
@@ -820,7 +820,7 @@ class FragmentoMapas : Fragment() {
      * Draws glowing polyline on map with distance and estimated time
      */
     private fun calculateAndDrawRoute(start: LatLng, destination: LatLng, destinationName: String) {
-        Toast.makeText(requireContext(), "Trazando ruta a $destinationName...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), getString(R.string.k_mapa_ruta_fmt, destinationName), Toast.LENGTH_SHORT).show()
         val myId = ++routeRequestId
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
@@ -1026,7 +1026,7 @@ class FragmentoMapas : Fragment() {
         zonaMapa = target
         zonaLabel = null
         view?.findViewById<View>(R.id.btnSearchArea)?.visibility = View.GONE
-        Toast.makeText(requireContext(), "Buscando chambas en esta zona…", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), getString(R.string.k_mapa_buscando_zona), Toast.LENGTH_SHORT).show()
         actualizarDistanciasYLista()
     }
 
@@ -1105,7 +1105,7 @@ class FragmentoMapas : Fragment() {
                         )
                         // Calle real del punto: Geocode Earth (Pelias), con ORS de respaldo
                         fetchAddressForLocation(userLatLng)
-                        Toast.makeText(context, "Ubicación GPS centrada", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, getString(R.string.k_mapa_gps_ok), Toast.LENGTH_SHORT).show()
                     } else {
                         val lastKnown = maplibreMap?.locationComponent?.lastKnownLocation
                         if (lastKnown != null) {
@@ -1117,7 +1117,7 @@ class FragmentoMapas : Fragment() {
                             )
                             fetchAddressForLocation(userLatLng)
                         } else {
-                            Toast.makeText(context, "Buscando señal GPS...", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, getString(R.string.k_mapa_gps_buscando), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

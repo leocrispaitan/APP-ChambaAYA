@@ -70,13 +70,13 @@ class ActividadChatDetalle : AppCompatActivity() {
 
         conversationId = intent.getStringExtra(EXTRA_CONV_ID).orEmpty()
         otherUid = intent.getStringExtra(EXTRA_OTHER_UID).orEmpty()
-        otherName = intent.getStringExtra(EXTRA_NOMBRE) ?: "Chat"
+        otherName = intent.getStringExtra(EXTRA_NOMBRE) ?: getString(R.string.k_chat_default)
         val photoUrl = intent.getStringExtra(EXTRA_FOTO).orEmpty()
         val pubTitle = intent.getStringExtra(EXTRA_PUB_TITULO).orEmpty()
         myUid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
 
         if (conversationId.isBlank() || myUid.isBlank()) {
-            Toast.makeText(this, "No se pudo abrir el chat.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.k_chat_no_abrir), Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -125,11 +125,11 @@ class ActividadChatDetalle : AppCompatActivity() {
         }
         // Sin sistema de presencia: el subtítulo muestra el contexto.
         viewDetailOnlineDot.visibility = View.GONE
-        tvDetailStatus.text = pubTitle.ifBlank { "Chat de ChambAYA" }
+        tvDetailStatus.text = pubTitle.ifBlank { getString(R.string.k_chat_titulo) }
 
         btnBack.setOnClickListener { finish() }
         btnCall.setOnClickListener {
-            Toast.makeText(this, "Las llamadas llegan pronto a ChambAYA.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.k_chat_llamadas), Toast.LENGTH_SHORT).show()
         }
         btnMoreOptions.setOnClickListener { menuChat(it) }
         ivDetailAvatar.setOnClickListener { verPerfil() }
@@ -144,9 +144,9 @@ class ActividadChatDetalle : AppCompatActivity() {
 
     private fun menuChat(anchor: View) {
         val menu = PopupMenu(this, anchor)
-        menu.menu.add(0, 1, 0, "Ver perfil")
-        menu.menu.add(0, 2, 0, "Bloquear")
-        menu.menu.add(0, 3, 0, "Denunciar")
+        menu.menu.add(0, 1, 0, getString(R.string.k_chat_ver_perfil))
+        menu.menu.add(0, 2, 0, getString(R.string.k_comun_bloquear))
+        menu.menu.add(0, 3, 0, getString(R.string.k_comun_denunciar))
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> verPerfil()
@@ -160,38 +160,38 @@ class ActividadChatDetalle : AppCompatActivity() {
 
     private fun confirmarBloqueo() {
         AlertDialog.Builder(this)
-            .setTitle("Bloquear a $otherName")
-            .setMessage("No verás sus chambas ni podrán escribirse. Podrás desbloquearlo desde su perfil.")
-            .setPositiveButton("Bloquear") { _, _ ->
+            .setTitle(getString(R.string.k_chat_bloquear_fmt, otherName))
+            .setMessage(R.string.k_chat_bloquear_msg)
+            .setPositiveButton(R.string.k_comun_bloquear) { _, _ ->
                 lifecycleScope.launch {
                     val r = blockRepo.block(myUid, otherUid)
                     Toast.makeText(
                         this@ActividadChatDetalle,
-                        if (r.isSuccess) "Usuario bloqueado." else "No se pudo bloquear.",
+                        if (r.isSuccess) getString(R.string.k_chat_bloqueado_ok) else getString(R.string.k_chat_no_bloquear),
                         Toast.LENGTH_SHORT
                     ).show()
                     if (r.isSuccess) finish()
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 
     private fun denunciar() {
-        val motivos = arrayOf("Spam", "Acoso", "Fraude o estafa", "Contenido inapropiado", "Otro")
+        val motivos = arrayOf(getString(R.string.k_razon_spam), getString(R.string.k_razon_acoso), getString(R.string.k_razon_fraude_estafa), getString(R.string.k_razon_inapropiado), getString(R.string.k_razon_otro))
         AlertDialog.Builder(this)
-            .setTitle("Denunciar a $otherName")
+            .setTitle(getString(R.string.k_chat_denunciar_fmt, otherName))
             .setItems(motivos) { _, cual ->
                 lifecycleScope.launch {
                     val r = blockRepo.reportUser(myUid, otherUid, motivos[cual])
                     Toast.makeText(
                         this@ActividadChatDetalle,
-                        if (r.isSuccess) "Denuncia enviada. La revisaremos." else "No se pudo enviar.",
+                        if (r.isSuccess) getString(R.string.k_com_denunciar_enviar) else getString(R.string.k_comun_no_enviar),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 
@@ -201,9 +201,9 @@ class ActividadChatDetalle : AppCompatActivity() {
                 blockRepo.isBlocked(otherUid, myUid)
             if (bloqueado) {
                 etMessageInput.isEnabled = false
-                etMessageInput.hint = "Chat no disponible"
+                etMessageInput.hint = getString(R.string.k_chat_no_disponible)
                 findViewById<View>(R.id.btnSend).visibility = View.GONE
-                Toast.makeText(this@ActividadChatDetalle, "Este chat está bloqueado.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@ActividadChatDetalle, getString(R.string.k_chat_bloqueado), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -241,7 +241,7 @@ class ActividadChatDetalle : AppCompatActivity() {
                 lifecycleScope.launch { chatRepo.markRead(myUid, conversationId) }
             },
             onError = {
-                Toast.makeText(this, "Se cortó la conexión del chat.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.k_chat_sin_conexion), Toast.LENGTH_SHORT).show()
             }
         )
     }
@@ -279,7 +279,7 @@ class ActividadChatDetalle : AppCompatActivity() {
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_adjuntos, null)
         dialog.setContentView(sheetView)
         val pronto = {
-            Toast.makeText(this, "Fotos y archivos llegan pronto.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.k_chat_adjuntos), Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
         sheetView.findViewById<LinearLayout>(R.id.btnMenuGaleria)?.setOnClickListener { pronto() }
@@ -295,7 +295,7 @@ class ActividadChatDetalle : AppCompatActivity() {
         etMessageInput.text?.clear()
         findViewById<View>(R.id.btnSend).visibility = View.GONE
         lifecycleScope.launch {
-            val r = chatRepo.sendMessage(myUid, conversationId, texto)
+            val r = chatRepo.sendMessage(this@ActividadChatDetalle, myUid, conversationId, texto)
             if (r.isFailure) {
                 Toast.makeText(
                     this@ActividadChatDetalle,

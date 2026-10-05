@@ -24,7 +24,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-black"
-        android:text="Postularme"
+        android:text="@string/sheet_postular_titulo"
         android:textColor="@color/text_primary"
         android:textSize="19sp" />
 
@@ -69,7 +69,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Mensaje al contratante (opcional)"
+            android:text="@string/sheet_postular_mensaje"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -84,7 +84,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="110dp"
                 android:gravity="top"
-                android:hint="Cuéntale por qué eres la persona indicada…"
+                android:hint="@string/sheet_postular_hint"
                 android:inputType="textMultiLine"
                 android:maxLength="500" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -93,7 +93,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Verá tu perfil: experiencia, calificación y trabajos realizados."
+            android:text="@string/sheet_postular_nota"
             android:textColor="@color/text_secondary"
             android:textSize="12sp" />
 
@@ -117,7 +117,7 @@
                 android:layout_width="0dp"
                 android:layout_height="50dp"
                 android:layout_weight="1"
-                android:text="Cancelar"
+                android:text="@string/sheet_postular_cancelar"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 app:cornerRadius="14dp" />
 
@@ -127,7 +127,7 @@
                 android:layout_height="50dp"
                 android:layout_weight="1"
                 android:layout_marginStart="10dp"
-                android:text="Enviar"
+                android:text="@string/sheet_postular_enviar"
                 android:textColor="@android:color/white"
                 android:textAllCaps="false"
                 android:textStyle="bold"
@@ -149,7 +149,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:gravity="center"
-            android:text="Ya enviaste tu postulación. El contratante la revisará pronto."
+            android:text="@string/sheet_postular_enviada"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
@@ -158,7 +158,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="16dp"
-            android:text="Retirar postulación"
+            android:text="@string/sheet_postular_retirar"
             style="@style/Widget.Material3.Button.OutlinedButton"
             app:cornerRadius="14dp" />
     </LinearLayout>

@@ -22,22 +22,16 @@ import androidx.appcompat.app.AppCompatActivity
  */
 class ActividadAyuda : AppCompatActivity() {
 
-    private val faqs = listOf(
-        "¿Cómo postulo a una chamba?" to
-            "Abre la oferta en Chambas, revisa el pago, el distrito y lo que piden, y pulsa Postular. El contratante verá tu perfil y te llegará un aviso si te aceptan o no.",
-        "¿Cómo publico un trabajo?" to
-            "Activa tu modo contratante, registra tu lugar y crea la publicación con título, pago en soles, distrito y fotos. Solo los contratantes verificados pueden publicar.",
-        "¿Cómo me pagan?" to
-            "El pago se acuerda directo entre las partes: monto, periodo y si es negociable aparecen en la publicación. ChambAYA no retiene ni cobra los pagos.",
-        "¿Por qué verifican mi DNI o RUC?" to
-            "Para que todos confíen: validamos tu identidad una sola vez con RENIEC o SUNAT. Tu documento nunca se muestra en público, solo tu nombre y tu verificación.",
-        "¿Cómo funcionan las calificaciones?" to
-            "Solo se califica el trabajo completado, de 1 a 5 estrellas y una sola vez por trabajo en cada dirección. Tu promedio aparece en tu perfil.",
-        "¿Cómo reporto o bloqueo a alguien?" to
-            "En la publicación o el chat usa Denunciar y en el perfil usa Bloquear. Cada reporte queda en revisión por moderación.",
-        "¿Puedo ser trabajador y contratante?" to
-            "Sí, con la misma cuenta: tu rol se definió al registrarte y el otro se activa desde tu perfil, sin crear otra cuenta."
-    )
+    private val faqs: List<Pair<String, String>>
+        get() = listOf(
+            getString(R.string.ayuda_faq_p1) to getString(R.string.ayuda_faq_r1),
+            getString(R.string.ayuda_faq_p2) to getString(R.string.ayuda_faq_r2),
+            getString(R.string.ayuda_faq_p3) to getString(R.string.ayuda_faq_r3),
+            getString(R.string.ayuda_faq_p4) to getString(R.string.ayuda_faq_r4),
+            getString(R.string.ayuda_faq_p5) to getString(R.string.ayuda_faq_r5),
+            getString(R.string.ayuda_faq_p6) to getString(R.string.ayuda_faq_r6),
+            getString(R.string.ayuda_faq_p7) to getString(R.string.ayuda_faq_r7)
+        )
 
     private val filas = mutableListOf<View>()
 
@@ -61,7 +55,7 @@ class ActividadAyuda : AppCompatActivity() {
         findViewById<View>(R.id.btnCopiarCorreo)?.setOnClickListener {
             val clip = ClipData.newPlainText("soporte", CORREO_SOPORTE)
             (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
-            Toast.makeText(this, "Correo copiado.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.ayuda_copiado, Toast.LENGTH_SHORT).show()
         }
     }
 

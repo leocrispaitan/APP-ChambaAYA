@@ -15,11 +15,11 @@ object JobStatus {
     const val COMPLETED = "COMPLETED"
     const val CANCELLED = "CANCELLED"
 
-    fun label(status: String): String = when (status) {
-        ACCEPTED -> "Aceptado"
-        IN_PROGRESS -> "En curso"
-        COMPLETED -> "Completado"
-        CANCELLED -> "Cancelado"
+    fun label(context: android.content.Context, status: String): String = when (status) {
+        ACCEPTED -> context.getString(com.proyecto.chambaya.R.string.k_est_job_aceptado)
+        IN_PROGRESS -> context.getString(com.proyecto.chambaya.R.string.k_est_job_curso)
+        COMPLETED -> context.getString(com.proyecto.chambaya.R.string.k_est_job_fin)
+        CANCELLED -> context.getString(com.proyecto.chambaya.R.string.k_est_job_cancel)
         else -> status
     }
 

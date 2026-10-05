@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-black"
-        android:text="¿Dónde buscas chambas?"
+        android:text="@string/sheet_zona_titulo"
         android:textColor="@color/text_primary"
         android:textSize="18sp" />
 
@@ -35,7 +35,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
-        android:text="Escribe una calle, un restaurante o un lugar de Ayacucho."
+        android:text="@string/sheet_zona_sub"
         android:textColor="@color/text_secondary"
         android:textSize="13sp" />
 
@@ -64,7 +64,7 @@
             android:layout_weight="1"
             android:background="@null"
             android:fontFamily="sans-serif"
-            android:hint="Jr. Los Libertadores, mercado, farmacia…"
+            android:hint="@string/sheet_zona_hint"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1"
@@ -105,42 +105,42 @@
                 style="@style/Widget.Material3.Chip.Suggestion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Restaurantes" />
+                android:text="@string/sheet_zona_restaurantes" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipFarmacias"
                 style="@style/Widget.Material3.Chip.Suggestion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Farmacias" />
+                android:text="@string/sheet_zona_farmacias" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipMercados"
                 style="@style/Widget.Material3.Chip.Suggestion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Mercados" />
+                android:text="@string/sheet_zona_mercados" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipColegios"
                 style="@style/Widget.Material3.Chip.Suggestion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Colegios" />
+                android:text="@string/sheet_zona_colegios" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipMunicipalidad"
                 style="@style/Widget.Material3.Chip.Suggestion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Municipalidad" />
+                android:text="@string/sheet_zona_muni" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipUniversidades"
                 style="@style/Widget.Material3.Chip.Suggestion"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Universidades" />
+                android:text="@string/sheet_zona_unis" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
@@ -171,7 +171,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:fontFamily="sans-serif-medium"
-            android:text="Usar mi ubicación"
+            android:text="@string/sheet_zona_miubicacion"
             android:textColor="@color/brand_color"
             android:textSize="13sp" />
 
@@ -181,7 +181,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="end"
-            android:text="Chambas a mi alrededor"
+            android:text="@string/sheet_zona_alrededor"
             android:textColor="@color/text_secondary"
             android:textSize="12sp" />
     </LinearLayout>
@@ -220,7 +220,7 @@
             android:paddingTop="28dp"
             android:paddingEnd="16dp"
             android:paddingBottom="28dp"
-            android:text="Escribe al menos 3 letras para buscar."
+            android:text="@string/sheet_zona_minimo"
             android:textColor="@color/text_secondary"
             android:textSize="13sp" />
     </FrameLayout>
@@ -231,6 +231,6 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_marginTop="10dp"
-        android:text="Ver todas las chambas de Ayacucho"
+        android:text="@string/sheet_zona_todas"
         app:cornerRadius="14dp" />
 </LinearLayout>

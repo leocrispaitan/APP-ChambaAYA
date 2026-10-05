@@ -470,7 +470,7 @@ class RegistroActivity : AppCompatActivity() {
     private fun updateStep(step: Int) {
         // Bloquear acceso a Paso 4 si la verificación no ha sido completada
         if (step == 4 && !isOtpVerified) {
-            showToast("Debes completar la verificación para continuar.")
+            showToast(getString(R.string.rg_debes_verificar))
             return
         }
 
@@ -690,21 +690,21 @@ class RegistroActivity : AppCompatActivity() {
 
             when {
                 esContratante && !EmployerTypes.isValid(selectedEmployerType) ->
-                    showToast("Elige cómo vas a contratar para continuar")
+                    showToast(getString(R.string.rg_elige_contratar_continuar))
                 identityMode == IdentityDocumentTypes.DNI && dni.length != 8 ->
-                    showToast("Ingresa tu DNI de 8 dígitos para continuar")
+                    showToast(getString(R.string.rg_dni8_continuar))
                 identityMode == IdentityDocumentTypes.DNI && !isDniVerified ->
-                    showToast("Primero verifica tu identidad")
+                    showToast(getString(R.string.rg_primero_verifica))
                 identityMode == IdentityDocumentTypes.DNI &&
                     identity?.documentType != IdentityDocumentTypes.DNI ->
-                    showToast("Vuelve a consultar tu DNI en RENIEC para continuar")
+                    showToast(getString(R.string.rg_reconsulta_dni))
                 identityMode == IdentityDocumentTypes.RUC && ruc.length != 11 ->
-                    showToast("Ingresa un RUC válido de 11 dígitos")
+                    showToast(getString(R.string.rg_ruc_valido))
                 identityMode == IdentityDocumentTypes.RUC && !isRucVerified ->
-                    showToast("Primero confirma tu empresa en SUNAT")
+                    showToast(getString(R.string.rg_primero_sunat))
                 identityMode == IdentityDocumentTypes.RUC &&
                     identity?.documentType != IdentityDocumentTypes.RUC ->
-                    showToast("Vuelve a consultar tu RUC en SUNAT para continuar")
+                    showToast(getString(R.string.rg_reconsulta_ruc))
                 else -> updateStep(2)
             }
         }
@@ -726,7 +726,7 @@ class RegistroActivity : AppCompatActivity() {
             // DNI/RUC ya no se usan.
             layoutEmployerType.visibility = View.VISIBLE
             layoutIdentityTypeTabs.visibility = View.GONE
-            tvStep1Subtitle.text = "Elige cómo vas a contratar y valida tu documento"
+            tvStep1Subtitle.text = getString(R.string.rg_elige_contratar)
             if (EmployerTypes.isValid(selectedEmployerType)) {
                 applyEmployerTypeUi(selectedEmployerType)
             } else {
@@ -749,7 +749,7 @@ class RegistroActivity : AppCompatActivity() {
         layoutDniForm.visibility = if (ruc) View.GONE else View.VISIBLE
         layoutRucForm.visibility = if (ruc) View.VISIBLE else View.GONE
         tvStep1Subtitle.text = if (ruc) {
-            "Valida tu empresa registrada en SUNAT (RUC Activo/Habido)"
+            getString(R.string.rg_valida_sunat)
         } else {
             getString(R.string.register_step2_subtitle)
         }
@@ -815,7 +815,7 @@ class RegistroActivity : AppCompatActivity() {
             applyTabStyle(btnTabDni, selected = false, brandColor)
             layoutRucForm.visibility = View.VISIBLE
             layoutDniForm.visibility = View.GONE
-            tvStep1Subtitle.text = "Valida tu empresa registrada en SUNAT (RUC Activo/Habido)"
+            tvStep1Subtitle.text = getString(R.string.rg_valida_sunat)
         }
 
         if (validatedIdentity == null) {
@@ -845,14 +845,14 @@ class RegistroActivity : AppCompatActivity() {
         val dni = etDni.text?.toString()?.trim() ?: ""
 
         if (dni.length != 8) {
-            showToast("Ingresa un DNI de 8 dígitos")
+            showToast(getString(R.string.rg_dni8_corto))
             return
         }
 
         pbReniec.visibility = View.VISIBLE
         btnConsultReniec.isEnabled = false
         cardDniVerified.visibility = View.GONE
-        tvDniAttempts.text = "Consultando RENIEC..."
+        tvDniAttempts.text = getString(R.string.rg_consultando_reniec)
 
         lifecycleScope.launch {
             when (val result = identityValidationService.validateDni(dni)) {
@@ -862,13 +862,13 @@ class RegistroActivity : AppCompatActivity() {
                     validatedIdentity = identity
                     tvReniecFullName.text = identity.fullName
                     tvReniecDniDetail.text =
-                        "DNI: ${identity.documentNumber} · ${identity.locationLabel.orEmpty()}"
+                        getString(R.string.rg_dni_detalle_fmt, identity.documentNumber, identity.locationLabel.orEmpty())
                     cardDniVerified.visibility = View.VISIBLE
-                    tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
+                    tvDniAttempts.text = getString(R.string.rg_reniec_ok)
 
                     Snackbar.make(
                         findViewById(R.id.registerRoot),
-                        "✓ Identidad verificada: ${identity.fullName}",
+                        getString(R.string.rg_identidad_ok_fmt, identity.fullName),
                         Snackbar.LENGTH_LONG
                     ).show()
 
@@ -876,18 +876,18 @@ class RegistroActivity : AppCompatActivity() {
                 }
 
                 is IdentityValidationResult.Rejected -> {
-                    tvDniAttempts.text = "No se pudo verificar el DNI"
-                    showToast("Error: ${result.message}")
+                    tvDniAttempts.text = getString(R.string.rg_no_verificar_dni)
+                    showToast(getString(R.string.rg_error_fmt, result.message))
                 }
 
                 is IdentityValidationResult.ServiceError -> {
-                    tvDniAttempts.text = "Error al consultar RENIEC"
-                    showToast("Error ${result.httpCode} al consultar RENIEC. Intenta de nuevo.")
+                    tvDniAttempts.text = getString(R.string.rg_error_reniec)
+                    showToast(getString(R.string.rg_error_http_reniec_fmt, result.httpCode))
                 }
 
                 is IdentityValidationResult.NetworkError -> {
-                    tvDniAttempts.text = "Sin conexión a internet"
-                    showToast("Error de conexión: ${result.cause}")
+                    tvDniAttempts.text = getString(R.string.rg_sin_conexion)
+                    showToast(getString(R.string.rg_error_conexion_fmt, result.cause))
                 }
             }
 
@@ -899,7 +899,7 @@ class RegistroActivity : AppCompatActivity() {
     private fun resetDniVerifiedUi() {
         isDniVerified = false
         cardDniVerified.visibility = View.GONE
-        tvDniAttempts.text = "Ingresa tu DNI para verificar"
+        tvDniAttempts.text = getString(R.string.rg_ingresa_dni)
         if (validatedIdentity?.documentType == IdentityDocumentTypes.DNI) {
             validatedIdentity = null
             pendingRegistrationStore.clear()
@@ -909,7 +909,7 @@ class RegistroActivity : AppCompatActivity() {
     private fun consultSunat() {
         val ruc = etRuc.text?.toString()?.trim() ?: ""
         if (ruc.length != 11) {
-            showToast("El RUC debe tener 11 dígitos")
+            showToast(getString(R.string.rg_ruc_11))
             return
         }
 
@@ -924,12 +924,12 @@ class RegistroActivity : AppCompatActivity() {
                     isRucVerified = true
                     validatedIdentity = identity
                     tvSunatRazonSocial.text = identity.legalName ?: identity.fullName
-                    tvSunatCondition.text = "Condición: ${identity.statusLabel.orEmpty()}"
+                    tvSunatCondition.text = getString(R.string.rg_condicion_fmt, identity.statusLabel.orEmpty())
                     cardRucVerified.visibility = View.VISIBLE
 
                     Snackbar.make(
                         findViewById(R.id.registerRoot),
-                        "✓ RUC validado: ACTIVO y HABIDO en SUNAT",
+                        getString(R.string.rg_ruc_ok),
                         Snackbar.LENGTH_SHORT
                     ).show()
 
@@ -941,11 +941,11 @@ class RegistroActivity : AppCompatActivity() {
                 }
 
                 is IdentityValidationResult.ServiceError -> {
-                    showToast("Error ${result.httpCode} al consultar SUNAT. Intenta de nuevo.")
+                    showToast(getString(R.string.rg_error_http_sunat_fmt, result.httpCode))
                 }
 
                 is IdentityValidationResult.NetworkError -> {
-                    showToast("Error de conexión: ${result.cause}")
+                    showToast(getString(R.string.rg_error_conexion_fmt, result.cause))
                 }
             }
 
@@ -1038,23 +1038,23 @@ class RegistroActivity : AppCompatActivity() {
 
         when {
             email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
-                showToast("Ingresa un correo electrónico válido")
+                showToast(getString(R.string.rg_correo_valido))
                 return
             }
             !hasLength -> {
-                showToast("La contraseña debe tener al menos 8 caracteres")
+                showToast(getString(R.string.rg_pwd_8))
                 return
             }
             !hasNumber -> {
-                showToast("La contraseña debe contener al menos un número")
+                showToast(getString(R.string.rg_pwd_num))
                 return
             }
             !hasSpecial -> {
-                showToast("La contraseña debe contener una letra mayúscula o un símbolo")
+                showToast(getString(R.string.rg_pwd_simbolo))
                 return
             }
             pwd != confirmPwd -> {
-                showToast("Las contraseñas no coinciden")
+                showToast(getString(R.string.rg_pwd_no_coinciden))
                 return
             }
         }
@@ -1084,8 +1084,8 @@ class RegistroActivity : AppCompatActivity() {
                             if (verifyTask.isSuccessful) {
                                 showEmailVerificationSentModal(email)
                             } else {
-                                val err = verifyTask.exception?.localizedMessage ?: "No se pudo enviar el correo de verificación"
-                                showToast("Cuenta creada. $err")
+                                val err = verifyTask.exception?.localizedMessage ?: getString(R.string.rg_no_envio_correo)
+                                showToast(getString(R.string.rg_cuenta_creada_fmt, err))
                                 showEmailVerificationSentModal(email)
                             }
                         } ?: run {
@@ -1107,13 +1107,13 @@ class RegistroActivity : AppCompatActivity() {
 
                     val errorMsg = when (exception) {
                         is FirebaseAuthWeakPasswordException ->
-                            "La contraseña es demasiado débil. Ingresa al menos 8 caracteres con números y mayúsculas o símbolos."
+                            getString(R.string.rg_pwd_debil)
                         is FirebaseAuthInvalidCredentialsException ->
-                            "El formato del correo electrónico ingresado no es válido."
+                            getString(R.string.rg_correo_formato)
                         is FirebaseNetworkException ->
-                            "Sin conexión a internet. Verifica tu red e inténtalo de nuevo."
+                            getString(R.string.rg_sin_conexion_larga)
                         else ->
-                            exception?.localizedMessage ?: "Ocurrió un error al registrar las credenciales. Intenta nuevamente."
+                            exception?.localizedMessage ?: getString(R.string.rg_error_credenciales)
                     }
                     showToast(errorMsg)
                 }
@@ -1136,7 +1136,7 @@ class RegistroActivity : AppCompatActivity() {
             val idToken = account.idToken
             if (idToken.isNullOrEmpty()) {
                 setStep2Loading(false)
-                showToast("No se pudo obtener la credencial de Google. Inténtalo de nuevo.")
+                showToast(getString(R.string.rg_google_credencial))
                 return
             }
 
@@ -1148,7 +1148,7 @@ class RegistroActivity : AppCompatActivity() {
                     if (authTask.isSuccessful) {
                         val user = auth.currentUser
                         if (user == null) {
-                            showToast("No pudimos recuperar la cuenta de Google. Inténtalo de nuevo.")
+                            showToast(getString(R.string.rg_google_cuenta))
                             return@addOnCompleteListener
                         }
 
@@ -1176,9 +1176,9 @@ class RegistroActivity : AppCompatActivity() {
 
                         val errorMsg = when (exception) {
                             is FirebaseNetworkException ->
-                                "Error de conexión a internet con Firebase. Intenta nuevamente."
+                                getString(R.string.rg_google_conexion)
                             else ->
-                                exception?.localizedMessage ?: "Error al autenticar con Firebase usando Google."
+                                exception?.localizedMessage ?: getString(R.string.rg_google_auth)
                         }
                         showToast(errorMsg)
                     }
@@ -1190,18 +1190,18 @@ class RegistroActivity : AppCompatActivity() {
                     // El usuario canceló la selección de cuenta
                 }
                 CommonStatusCodes.NETWORK_ERROR, 7 -> {
-                    showToast("Error de red al conectar con Google.")
+                    showToast(getString(R.string.rg_google_red))
                 }
                 CommonStatusCodes.DEVELOPER_ERROR, 10 -> {
-                    showToast("Configuración de Google Sign-In pendiente de vinculación SHA-1.")
+                    showToast(getString(R.string.rg_google_sha1))
                 }
                 else -> {
-                    showToast("Error al conectar con Google (código: ${e.statusCode})")
+                    showToast(getString(R.string.rg_google_codigo_fmt, e.statusCode))
                 }
             }
         } catch (e: Exception) {
             setStep2Loading(false)
-            showToast("Error inesperado en Google Sign-In: ${e.localizedMessage}")
+            showToast(getString(R.string.rg_google_inesperado_fmt, e.localizedMessage))
         }
     }
 
@@ -1243,13 +1243,12 @@ class RegistroActivity : AppCompatActivity() {
      */
     private fun handleExistingAccountOnGoogleRegister(email: String) {
         if (email.isBlank()) {
-            showToast("Ya existe una cuenta con este correo. Inicia sesión para continuar.")
+            showToast(getString(R.string.rg_cuenta_existe_login))
             return
         }
 
         showToast(
-            "El correo ${maskEmail(email)} ya pertenece a una cuenta creada con correo " +
-                "y contraseña. Inicia sesión con ese correo para completar tu registro."
+            getString(R.string.rg_cuenta_google_existe_fmt, maskEmail(email))
         )
     }
 
@@ -1315,7 +1314,7 @@ class RegistroActivity : AppCompatActivity() {
         persistPendingAccountForResume(firebaseUser)
 
         if (validatedIdentity == null) {
-            showToast("Recuperamos tu cuenta. Vuelve a verificar tu identidad para continuar.")
+            showToast(getString(R.string.rg_recuperamos))
             updateStep(1)
         } else {
             showResumeRegistrationDialog(registeredEmail.orEmpty())
@@ -1354,21 +1353,17 @@ class RegistroActivity : AppCompatActivity() {
     private fun showResumeRegistrationDialog(email: String) {
         val identity = validatedIdentity
         val documentLabel = when (identity?.documentType) {
-            IdentityDocumentTypes.RUC -> "RUC ${identity.documentNumber}"
-            else -> "DNI ${identity?.documentNumber ?: "validado"}"
+            IdentityDocumentTypes.RUC -> getString(R.string.rg_doc_ruc_fmt, identity.documentNumber)
+            else -> getString(R.string.rg_doc_dni_fmt, identity?.documentNumber ?: getString(R.string.rg_doc_validado))
         }
 
         MaterialAlertDialogBuilder(this)
-            .setTitle("Retoma tu registro")
+            .setTitle(R.string.rg_retoma_titulo)
             .setMessage(
-                "Ya habías iniciado tu registro con ${maskEmail(email)} y solo falta " +
-                    "confirmar el código de verificación.\n\n" +
-                    "✓ $documentLabel ya está validado\n" +
-                    "✓ No necesitas crear la cuenta de nuevo\n\n" +
-                    "¿Quieres continuar donde lo dejaste?"
+                getString(R.string.rg_retoma_msg_fmt, maskEmail(email), documentLabel)
             )
-            .setPositiveButton("Continuar verificación") { _, _ -> resumeAtVerificationStep() }
-            .setNegativeButton("Volver al inicio") { _, _ -> updateStep(0) }
+            .setPositiveButton(R.string.rg_retoma_continuar) { _, _ -> resumeAtVerificationStep() }
+            .setNegativeButton(R.string.rg_retoma_inicio) { _, _ -> updateStep(0) }
             .setCancelable(false)
             .show()
     }
@@ -1393,12 +1388,11 @@ class RegistroActivity : AppCompatActivity() {
     /** Diálogo: la cuenta ya tiene un registro completo. */
     private fun showAlreadyRegisteredDialog(email: String) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Esta cuenta ya está registrada")
+            .setTitle(R.string.rg_ya_registrada)
             .setMessage(
-                "El correo ${maskEmail(email)} ya tiene un registro completado en " +
-                    "ChambAYA.\n\nInicia sesión con ese correo y contraseña para entrar a tu cuenta."
+                getString(R.string.rg_ya_registrada_msg_fmt, maskEmail(email))
             )
-            .setPositiveButton("Iniciar sesión") { _, _ ->
+            .setPositiveButton(R.string.rg_iniciar_sesion) { _, _ ->
                 auth.signOut()
                 startActivity(
                     Intent(this, LoginActivity::class.java).apply {
@@ -1408,20 +1402,18 @@ class RegistroActivity : AppCompatActivity() {
                 )
                 finish()
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.k_comun_cancelar, null)
             .show()
     }
 
     /** La cuenta existe pero no se pudo probar la titularidad con la contraseña. */
     private fun showExistingAccountDialog(email: String) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Esa cuenta ya existe")
+            .setTitle(R.string.rg_existe_titulo)
             .setMessage(
-                "Ya existe una cuenta con ${maskEmail(email)} y la contraseña no " +
-                    "coincide.\n\nSi olvidaste tu contraseña, recupérala desde el inicio de " +
-                    "sesión. Si no te registraste tú, revisa que el correo sea correcto."
+                getString(R.string.rg_existe_msg_fmt, maskEmail(email))
             )
-            .setPositiveButton("Ir a iniciar sesión") { _, _ ->
+            .setPositiveButton(R.string.rg_ir_login) { _, _ ->
                 startActivity(
                     Intent(this, LoginActivity::class.java).apply {
                         putExtra(LoginActivity.EXTRA_PREFILL_EMAIL, email)
@@ -1430,7 +1422,7 @@ class RegistroActivity : AppCompatActivity() {
                 )
                 finish()
             }
-            .setNegativeButton("Usar otro correo", null)
+            .setNegativeButton(R.string.rg_otro_correo, null)
             .show()
     }
 
@@ -1460,7 +1452,7 @@ class RegistroActivity : AppCompatActivity() {
             // Sin identidad recuperable no se puede prometer nada: se vuelve
             // al sub-paso 1 para validarla de nuevo.
             if (validatedIdentity == null) {
-                showToast("Recuperamos tu cuenta. Vuelve a verificar tu identidad para continuar.")
+                showToast(getString(R.string.rg_recuperamos))
                 updateStep(1)
                 return@launch
             }
@@ -1471,19 +1463,17 @@ class RegistroActivity : AppCompatActivity() {
 
     /** Etiqueta de rol para resúmenes: "Trabajador" o "Contratante · Empresa". */
     private fun etiquetaRol(): String {
-        if (selectedRole == UserRoles.TRABAJADOR) return "Trabajador"
-        val tipo = EmployerTypes.label(selectedEmployerType).ifBlank { "Contratante" }
-        return if (tipo == "Contratante") tipo else "Contratante · $tipo"
+        if (selectedRole == UserRoles.TRABAJADOR) return getString(R.string.k_rol_trabajador)
+        if (!EmployerTypes.isValid(selectedEmployerType)) return getString(R.string.k_rol_contratante)
+        return getString(R.string.rg_rol_fmt, getString(R.string.k_rol_contratante), EmployerTypes.label(this, selectedEmployerType))
     }
 
     // Modal de éxito profesional para Google Auth (Regla 6)
     private fun showGoogleSuccessModal() {
         MaterialAlertDialogBuilder(this)
-            .setTitle("¡Registro exitoso!")
-            .setMessage("Tu cuenta se ha creado correctamente con Google.\n\n" +
-                "✓ Correo: ${registeredEmail ?: ""}\n" +
-                "✓ Rol: ${etiquetaRol()}")
-            .setPositiveButton("Continuar") { _, _ ->
+            .setTitle(R.string.rg_exito_titulo)
+            .setMessage(getString(R.string.rg_exito_msg_fmt, registeredEmail ?: "", etiquetaRol()))
+            .setPositiveButton(R.string.register_btn_continue) { _, _ ->
                 onPhase2Completed()
             }
             .setCancelable(false)
@@ -1554,7 +1544,7 @@ class RegistroActivity : AppCompatActivity() {
     /** Verifica si el usuario ya validó su correo en Firebase y avanza a Fase 4 */
     private fun checkEmailVerificationAndProceed() {
         val user = auth.currentUser ?: run {
-            tvEmailWaitingError.text = "No se encontró la sesión activa. Vuelve a registrarte."
+            tvEmailWaitingError.text = getString(R.string.rg_sin_sesion)
             tvEmailWaitingError.visibility = View.VISIBLE
             return
         }
@@ -1563,7 +1553,7 @@ class RegistroActivity : AppCompatActivity() {
         btnEmailWaitingCheck.isEnabled = false
         btnEmailWaitingCheck.alpha = 0.6f
         tvEmailWaitingError.visibility = View.GONE
-        tvEmailWaitingStatus.text = "🔄 Verificando..."
+        tvEmailWaitingStatus.text = getString(R.string.rg_verificando)
         tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#3B82F6"))
 
         // Recargar el usuario para obtener el estado actualizado de emailVerified
@@ -1578,7 +1568,7 @@ class RegistroActivity : AppCompatActivity() {
                     // Correo verificado: crear/actualizar users/{uid} y pasar a Fase 4
                     isOtpVerified = true
                     isEmailVerifiedByAuth = true
-                    tvEmailWaitingStatus.text = "✅ ¡Correo verificado!"
+                    tvEmailWaitingStatus.text = getString(R.string.rg_correo_verificado)
                     tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#059669"))
 
                     val email = registeredEmail ?: freshUser.email ?: ""
@@ -1586,23 +1576,23 @@ class RegistroActivity : AppCompatActivity() {
                         if (saved) {
                             showEmailVerifiedSuccessAndProceed(email)
                         } else {
-                            tvEmailWaitingStatus.text = "⏳ Guardando tu cuenta..."
+                            tvEmailWaitingStatus.text = getString(R.string.rg_guardando_cuenta)
                             tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
                             tvEmailWaitingError.text =
-                                "No pudimos guardar tu cuenta. Pulsa \"Verificar de nuevo\" para reintentar."
+                                getString(R.string.rg_no_guardar_cuenta)
                             tvEmailWaitingError.visibility = View.VISIBLE
                         }
                     }
                 } else {
-                    tvEmailWaitingStatus.text = "⏳ Pendiente de verificación"
+                    tvEmailWaitingStatus.text = getString(R.string.reg_pendiente)
                     tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
-                    tvEmailWaitingError.text = "Aun no hemos detectado la verificación. Revisa tu correo y vuelve a intentarlo."
+                    tvEmailWaitingError.text = getString(R.string.rg_no_detectado)
                     tvEmailWaitingError.visibility = View.VISIBLE
                 }
             } else {
-                tvEmailWaitingStatus.text = "⏳ Pendiente de verificación"
+                tvEmailWaitingStatus.text = getString(R.string.reg_pendiente)
                 tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
-                tvEmailWaitingError.text = "Error al verificar. Revisa tu conexión e inténtalo de nuevo."
+                tvEmailWaitingError.text = getString(R.string.rg_error_verificar)
                 tvEmailWaitingError.visibility = View.VISIBLE
             }
         }
@@ -1615,18 +1605,18 @@ class RegistroActivity : AppCompatActivity() {
         btnEmailWaitingResend.alpha = 0.5f
         user.sendEmailVerification().addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                showToast("✉️ Correo de verificación reenviado")
+                showToast(getString(R.string.rg_reenviado))
             } else {
-                showToast("No se pudo reenviar. Inténtalo en un momento.")
+                showToast(getString(R.string.rg_no_reenviar))
             }
             // Cooldown de 30 segundos para reenviar
             object : android.os.CountDownTimer(30_000, 1000) {
                 override fun onTick(ms: Long) {
                     val sec = Math.ceil(ms / 1000.0).toInt()
-                    btnEmailWaitingResend.text = "Reenviar en $sec s"
+                    btnEmailWaitingResend.text = getString(R.string.rg_reenviar_en_fmt, sec)
                 }
                 override fun onFinish() {
-                    btnEmailWaitingResend.text = "Reenviar correo de verificación"
+                    btnEmailWaitingResend.text = getString(R.string.reg_reenviar_correo)
                     btnEmailWaitingResend.isEnabled = true
                     btnEmailWaitingResend.alpha = 1f
                 }
@@ -1731,7 +1721,7 @@ class RegistroActivity : AppCompatActivity() {
             layoutEmailWaiting.visibility = View.VISIBLE
             layoutOtpContent.visibility = View.GONE
             tvEmailWaitingAddress.text = email
-            tvEmailWaitingStatus.text = "⏳ Pendiente de verificación"
+            tvEmailWaitingStatus.text = getString(R.string.reg_pendiente)
             tvEmailWaitingStatus.setTextColor(android.graphics.Color.parseColor("#F59E0B"))
             tvEmailWaitingError.visibility = View.GONE
             pbEmailWaiting.visibility = View.GONE
@@ -1739,9 +1729,9 @@ class RegistroActivity : AppCompatActivity() {
             // Mostrar sub-panel OTP de 6 dígitos (GOOGLE)
             layoutEmailWaiting.visibility = View.GONE
             layoutOtpContent.visibility = View.VISIBLE
-            tvOtpInstruction.text = "Hemos enviado un código de 6 dígitos a"
+            tvOtpInstruction.text = getString(R.string.rg_otp_codigo)
             tvOtpEmailHint.text = maskEmail(email)
-            tvOtpExpirationHint.text = "El código expira en 5 minutos"
+            tvOtpExpirationHint.text = getString(R.string.rg_otp_expira)
             tvOtpError.visibility = View.GONE
             clearOtpBoxes()
             updateConfirmOtpButtonState()
@@ -1773,7 +1763,7 @@ class RegistroActivity : AppCompatActivity() {
         val uid = registeredFirebaseUid ?: auth.currentUser?.uid
 
         if (uid.isNullOrEmpty() || email.isBlank()) {
-            showOtpError("No se encontró la sesión del usuario. Vuelve a identificarte.")
+            showOtpError(getString(R.string.rg_sin_sesion_otp))
             return
         }
 
@@ -1799,7 +1789,7 @@ class RegistroActivity : AppCompatActivity() {
                 otpRequestedAtLeastOnce = true
                 startResendCooldownTimer(60)
                 if (showToastOnSuccess) {
-                    showToast("Código de 6 dígitos enviado a ${maskEmail(email)}")
+                    showToast(getString(R.string.rg_codigo_enviado_fmt, maskEmail(email)))
                 }
             }
             .addOnFailureListener {
@@ -1872,13 +1862,13 @@ class RegistroActivity : AppCompatActivity() {
 
                             if (responseCode in 200..299) {
                                 if (showToastOnSuccess) {
-                                    showToast("Código de 6 dígitos enviado a ${maskEmail(email)}")
+                                    showToast(getString(R.string.rg_codigo_enviado_fmt, maskEmail(email)))
                                 }
                             } else {
                                 if (responseBody.contains("testing email address") || responseBody.contains("validation_error")) {
-                                    showToast("Resend modo prueba: enviado a tu correo o añade tu dominio.")
+                                    showToast(getString(R.string.rg_resend_prueba))
                                 } else {
-                                    showToast("Código generado. Revisa tu correo.")
+                                    showToast(getString(R.string.rg_codigo_generado))
                                 }
                             }
                         }
@@ -1886,7 +1876,7 @@ class RegistroActivity : AppCompatActivity() {
                         withContext(Dispatchers.Main) {
                             isRequestingOtp = false
                             pbOtp.visibility = View.GONE
-                            showOtpError("Error al enviar correo: ${e.localizedMessage}")
+                            showOtpError(getString(R.string.rg_error_enviar_fmt, e.localizedMessage))
                         }
                     }
                 }
@@ -1894,14 +1884,14 @@ class RegistroActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 isRequestingOtp = false
                 pbOtp.visibility = View.GONE
-                showOtpError("Error al conectar con Firestore: ${e.localizedMessage}")
+                showOtpError(getString(R.string.rg_error_firestore_fmt, e.localizedMessage))
             }
     }
 
     private fun handleVerifyOtp() {
         val otp = getEnteredOtp()
         if (otp.length != 6) {
-            showOtpError("Ingresa el código completo de 6 dígitos.")
+            showOtpError(getString(R.string.rg_codigo_completo))
             return
         }
 
@@ -1945,7 +1935,7 @@ class RegistroActivity : AppCompatActivity() {
                     pbOtp.visibility = View.GONE
                     btnConfirmOtp.isEnabled = true
                     btnConfirmOtp.alpha = 1.0f
-                    showOtpError("No se encontró solicitud de código. Solicita uno nuevo.")
+                    showOtpError(getString(R.string.rg_sin_solicitud))
                     return@addOnSuccessListener
                 }
 
@@ -1959,7 +1949,7 @@ class RegistroActivity : AppCompatActivity() {
                     pbOtp.visibility = View.GONE
                     btnConfirmOtp.isEnabled = true
                     btnConfirmOtp.alpha = 1.0f
-                    showOtpError("Has superado el número de intentos. Solicita un nuevo código.")
+                    showOtpError(getString(R.string.rg_max_intentos))
                     return@addOnSuccessListener
                 }
 
@@ -1968,7 +1958,7 @@ class RegistroActivity : AppCompatActivity() {
                     pbOtp.visibility = View.GONE
                     btnConfirmOtp.isEnabled = true
                     btnConfirmOtp.alpha = 1.0f
-                    showOtpError("El código ha expirado. Solicita un nuevo código para continuar.")
+                    showOtpError(getString(R.string.rg_expirado))
                     return@addOnSuccessListener
                 }
 
@@ -2007,9 +1997,9 @@ class RegistroActivity : AppCompatActivity() {
                     btnConfirmOtp.alpha = 1.0f
 
                     if (remaining == 0) {
-                        showOtpError("Has superado el número de intentos. Solicita un nuevo código.")
+                        showOtpError(getString(R.string.rg_max_intentos))
                     } else {
-                        showOtpError("Código incorrecto. Verifica el código e inténtalo nuevamente. (Quedan $remaining intentos)")
+                        showOtpError(getString(R.string.rg_incorrecto_fmt, remaining))
                     }
                 }
             }
@@ -2082,11 +2072,11 @@ class RegistroActivity : AppCompatActivity() {
         resendCountDownTimer = object : CountDownTimer(seconds * 1000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val secsLeft = Math.ceil(millisUntilFinished / 1000.0).toInt()
-                btnResendOtp.text = "Reenviar código en $secsLeft s"
+                btnResendOtp.text = getString(R.string.rg_reenviar_codigo_en_fmt, secsLeft)
             }
 
             override fun onFinish() {
-                btnResendOtp.text = "Reenviar código"
+                btnResendOtp.text = getString(R.string.rg_otp_reenviar)
                 btnResendOtp.isEnabled = true
                 btnResendOtp.alpha = 1.0f
             }
@@ -2112,7 +2102,7 @@ class RegistroActivity : AppCompatActivity() {
                 if (saved) {
                     showSuccessRegistrationDialog()
                 } else {
-                    showToast("No pudimos guardar tu cuenta. Revisa tu conexión e inténtalo otra vez.")
+                    showToast(getString(R.string.rg_no_guardar_cuenta2))
                 }
             }
         }
@@ -2131,16 +2121,16 @@ class RegistroActivity : AppCompatActivity() {
         val email = registeredEmail ?: etEmail.text.toString().trim()
         tvSummaryEmail.text = if (email.isNotEmpty()) email else "usuario@chambaya.pe"
 
-        tvSummaryPhone.text = "No requerido"
+        tvSummaryPhone.text = getString(R.string.rg_no_requerido)
 
         val identity = validatedIdentity
 
         if (identity != null && identity.isCompany) {
             layoutSummaryRucRow.visibility = View.VISIBLE
             layoutSummaryDniRow.visibility = View.GONE
-            tvSummaryRuc.text = "${identity.documentNumber} (${identity.statusLabel ?: "Activo/Habido"})"
+            tvSummaryRuc.text = getString(R.string.rg_ruc_detalle_fmt, identity.documentNumber, identity.statusLabel ?: getString(R.string.rg_activo))
             tvSummaryFullName.text = identity.legalName ?: identity.fullName
-            tvSummaryVerifiedBadge.text = "✓ Empresa Verificada Oficial (SUNAT)"
+            tvSummaryVerifiedBadge.text = getString(R.string.rg_empresa_ok)
         } else {
             layoutSummaryRucRow.visibility = View.GONE
             layoutSummaryDniRow.visibility = View.VISIBLE
@@ -2148,8 +2138,8 @@ class RegistroActivity : AppCompatActivity() {
             tvSummaryDni.text = if (dni.isNotEmpty()) dni else "72345678"
             tvSummaryFullName.text = identity?.fullName?.takeIf { it.isNotBlank() }
                 ?: googleDisplayName.takeIf { it.isNotBlank() }
-                ?: "Perfil Verificado"
-            tvSummaryVerifiedBadge.text = "✓ Perfil Verificado Oficial (RENIEC)"
+                ?: getString(R.string.rg_perfil_verificado)
+            tvSummaryVerifiedBadge.text = getString(R.string.rg_perfil_ok_reniec)
         }
 
         tvSummaryRole.text = etiquetaRol()
@@ -2163,20 +2153,20 @@ class RegistroActivity : AppCompatActivity() {
             ?: email
         val roleLabel = etiquetaRol()
         val methodLabel =
-            if (registeredAuthMethod == AuthMethods.GOOGLE) "Google" else "Correo y contraseña"
+            if (registeredAuthMethod == AuthMethods.GOOGLE) "Google" else getString(R.string.rg_metodo_correo)
         val sourceLabel = if (identity != null && identity.isCompany) "SUNAT" else "RENIEC"
 
         val content = layoutInflater.inflate(R.layout.dialog_registration_success, null)
         content.findViewById<TextView>(R.id.tvRegistrationWelcome)
-            .text = "¡Bienvenido a ChambAYA!"
+            .text = getString(R.string.rg_bienvenido)
         content.findViewById<TextView>(R.id.tvRegistrationSuccessMessage)
-            .text = "Tu cuenta ha sido creada y verificada con éxito."
+            .text = getString(R.string.rg_cuenta_ok)
         content.findViewById<TextView>(R.id.tvRegistrationName).text = "👤  $fullName"
         content.findViewById<TextView>(R.id.tvRegistrationEmail).text = "✉  $email"
         content.findViewById<TextView>(R.id.tvRegistrationRole).text = "💼  $roleLabel"
-        content.findViewById<TextView>(R.id.tvRegistrationMethod).text = "Acceso vía: $methodLabel"
+        content.findViewById<TextView>(R.id.tvRegistrationMethod).text = getString(R.string.rg_acceso_fmt, methodLabel)
         content.findViewById<TextView>(R.id.tvRegistrationIdentity)
-            .text = "Identidad verificada ($sourceLabel)"
+            .text = getString(R.string.rg_identidad_fmt, sourceLabel)
 
         val dialog = MaterialAlertDialogBuilder(
             this,
@@ -2410,8 +2400,8 @@ class RegistroActivity : AppCompatActivity() {
                 ivDniCheckIcon.visibility = View.VISIBLE
                 tvReniecFullName.text = identity.fullName
                 tvReniecDniDetail.text =
-                    "DNI: ${identity.documentNumber} · ${identity.locationLabel.orEmpty()}"
-                tvDniAttempts.text = "✓ Verificación confirmada con RENIEC"
+                    getString(R.string.rg_dni_detalle_fmt, identity.documentNumber, identity.locationLabel.orEmpty())
+                tvDniAttempts.text = getString(R.string.rg_reniec_ok)
                 cardDniVerified.visibility = View.VISIBLE
             }
 
@@ -2421,7 +2411,7 @@ class RegistroActivity : AppCompatActivity() {
                 etRuc.setText(identity.documentNumber)
                 etRuc.setSelection(identity.documentNumber.length)
                 tvSunatRazonSocial.text = identity.legalName ?: identity.fullName
-                tvSunatCondition.text = "Condición: ${identity.statusLabel.orEmpty()}"
+                tvSunatCondition.text = getString(R.string.rg_condicion_fmt, identity.statusLabel.orEmpty())
                 cardRucVerified.visibility = View.VISIBLE
             }
         }

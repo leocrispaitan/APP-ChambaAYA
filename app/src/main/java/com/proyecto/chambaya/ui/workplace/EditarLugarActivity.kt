@@ -609,7 +609,7 @@ class EditarLugarActivity : AppCompatActivity() {
         }
         if (cargando) return
         val borrador = construirBorrador()
-        val errores = repository.validate(borrador)
+        val errores = repository.validate(this@EditarLugarActivity, borrador)
         if (errores.isNotEmpty()) {
             if (borrador.name.trim().length !in WorkplaceLimits.NAME_MIN..WorkplaceLimits.NAME_MAX) {
                 etNombre.error = errores.first()
@@ -659,11 +659,11 @@ class EditarLugarActivity : AppCompatActivity() {
 
             // 2) Crear o actualizar.
             val resultado = if (existente == null) {
-                repository.create(actual, idDestino, borrador, fotoUrl, fotoPublicId)
+                repository.create(this@EditarLugarActivity, actual, idDestino, borrador, fotoUrl, fotoPublicId)
             } else if (subirFoto) {
-                repository.update(actual, existente.workplaceId, borrador, fotoUrl, fotoPublicId)
+                repository.update(this@EditarLugarActivity, actual, existente.workplaceId, borrador, fotoUrl, fotoPublicId)
             } else {
-                repository.update(actual, existente.workplaceId, borrador, null, null)
+                repository.update(this@EditarLugarActivity, actual, existente.workplaceId, borrador, null, null)
             }
             resultado
                 .onSuccess { guardado ->
@@ -716,7 +716,7 @@ class EditarLugarActivity : AppCompatActivity() {
         val existente = lugarExistente ?: return
         bloquear(true)
         lifecycleScope.launch {
-            repository.delete(actual, existente.workplaceId)
+            repository.delete(this@EditarLugarActivity, actual, existente.workplaceId)
                 .onSuccess {
                     runCatching {
                         val perfil = profileRepository.loadProfile(actual).getOrNull()
