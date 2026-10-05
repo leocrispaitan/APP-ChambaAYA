@@ -24,17 +24,22 @@ import coil.ImageLoader
 import coil.load
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.EditarPerfilActivity
 import com.proyecto.chambaya.MainActivity
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.StatisticsBlock
+import com.proyecto.chambaya.data.model.ApplicationStatus
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.Workplace
 import com.proyecto.chambaya.data.repository.ProfileRepository
+import com.proyecto.chambaya.data.repository.PublicationRepository
 import com.proyecto.chambaya.data.repository.RatingRepository
 import com.proyecto.chambaya.data.repository.WorkplaceRepository
+import com.proyecto.chambaya.data.repository.ApplicationRepository
 import com.proyecto.chambaya.data.repository.motivoFirestore
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -61,6 +66,7 @@ import java.util.Locale
 class FragmentoMiPerfil : Fragment() {
 
     private val repository = ProfileRepository()
+    private val publicationRepository = PublicationRepository()
 
     private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
 
@@ -96,6 +102,9 @@ class FragmentoMiPerfil : Fragment() {
     private val ratingRepository = RatingRepository()
     private var ratingsAdapter: RatingsAdapter? = null
     private var resenasCargadasPara: String? = null
+    private var profileApplicationsListener: ListenerRegistration? = null
+    private var profilePublicationsListener: ListenerRegistration? = null
+    private var profileCountersKey: String? = null
 
     // Recoge el resultado de EditarPerfilActivity (layout dialog_editar_perfil)
     private val editProfileLauncher = registerForActivityResult(
@@ -142,6 +151,7 @@ class FragmentoMiPerfil : Fragment() {
         // Ensure bottom nav is visible when coming back from Settings
         (activity as? MainActivity)?.showBottomNav()
         sincronizarConCacheCompartido()
+        perfil?.let(::escucharContadoresPerfil)
     }
 
     /**
@@ -276,6 +286,7 @@ class FragmentoMiPerfil : Fragment() {
         ProfileCache.perfil = datos
         lugar = null
         pintar(root, datos)
+        escucharContadoresPerfil(datos)
 
         if (datos.activeRole == UserRoles.CONTRATANTE) {
             val uid = datos.uid
@@ -453,6 +464,73 @@ class FragmentoMiPerfil : Fragment() {
                     getString(R.string.profile_sin_puntuar)
                 }
         }
+    }
+
+    /** Los contadores visibles se derivan de documentos reales y se actualizan en vivo. */
+    private fun escucharContadoresPerfil(datos: UserProfile) {
+        val uid = datos.uid.ifBlank { auth.currentUser?.uid.orEmpty() }
+        if (uid.isBlank()) return
+        val rol = datos.activeRole
+        val key = "$uid:$rol"
+        if (profileCountersKey == key) return
+
+        profileApplicationsListener?.remove()
+        profilePublicationsListener?.remove()
+        profileApplicationsListener = null
+        profilePublicationsListener = null
+        profileCountersKey = key
+
+        val applicationsField = if (rol == UserRoles.CONTRATANTE) "employerUid" else "workerUid"
+        profileApplicationsListener = FirebaseFirestore.getInstance()
+            .collection(ApplicationRepository.COLLECTION)
+            .whereEqualTo(applicationsField, uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    if (error != null) Log.w(TAG, "No se pudo actualizar el contador de trabajos", error)
+                    return@addSnapshotListener
+                }
+                if (perfil?.uid != uid || perfil?.activeRole != rol) return@addSnapshotListener
+                val countView = if (rol == UserRoles.CONTRATANTE) R.id.tvFollowingCount else R.id.tvPostsCount
+                val acceptedCount = snapshot.documents.count {
+                    it.getString("status") == ApplicationStatus.ACCEPTED
+                }
+                val latestProfile = perfil ?: datos
+                val savedCount = if (rol == UserRoles.CONTRATANTE) {
+                    latestProfile.employer.hiredCount
+                } else {
+                    latestProfile.statistics.completedJobsCount
+                }
+                val visibleCount = maxOf(acceptedCount, savedCount)
+                if (rol == UserRoles.CONTRATANTE && visibleCount > latestProfile.employer.hiredCount) {
+                    val refreshed = latestProfile.copy(
+                        employer = latestProfile.employer.copy(hiredCount = visibleCount)
+                    )
+                    perfil = refreshed
+                    ProfileCache.perfil = refreshed
+                }
+                view?.findViewById<TextView>(countView)?.text = visibleCount.toString()
+            }
+
+        if (rol == UserRoles.CONTRATANTE) {
+            profilePublicationsListener = publicationRepository.listenByOwner(
+                uid = uid,
+                limit = 500,
+                onUpdate = { publications ->
+                    if (perfil?.uid != uid || perfil?.activeRole != rol) return@listenByOwner
+                    view?.findViewById<TextView>(R.id.tvPostsCount)?.text = publications.size.toString()
+                },
+                onError = { error -> Log.w(TAG, "No se pudo actualizar el contador de publicaciones", error) }
+            )
+        }
+    }
+
+    override fun onDestroyView() {
+        profileApplicationsListener?.remove()
+        profileApplicationsListener = null
+        profilePublicationsListener?.remove()
+        profilePublicationsListener = null
+        profileCountersKey = null
+        super.onDestroyView()
     }
 
     private fun pintarModoContratante(root: View, datos: UserProfile) {
