@@ -190,7 +190,13 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
         btnMsg.setOnClickListener {
             it.isEnabled = false
             viewLifecycleOwner.lifecycleScope.launch {
-                val r = chatRepo.ensureConversation(me, uid, publicationId, publicationTitle)
+                val r = chatRepo.ensureConversation(
+                    me,
+                    uid,
+                    publicationId,
+                    publicationTitle,
+                    ChatRepository.hiddenConversationIds(requireContext(), me)
+                )
                 if (!isAdded) return@launch
                 it.isEnabled = true
                 if (r.isSuccess) {

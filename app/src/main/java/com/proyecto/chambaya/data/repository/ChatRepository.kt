@@ -15,6 +15,7 @@ import com.proyecto.chambaya.data.model.conversationIdFor
 import com.proyecto.chambaya.data.model.toChatMessage
 import com.proyecto.chambaya.data.model.toConversation
 import com.proyecto.chambaya.R
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -35,7 +36,8 @@ class ChatRepository(
         myUid: String,
         otherUid: String,
         publicationId: String = "",
-        publicationTitle: String = ""
+        publicationTitle: String = "",
+        excludedConversationIds: Set<String> = emptySet()
     ): Result<Conversation> = withContext(Dispatchers.IO) {
         runCatching {
             require(myUid.isNotBlank() && otherUid.isNotBlank() && myUid != otherUid) {
@@ -47,18 +49,29 @@ class ChatRepository(
             if (blocks.isBlocked(otherUid, myUid)) {
                 throw IllegalStateException("No puedes iniciar este chat por ahora.")
             }
-            val id = conversationIdFor(publicationId, myUid, otherUid)
-            // OJO: no usar get() directo aquí — si el doc no existe, la regla
-            // `isParticipant(resource.data)` deniega la lectura. La consulta
-            // por campo (allow list abierto) devuelve vacío sin problema.
-            val existing = Tasks.await(
+            val pairConversations = Tasks.await(
                 firestore.collection(COLLECTION)
-                    .whereEqualTo("conversationId", id)
-                    .limit(1)
+                    .whereArrayContains("participants", myUid)
                     .get()
-            ).documents.firstOrNull()?.toConversation()
+            ).documents.map { it.toConversation() }
+                .filter { it.otherUid(myUid) == otherUid }
+            val existing = pairConversations
+                .filterNot { it.conversationId in excludedConversationIds }
+                .maxByOrNull { it.lastMessageAt?.seconds ?: it.createdAt?.seconds ?: 0L }
             if (existing != null) return@runCatching existing
-            val ref = firestore.collection(COLLECTION).document(id)
+
+            val wasRemovedFromInbox = pairConversations.any {
+                it.conversationId in excludedConversationIds
+            }
+            val stableId = conversationIdFor("", myUid, otherUid)
+            var id = if (wasRemovedFromInbox) "${stableId}_${UUID.randomUUID()}" else stableId
+            var ref = firestore.collection(COLLECTION).document(id)
+            val existingAtId = Tasks.await(ref.get()).takeIf { it.exists() }?.toConversation()
+            if (existingAtId != null) {
+                if (existingAtId.otherUid(myUid) == otherUid) return@runCatching existingAtId
+                id = "${stableId}_${UUID.randomUUID()}"
+                ref = firestore.collection(COLLECTION).document(id)
+            }
             val now = FieldValue.serverTimestamp()
             val participants = listOf(myUid, otherUid).sorted()
             Tasks.await(
@@ -209,5 +222,16 @@ class ChatRepository(
     companion object {
         const val COLLECTION = "conversations"
         const val SUB_MESSAGES = "messages"
+
+        fun hiddenConversationIds(context: Context, uid: String): Set<String> {
+            if (uid.isBlank()) return emptySet()
+            val prefix = "${uid}_"
+            return context.getSharedPreferences("chat_inbox_hidden", Context.MODE_PRIVATE)
+                .all
+                .filter { (key, value) -> key.startsWith(prefix) && value is Long }
+                .map { (key, _) -> key.removePrefix(prefix) }
+                .filter(String::isNotBlank)
+                .toSet()
+        }
     }
 }

@@ -656,7 +656,13 @@ class FragmentoPublicar : Fragment() {
         if (me.isBlank() || otherUid.isBlank() || me == otherUid) return
         viewLifecycleOwner.lifecycleScope.launch {
             val conv = com.proyecto.chambaya.data.repository.ChatRepository()
-                .ensureConversation(me, otherUid, publicationId, publicationTitle).getOrNull()
+                .ensureConversation(
+                    me,
+                    otherUid,
+                    publicationId,
+                    publicationTitle,
+                    com.proyecto.chambaya.data.repository.ChatRepository.hiddenConversationIds(requireContext(), me)
+                ).getOrNull()
             if (!isAdded) return@launch
             if (conv == null) {
                 Toast.makeText(requireContext(), getString(R.string.k_chat_no_abrir), Toast.LENGTH_LONG).show()

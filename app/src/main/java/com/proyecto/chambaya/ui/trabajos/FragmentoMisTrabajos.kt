@@ -300,7 +300,13 @@ class FragmentoMisTrabajos : Fragment() {
         if (me.isBlank() || otherUid.isBlank() || me == otherUid) return
         viewLifecycleOwner.lifecycleScope.launch {
             val conv = ChatRepository()
-                .ensureConversation(me, otherUid, publicationId, publicationTitle).getOrNull()
+                .ensureConversation(
+                    me,
+                    otherUid,
+                    publicationId,
+                    publicationTitle,
+                    ChatRepository.hiddenConversationIds(requireContext(), me)
+                ).getOrNull()
             val perfil = profileRepository.loadPublicProfile(otherUid).getOrNull()
             if (!isAdded) return@launch
             if (conv == null) {
