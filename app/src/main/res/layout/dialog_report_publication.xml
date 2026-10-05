@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true"
+    android:background="@drawable/bg_report_dialog"
+    android:clipToOutline="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="26dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/k_reportar_seguridad"
+            android:textColor="#E84B50"
+            android:textSize="22sp"
+            android:fontFamily="sans-serif-black" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/k_reportar_subtitulo"
+            android:textColor="#68717D"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/reportReasons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp">
+
+            <RadioButton android:id="@+id/reasonFraud" style="@style/ReportReason" android:text="@string/k_razon_fraude_estafa" />
+            <RadioButton android:id="@+id/reasonFalse" style="@style/ReportReason" android:text="@string/k_razon_info_falsa" />
+            <RadioButton android:id="@+id/reasonPayment" style="@style/ReportReason" android:text="@string/k_razon_pago_incumplido" />
+            <RadioButton android:id="@+id/reasonHarassment" style="@style/ReportReason" android:text="@string/k_razon_acoso_irrespeto" />
+            <RadioButton android:id="@+id/reasonInappropriate" style="@style/ReportReason" android:text="@string/k_razon_inapropiado" />
+            <RadioButton android:id="@+id/reasonSpam" style="@style/ReportReason" android:text="@string/k_razon_spam" />
+            <RadioButton android:id="@+id/reasonOther" style="@style/ReportReason" android:text="@string/k_razon_otro" />
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/reportDetails"
+            android:layout_width="match_parent"
+            android:layout_height="92dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_input_outline"
+            android:gravity="top|start"
+            android:hint="@string/k_reportar_detalles"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLength="500"
+            android:padding="14dp"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical|end"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/reportCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="@string/k_comun_cancelar"
+                android:textColor="@color/brand_color"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/reportSubmit"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_report_submit"
+                android:gravity="center"
+                android:minWidth="150dp"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="@string/k_reportar_enviar"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

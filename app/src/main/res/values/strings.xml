@@ -805,6 +805,13 @@
     <string name="k_razon_otro">Otro</string>
     <string name="k_razon_fraude_estafa">Fraude o estafa</string>
     <string name="k_razon_info_falsa">Información falsa</string>
+    <string name="k_razon_pago_incumplido">Incumplimiento de acuerdo de pago</string>
+    <string name="k_razon_acoso_irrespeto">Comportamiento irrespetuoso / Acoso</string>
+    <string name="k_reportar_seguridad">Reportar a Seguridad</string>
+    <string name="k_reportar_subtitulo">El equipo de ChambAYA revisará este reporte.</string>
+    <string name="k_reportar_detalles">Detalles adicionales (opcional)</string>
+    <string name="k_reportar_enviar">Enviar reporte</string>
+    <string name="k_reportar_elige_motivo">Selecciona un motivo para continuar.</string>
     <string name="k_filtro_desde_fmt">Desde S/ %1$d</string>
     <string name="k_feed_sin">Sin resultados</string>
     <string name="k_feed_sin_sub">Prueba con otra palabra o ajusta los filtros.</string>

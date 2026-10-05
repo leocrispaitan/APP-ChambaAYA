@@ -609,21 +609,47 @@ class FragmentoChambas : Fragment() {
             Toast.makeText(requireContext(), getString(R.string.k_com_denunciar_login), Toast.LENGTH_SHORT).show()
             return
         }
-        val motivos = arrayOf(getString(R.string.k_razon_fraude_estafa), getString(R.string.k_razon_inapropiado), getString(R.string.k_razon_info_falsa), getString(R.string.k_razon_spam), getString(R.string.k_razon_otro))
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.sheet_opciones_denunciar)
-            .setItems(motivos) { _, cual ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val r = interRepo.report(item.publication.publicationId, uid, motivos[cual])
-                    Toast.makeText(
-                        requireContext(),
-                        if (r.isSuccess) getString(R.string.k_com_denunciar_enviar) else getString(R.string.k_denuncia_pub_no),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+        val dialogView = layoutInflater.inflate(R.layout.dialog_report_publication, null)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        val reasons = dialogView.findViewById<android.widget.RadioGroup>(R.id.reportReasons)
+        val details = dialogView.findViewById<android.widget.EditText>(R.id.reportDetails)
+
+        dialogView.findViewById<View>(R.id.reportCancel).setOnClickListener { dialog.dismiss() }
+        dialogView.findViewById<View>(R.id.reportSubmit).setOnClickListener {
+            val selected = reasons.checkedRadioButtonId
+            if (selected == -1) {
+                Toast.makeText(requireContext(), getString(R.string.k_reportar_elige_motivo), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            .setNegativeButton(R.string.k_comun_cancelar, null)
-            .show()
+            val reason = dialogView.findViewById<android.widget.RadioButton>(selected).text.toString()
+            val description = details.text?.toString().orEmpty()
+            dialogView.findViewById<View>(R.id.reportSubmit).isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                val result = interRepo.report(item.publication.publicationId, uid, reason, description)
+                if (!isAdded) return@launch
+                Toast.makeText(
+                    requireContext(),
+                    if (result.isSuccess) getString(R.string.k_com_denunciar_enviar) else getString(R.string.k_denuncia_pub_no),
+                    Toast.LENGTH_SHORT
+                ).show()
+                dialog.dismiss()
+            }
+        }
+        dialog.setOnShowListener {
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            dialog.window?.setLayout(
+                (resources.displayMetrics.widthPixels * 0.94f).toInt(),
+                android.view.WindowManager.LayoutParams.WRAP_CONTENT
+            )
+        }
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.94f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
     }
 
     override fun onResume() {
