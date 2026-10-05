@@ -34,7 +34,7 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
         )
 
         val groupCat = view.findViewById<ChipGroup>(R.id.chipGroupCategory)
-        categories.take(12).forEach { cat ->
+        categories.forEach { cat ->
             val chip = Chip(requireContext()).apply {
                 text = cat; isCheckable = true
                 isChecked = cat.equals(current.category, ignoreCase = true)
@@ -43,7 +43,7 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
             groupCat.addView(chip)
         }
         val groupDis = view.findViewById<ChipGroup>(R.id.chipGroupDistrict)
-        districts.take(12).forEach { dis ->
+        districts.forEach { dis ->
             val chip = Chip(requireContext()).apply {
                 text = dis; isCheckable = true
                 isChecked = dis.equals(current.district, ignoreCase = true)

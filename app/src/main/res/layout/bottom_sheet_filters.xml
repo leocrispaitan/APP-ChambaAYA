@@ -27,10 +27,22 @@
         android:textColor="@color/text_primary"
         android:textSize="18sp" />
 
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="340dp"
+        android:layout_marginTop="6dp"
+        android:fillViewport="false"
+        android:overScrollMode="ifContentScrolls">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="10dp"
         android:fontFamily="sans-serif-medium"
         android:text="@string/sheet_filtros_categoria"
         android:textColor="@color/text_primary"
@@ -109,6 +121,9 @@
             android:checked="true" />
     </LinearLayout>
 
+    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -131,6 +146,8 @@
             android:layout_weight="1"
             android:layout_marginStart="10dp"
             android:text="@string/sheet_filtros_ver"
+            android:textColor="@color/white"
+            android:textStyle="bold"
             app:cornerRadius="14dp"
             app:backgroundTint="@color/brand_color" />
     </LinearLayout>

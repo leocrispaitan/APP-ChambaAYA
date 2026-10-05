@@ -592,7 +592,7 @@
     <string name="sheet_filtros_desde">Desde S/ 0</string>
     <string name="sheet_filtros_orden">Ordenar por recientes</string>
     <string name="sheet_filtros_limpiar">Limpiar</string>
-    <string name="sheet_filtros_ver">Ver resultados</string>
+    <string name="sheet_filtros_ver">Aplicar filtros</string>
     <string name="sheet_postular_titulo">Postularme</string>
     <string name="sheet_postular_mensaje">Mensaje al contratante (opcional)</string>
     <string name="sheet_postular_hint">Cuéntale por qué eres la persona indicada…</string>

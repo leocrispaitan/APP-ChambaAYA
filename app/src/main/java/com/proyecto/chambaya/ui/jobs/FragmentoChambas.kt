@@ -384,8 +384,11 @@ class FragmentoChambas : Fragment() {
             true
         }
         view.findViewById<View>(R.id.btnFilter)?.setOnClickListener {
-            val cats = allItems.map { it.publication.category }.filter { it.isNotBlank() }.distinct().sorted()
-            val dis = allItems.map { it.publication.location.district }.filter { it.isNotBlank() }.distinct().sorted()
+            val cats = CategoriasChamba.disponibles
+            val dis = (
+                com.proyecto.chambaya.data.model.PeruLocations.distritos("Ayacucho", "Huamanga").take(12) +
+                    allItems.map { it.publication.location.district }.filter { it.isNotBlank() }
+                ).distinct().sorted()
             FilterBottomSheet.newInstance(cats, dis, filters).show(parentFragmentManager, "filters")
         }
     }
