@@ -527,6 +527,9 @@
     <string name="sheet_detalle_titulo">Job details</string>
     <string name="sheet_detalle_horario">Schedule</string>
     <string name="sheet_detalle_vacantes">Openings</string>
+    <string name="sheet_detalle_experiencia">Experience</string>
+    <string name="k_experiencia_requerida">Experience required</string>
+    <string name="k_experiencia_no_requerida">No experience required</string>
     <string name="sheet_detalle_publicado">Posted</string>
     <string name="sheet_detalle_lugar">Place</string>
     <string name="sheet_detalle_descripcion">Description</string>
@@ -942,6 +945,10 @@
     <string name="pub_dia">Day</string>
     <string name="pub_tratar">Negotiable amount</string>
     <string name="pub_vacantes">Openings</string>
+    <string name="pub_experiencia">Experience required</string>
+    <string name="pub_con_experiencia">Experience required</string>
+    <string name="pub_sin_experiencia">No experience required</string>
+    <string name="pub_experiencia_seleccion_requerida">Select whether experience is required.</string>
     <string name="pub_distrito">District</string>
     <string name="pub_distrito_hint">Carmen Alto</string>
     <string name="pub_horario">Schedule (optional)</string>

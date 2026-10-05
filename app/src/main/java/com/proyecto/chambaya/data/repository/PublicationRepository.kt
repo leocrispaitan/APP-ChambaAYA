@@ -100,6 +100,7 @@ class PublicationRepository(
                     "endTime" to draft.endTime.trim()
                 ),
                 "workersNeeded" to draft.workersNeeded,
+                "requiresExperience" to draft.requiresExperience,
                 "workersHired" to 0,
                 "location" to mapOf(
                     "district" to draft.district.trim(),
@@ -176,6 +177,7 @@ class PublicationRepository(
                 "payment.period" to draft.period,
                 "payment.negotiable" to draft.negotiable,
                 "workersNeeded" to draft.workersNeeded,
+                "requiresExperience" to draft.requiresExperience,
                 "location.district" to draft.district.trim(),
                 "location.exactAddress" to draft.exactAddress.trim(),
                 "schedule.startTime" to draft.startTime.trim(),

@@ -819,6 +819,7 @@ service cloud.firestore {
         && d.get('workersNeeded', 0) is number
         && d.get('workersNeeded', 0) >= 1
         && d.get('workersNeeded', 0) <= 50
+        && d.get('requiresExperience', false) is bool
         && d.get('location', {}).get('district', '') is string
         && d.get('location', {}).get('district', '').size() >= 2
         && isValidPublicationImages(d.get('images', []), request.auth.uid, pubId);
@@ -862,7 +863,8 @@ service cloud.firestore {
           && request.resource.data.get('ownerUid', '') == resource.data.get('ownerUid', '')
           && request.resource.data.get('publicationId', '') == resource.data.get('publicationId', '')
           && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null)
-          && keepsPublicationCounters())
+          && keepsPublicationCounters()
+          && request.resource.data.get('requiresExperience', false) is bool)
           || isAllowedStatisticsStep());
 
       allow delete: if request.auth != null

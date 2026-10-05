@@ -172,6 +172,9 @@ class CrearPublicacionActivity : AppCompatActivity() {
             )
             findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchNegociable)?.isChecked = pub.payment.negotiable
             findViewById<TextInputEditText>(R.id.etVacantes)?.setText(pub.workersNeeded.toString())
+            findViewById<android.widget.RadioGroup>(R.id.groupExperienceRequirement)?.check(
+                if (pub.requiresExperience) R.id.radioExperienceRequired else R.id.radioExperienceNotRequired
+            )
             findViewById<MaterialAutoCompleteTextView>(R.id.actvDistrito)?.setText(pub.location.district, false)
             findViewById<TextInputEditText>(R.id.etHoraInicio)?.setText(pub.schedule.startTime)
             findViewById<TextInputEditText>(R.id.etHoraFin)?.setText(pub.schedule.endTime)
@@ -201,6 +204,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
             period = periodoElegido(),
             negotiable = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchNegociable)?.isChecked == true,
             workersNeeded = findViewById<TextInputEditText>(R.id.etVacantes)?.text?.toString()?.toIntOrNull() ?: 1,
+            requiresExperience = findViewById<android.widget.RadioGroup>(R.id.groupExperienceRequirement)?.checkedRadioButtonId == R.id.radioExperienceRequired,
             district = findViewById<MaterialAutoCompleteTextView>(R.id.actvDistrito)?.text?.toString().orEmpty(),
             startTime = findViewById<TextInputEditText>(R.id.etHoraInicio)?.text?.toString().orEmpty().trim(),
             endTime = findViewById<TextInputEditText>(R.id.etHoraFin)?.text?.toString().orEmpty().trim()
@@ -209,9 +213,15 @@ class CrearPublicacionActivity : AppCompatActivity() {
 
     private fun publicar() {
         if (publicando) return
+        val tvError = findViewById<TextView>(R.id.tvFormError)
+        val experienceGroup = findViewById<android.widget.RadioGroup>(R.id.groupExperienceRequirement)
+        if (experienceGroup?.checkedRadioButtonId == -1) {
+            tvError.visibility = View.VISIBLE
+            tvError.text = getString(R.string.pub_experiencia_seleccion_requerida)
+            return
+        }
         val draft = armarDraft()
         val errores = validatePublicationDraft(this, draft)
-        val tvError = findViewById<TextView>(R.id.tvFormError)
         if (errores.isNotEmpty()) {
             tvError.visibility = View.VISIBLE
             tvError.text = errores.first()

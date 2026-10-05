@@ -164,6 +164,9 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         view.findViewById<TextView>(R.id.tvDetailSchedule).text = horario.ifBlank { getString(R.string.k_detalle_convenir) }
         view.findViewById<TextView>(R.id.tvDetailWorkers).text =
             (if (pub.workersNeeded == 1) getString(R.string.k_personas_1) else getString(R.string.k_personas_n, pub.workersNeeded))
+        view.findViewById<TextView>(R.id.tvDetailExperience).text = getString(
+            if (pub.requiresExperience) R.string.k_experiencia_requerida else R.string.k_experiencia_no_requerida
+        )
         view.findViewById<TextView>(R.id.tvDetailDate).text = publicationTimeAgo(pub.createdAt)
         val wp = pub.workplaceName.ifBlank { getString(R.string.k_por_definir) }
         view.findViewById<TextView>(R.id.tvDetailWorkplace).text = wp

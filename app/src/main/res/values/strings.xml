@@ -609,6 +609,9 @@
     <string name="sheet_detalle_titulo">Detalles del trabajo</string>
     <string name="sheet_detalle_horario">Horario</string>
     <string name="sheet_detalle_vacantes">Vacantes</string>
+    <string name="sheet_detalle_experiencia">Experiencia</string>
+    <string name="k_experiencia_requerida">Con experiencia</string>
+    <string name="k_experiencia_no_requerida">Sin experiencia</string>
     <string name="sheet_detalle_publicado">Publicado</string>
     <string name="sheet_detalle_lugar">Lugar</string>
     <string name="sheet_detalle_descripcion">Descripción</string>
@@ -1031,6 +1034,10 @@
     <string name="pub_dia">Día</string>
     <string name="pub_tratar">Monto a tratar</string>
     <string name="pub_vacantes">Vacantes</string>
+    <string name="pub_experiencia">Experiencia requerida</string>
+    <string name="pub_con_experiencia">Con experiencia</string>
+    <string name="pub_sin_experiencia">Sin experiencia</string>
+    <string name="pub_experiencia_seleccion_requerida">Selecciona si se requiere experiencia.</string>
     <string name="pub_distrito">Distrito</string>
     <string name="pub_distrito_hint">Carmen Alto</string>
     <string name="pub_horario">Horario (opcional)</string>

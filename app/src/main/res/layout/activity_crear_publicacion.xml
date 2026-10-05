@@ -289,6 +289,40 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
+            android:text="@string/pub_experiencia"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/groupExperienceRequirement"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioExperienceRequired"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:buttonTint="@color/brand_color"
+                android:text="@string/pub_con_experiencia"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp" />
+
+            <RadioButton
+                android:id="@+id/radioExperienceNotRequired"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:buttonTint="@color/brand_color"
+                android:text="@string/pub_sin_experiencia"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="sans-serif-medium"
             android:text="@string/pub_horario"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />

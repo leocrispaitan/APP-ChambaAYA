@@ -107,6 +107,7 @@ data class Publication(
     val payment: PaymentBlock = PaymentBlock(),
     val schedule: ScheduleBlock = ScheduleBlock(),
     val workersNeeded: Int = 1,
+    val requiresExperience: Boolean = false,
     val workersHired: Int = 0,
     val location: PublicationLocation = PublicationLocation(),
     val workplaceId: String = "",
@@ -130,6 +131,7 @@ data class PublicationDraft(
     val period: String = PaymentPeriod.DAY,
     val negotiable: Boolean = false,
     val workersNeeded: Int = 1,
+    val requiresExperience: Boolean = false,
     val district: String = "",
     val exactAddress: String = "",
     val startTime: String = "",
@@ -215,6 +217,7 @@ fun DocumentSnapshot.toPublication(): Publication {
             endTime = (schMap?.get("endTime") as? String).orEmpty()
         ),
         workersNeeded = (get("workersNeeded") as? Number)?.toInt() ?: 1,
+        requiresExperience = (get("requiresExperience") as? Boolean) ?: false,
         workersHired = (get("workersHired") as? Number)?.toInt() ?: 0,
         location = PublicationLocation(
             district = (locMap?.get("district") as? String).orEmpty(),
