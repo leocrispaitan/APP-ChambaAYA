@@ -85,6 +85,19 @@
         <activity
             android:name=".ActividadIdioma"
             android:exported="false" />
+
+        <!-- Términos de uso (modo claro, solo lectura). -->
+        <activity
+            android:name=".ActividadTerminos"
+            android:exported="false" />
+
+        <!-- Privacidad y Permisos / Centro de Ayuda (modo claro). -->
+        <activity
+            android:name=".ActividadPrivacidad"
+            android:exported="false" />
+        <activity
+            android:name=".ActividadAyuda"
+            android:exported="false" />
     </application>
 
 </manifest>

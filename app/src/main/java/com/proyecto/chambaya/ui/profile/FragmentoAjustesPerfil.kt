@@ -218,18 +218,18 @@ class FragmentoAjustesPerfil : Fragment() {
 
         root.findViewById<View>(R.id.rowPrivacy)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Privacidad y permisos", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(requireContext(), com.proyecto.chambaya.ActividadPrivacidad::class.java))
         }
 
         // Section: Soporte y Legal
         root.findViewById<View>(R.id.rowHelpCenter)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Centro de ayuda y soporte ChambAYA", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(requireContext(), com.proyecto.chambaya.ActividadAyuda::class.java))
         }
 
         root.findViewById<View>(R.id.rowTerms)?.setOnClickListener {
             animateTap(it)
-            Toast.makeText(requireContext(), "Términos y condiciones", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(requireContext(), com.proyecto.chambaya.ActividadTerminos::class.java))
         }
 
         root.findViewById<View>(R.id.rowLogout)?.setOnClickListener {

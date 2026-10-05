@@ -661,6 +661,34 @@ class ProfileRepository(
     }
 
     /**
+     * Guarda solo el bloque `privacy` (qué contacto se muestra en público).
+     * Actualización parcial con rutas de punto: las reglas la autorizan como
+     * rama de perfil (solo toca `privacy` + `updatedAt`).
+     */
+    suspend fun updatePrivacy(
+        uid: String,
+        showPhone: Boolean,
+        showEmail: Boolean,
+        showExactAddress: Boolean
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(uid.isNotBlank()) { "Sesión no válida." }
+            Tasks.await(
+                firestore.collection(COLLECTION_USERS).document(uid).update(
+                    mapOf(
+                        "privacy.showPhone" to showPhone,
+                        "privacy.showEmail" to showEmail,
+                        "privacy.showExactAddress" to showExactAddress,
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                )
+            )
+            runCatching { syncPublicProfile(uid) }
+            Unit
+        }
+    }
+
+    /**
      * Calcula el `profileCompleted` que corresponde a [cambios] aplicado sobre
      * [previo].
      *
