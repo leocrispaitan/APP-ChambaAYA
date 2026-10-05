@@ -33,6 +33,7 @@ import com.proyecto.chambaya.data.repository.JobRepository
 import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.PublicationInteractionRepository
 import com.proyecto.chambaya.data.repository.PublicationRepository
+import com.proyecto.chambaya.data.repository.RatingRepository
 import com.proyecto.chambaya.ui.profile.ProfileCache
 import kotlinx.coroutines.launch
 
@@ -52,9 +53,11 @@ class JobDetailSheet : BottomSheetDialogFragment() {
     private val appRepo = ApplicationRepository()
     private val jobRepo = JobRepository()
     private val commentRepo = CommentRepository()
+    private val ratingRepo = RatingRepository()
 
     private var currentPub: Publication? = null
     private var commentListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private var publisherRatingListener: com.google.firebase.firestore.ListenerRegistration? = null
     private var photoPageCallback: ViewPager2.OnPageChangeCallback? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -98,6 +101,18 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         val username = pub.publisher.username.ifBlank { "chambaya" }
         view.findViewById<TextView>(R.id.tvDetailMeta).text =
             "@$username · ${publicationTimeAgo(pub.createdAt)}"
+        val tvRating = view.findViewById<TextView>(R.id.tvDetailRating)
+        publisherRatingListener?.remove()
+        publisherRatingListener = ratingRepo.listenSummary(
+            pub.publisher.uid.ifBlank { pub.ownerUid },
+            onUpdate = { average, count ->
+                if (!isAdded || this.view !== view) return@listenSummary
+                tvRating.text = if (count > 0) {
+                    "★ ${String.format(java.util.Locale.US, "%.1f", average)}"
+                } else "★ —"
+            },
+            onError = { error -> android.util.Log.w("JobDetailSheet", "No se pudo cargar la calificación del contratante", error) }
+        )
         view.findViewById<ImageView>(R.id.ivDetailVerified).visibility =
             if (pub.publisher.verified) View.VISIBLE else View.GONE
         val ivAvatar = view.findViewById<ImageView>(R.id.ivDetailAvatar)
@@ -516,6 +531,8 @@ class JobDetailSheet : BottomSheetDialogFragment() {
     override fun onDestroyView() {
         commentListener?.remove()
         commentListener = null
+        publisherRatingListener?.remove()
+        publisherRatingListener = null
         photoPageCallback?.let { cb ->
             view?.findViewById<ViewPager2>(R.id.vpDetailPhotos)?.unregisterOnPageChangeCallback(cb)
         }

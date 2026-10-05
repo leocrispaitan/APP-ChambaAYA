@@ -73,6 +73,22 @@ class RatingRepository(
                 .onFailure { onError(it as? Exception ?: Exception(it)) }
         }
 
+    fun listenSummary(
+        uid: String,
+        onUpdate: (average: Double, count: Int) -> Unit,
+        onError: (Exception) -> Unit
+    ): ListenerRegistration = firestore.collection(COLLECTION)
+        .whereEqualTo("toUid", uid)
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onError(error)
+                return@addSnapshotListener
+            }
+            if (snapshot == null) return@addSnapshotListener
+            val ratings = snapshot.documents.mapNotNull { (it.get("rating") as? Number)?.toInt() }
+            onUpdate(if (ratings.isEmpty()) 0.0 else ratings.average(), ratings.size)
+        }
+
     /** Jobs ya calificados por [fromUid] (para pintar "Calificar" solo si falta). */
     suspend fun ratedJobIds(jobIds: List<String>, fromUid: String): Result<Set<String>> =
         withContext(Dispatchers.IO) {

@@ -89,6 +89,17 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
                         tools:text="@constructora_andina · Hace 2h" />
+
+                    <TextView
+                        android:id="@+id/tvDetailRating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="★ —"
+                        android:textColor="#C58A00"
+                        android:textSize="12sp"
+                        tools:text="★ 4.8" />
                 </LinearLayout>
 
                 <ImageView
