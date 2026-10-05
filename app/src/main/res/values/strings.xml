@@ -588,6 +588,8 @@
     <string name="sheet_filtros_titulo">Filtros</string>
     <string name="sheet_filtros_categoria">Categoría</string>
     <string name="sheet_filtros_distrito">Distrito</string>
+    <string name="sheet_filtros_todas">Todas las categorías</string>
+    <string name="sheet_filtros_todos_distritos">Todos los distritos</string>
     <string name="sheet_filtros_pago">Pago mínimo (S/ por día)</string>
     <string name="sheet_filtros_desde">Desde S/ 0</string>
     <string name="sheet_filtros_orden">Ordenar por recientes</string>

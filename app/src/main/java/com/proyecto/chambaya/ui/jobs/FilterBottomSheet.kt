@@ -4,11 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.core.os.bundleOf
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.slider.Slider
 import com.proyecto.chambaya.R
 
@@ -33,24 +33,19 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
             sortNewestFirst = requireArguments().getBoolean(ARG_SORT, true)
         )
 
-        val groupCat = view.findViewById<ChipGroup>(R.id.chipGroupCategory)
-        categories.forEach { cat ->
-            val chip = Chip(requireContext()).apply {
-                text = cat; isCheckable = true
-                isChecked = cat.equals(current.category, ignoreCase = true)
-                tag = cat
+        val categoryOptions = listOf(getString(R.string.sheet_filtros_todas)) + categories
+        val districtOptions = listOf(getString(R.string.sheet_filtros_todos_distritos)) + districts
+        val categorySpinner = view.findViewById<Spinner>(R.id.spinnerCategory)
+        val districtSpinner = view.findViewById<Spinner>(R.id.spinnerDistrict)
+        fun bindOptions(spinner: Spinner, options: List<String>, selected: String) {
+            spinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, options).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             }
-            groupCat.addView(chip)
+            val index = options.indexOfFirst { it.equals(selected, ignoreCase = true) }
+            spinner.setSelection(index.coerceAtLeast(0), false)
         }
-        val groupDis = view.findViewById<ChipGroup>(R.id.chipGroupDistrict)
-        districts.forEach { dis ->
-            val chip = Chip(requireContext()).apply {
-                text = dis; isCheckable = true
-                isChecked = dis.equals(current.district, ignoreCase = true)
-                tag = dis
-            }
-            groupDis.addView(chip)
-        }
+        bindOptions(categorySpinner, categoryOptions, current.category)
+        bindOptions(districtSpinner, districtOptions, current.district)
 
         val slider = view.findViewById<Slider>(R.id.sliderMinPay)
         val tvMin = view.findViewById<TextView>(R.id.tvMinPayValue)
@@ -65,10 +60,10 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
             dismiss()
         }
         view.findViewById<View>(R.id.btnApplyFilters).setOnClickListener {
-            val cat = (0 until groupCat.childCount).map { groupCat.getChildAt(it) as Chip }
-                .firstOrNull { it.isChecked }?.tag as? String ?: ""
-            val dis = (0 until groupDis.childCount).map { groupDis.getChildAt(it) as Chip }
-                .firstOrNull { it.isChecked }?.tag as? String ?: ""
+            val cat = categorySpinner.selectedItem?.toString()
+                ?.takeUnless { it == categoryOptions.first() }.orEmpty()
+            val dis = districtSpinner.selectedItem?.toString()
+                ?.takeUnless { it == districtOptions.first() }.orEmpty()
             val newest = view.findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchNewest).isChecked
             parentFragmentManager.setFragmentResult(
                 REQUEST,

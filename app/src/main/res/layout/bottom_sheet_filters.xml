@@ -29,7 +29,7 @@
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="340dp"
+        android:layout_height="280dp"
         android:layout_marginTop="6dp"
         android:fillViewport="false"
         android:overScrollMode="ifContentScrolls">
@@ -48,13 +48,13 @@
         android:textColor="@color/text_primary"
         android:textSize="13sp" />
 
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chipGroupCategory"
+    <Spinner
+        android:id="@+id/spinnerCategory"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:singleSelection="true"
-        app:selectionRequired="false" />
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:spinnerMode="dropdown"
+        android:backgroundTint="@color/brand_color" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -65,13 +65,13 @@
         android:textColor="@color/text_primary"
         android:textSize="13sp" />
 
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/chipGroupDistrict"
+    <Spinner
+        android:id="@+id/spinnerDistrict"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:singleSelection="true"
-        app:selectionRequired="false" />
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:spinnerMode="dropdown"
+        android:backgroundTint="@color/brand_color" />
 
     <TextView
         android:layout_width="wrap_content"
