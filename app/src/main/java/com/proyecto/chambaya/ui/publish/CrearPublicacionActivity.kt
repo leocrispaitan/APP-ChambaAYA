@@ -55,6 +55,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
     private var editando: Publication? = null
     private var categoriaElegida = ""
     private var destacadaSeleccionada = false
+    private var pagoDemoConfirmado = false
     private var publicando = false
 
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -76,6 +77,16 @@ class CrearPublicacionActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnCerrar).setOnClickListener { finish() }
         configurarCampos()
         configurarTipoPublicacion(editId.isBlank())
+        supportFragmentManager.setFragmentResultListener(
+            ConfirmarPagoDemoSheet.REQUEST,
+            this
+        ) { _, result ->
+            findViewById<View>(R.id.btnPublicar)?.isEnabled = true
+            if (result.getBoolean(ConfirmarPagoDemoSheet.EXTRA_CONFIRMED)) {
+                pagoDemoConfirmado = true
+                publicar()
+            }
+        }
 
         if (editId.isNotBlank()) {
             findViewById<TextView>(R.id.tvWorkplaceChip)?.text = getString(R.string.k_crear_editando)
@@ -111,6 +122,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
             cardDestacada.setCardBackgroundColor(getColor(if (destacada) R.color.brand_container else R.color.white))
             cardDestacada.strokeColor = getColor(if (destacada) R.color.brand_color else R.color.divider)
             cardDestacada.strokeWidth = (if (destacada) 2 else 1) * resources.displayMetrics.density.toInt().coerceAtLeast(1)
+            actualizarTextoBotonPublicar()
         }
 
         cardEstandar.setOnClickListener { seleccionar(false) }
@@ -118,6 +130,18 @@ class CrearPublicacionActivity : AppCompatActivity() {
         cardDestacada.setOnClickListener { seleccionar(true) }
         radioDestacada.setOnClickListener { seleccionar(true) }
         seleccionar(false)
+    }
+
+    private fun actualizarTextoBotonPublicar() {
+        val button = findViewById<MaterialButton>(R.id.btnPublicar) ?: return
+        if (editando != null) {
+            button.setText(R.string.k_crear_guardar)
+            return
+        }
+        button.text = getString(
+            R.string.pub_continuar_pago_fmt,
+            if (destacadaSeleccionada) "5.00" else "2.00"
+        )
     }
 
     private fun configurarCampos() {
@@ -256,6 +280,16 @@ class CrearPublicacionActivity : AppCompatActivity() {
             tvError.text = errores.first()
             return
         }
+        if (editando == null && !pagoDemoConfirmado) {
+            findViewById<View>(R.id.btnPublicar)?.isEnabled = false
+            ConfirmarPagoDemoSheet.newInstance(
+                title = draft.title,
+                district = draft.district,
+                featured = destacadaSeleccionada,
+                amount = if (destacadaSeleccionada) 5.0 else 2.0
+            ).show(supportFragmentManager, "demo_checkout")
+            return
+        }
         tvError.visibility = View.GONE
         publicando = true
         (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply { isEnabled = false; text = "Publicando…" }
@@ -322,7 +356,10 @@ class CrearPublicacionActivity : AppCompatActivity() {
                 tvError.text = e.message ?: getString(R.string.k_crear_no_publicar)
             } finally {
                 publicando = false
-                (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply { isEnabled = true; text = if (editando != null) getString(R.string.k_crear_guardar) else getString(R.string.k_pub_cta) }
+                (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply {
+                    isEnabled = true
+                    actualizarTextoBotonPublicar()
+                }
             }
         }
     }
