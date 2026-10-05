@@ -163,7 +163,7 @@ class JobDetailSheet : BottomSheetDialogFragment() {
             .filter { it.isNotBlank() }.joinToString(" – ")
         view.findViewById<TextView>(R.id.tvDetailSchedule).text = horario.ifBlank { getString(R.string.k_detalle_convenir) }
         view.findViewById<TextView>(R.id.tvDetailWorkers).text =
-            (if (pub.workersNeeded == 1) getString(R.string.k_personas_1) else getString(R.string.k_personas_n, pub.workersNeeded))
+            (if (libres == 1) getString(R.string.k_personas_1) else getString(R.string.k_personas_n, libres))
         view.findViewById<TextView>(R.id.tvDetailExperience).text = getString(
             if (pub.requiresExperience) R.string.k_experiencia_requerida else R.string.k_experiencia_no_requerida
         )

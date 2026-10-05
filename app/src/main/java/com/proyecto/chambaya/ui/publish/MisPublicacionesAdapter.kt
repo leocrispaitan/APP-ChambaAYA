@@ -51,7 +51,8 @@ class MisPublicacionesAdapter(
             }
             tvDate.text = publicationTimeAgo(p.createdAt)
             tvTitle.text = p.title
-            tvMeta.text = itemView.context.getString(R.string.k_mispub_meta_fmt, p.precioTexto(itemView.context), p.location.district.ifBlank { "Ayacucho" }, p.workersNeeded)
+            val vacantesDisponibles = (p.workersNeeded - p.workersHired).coerceAtLeast(0)
+            tvMeta.text = itemView.context.getString(R.string.k_mispub_meta_fmt, p.precioTexto(itemView.context), p.location.district.ifBlank { "Ayacucho" }, vacantesDisponibles)
             tvStats.text = itemView.context.getString(R.string.k_mispub_stats_fmt, formatCount(p.statistics.views), formatCount(p.statistics.likes), formatCount(p.statistics.applications))
 
             btnToggle.text = when (p.status) {

@@ -211,29 +211,47 @@ class ApplicationRepository(
                         publicationTitle = pub.title
                     ).getOrThrow()
 
-                Tasks.await(
-                    ref.update(
-                        mapOf(
-                            "status" to ApplicationStatus.ACCEPTED,
-                            "updatedAt" to FieldValue.serverTimestamp()
-                        )
-                    )
-                )
-                app = Tasks.await(ref.get()).toJobApplication()
+                val publicationRef = firestore.collection(PublicationRepository.COLLECTION)
+                    .document(pub.publicationId)
+                val filled = Tasks.await(firestore.runTransaction { transaction ->
+                    // Serializa contrataciones para que dos aceptaciones simultáneas
+                    // no pierdan el incremento ni excedan las vacantes disponibles.
+                    val currentApplication = transaction.get(ref)
+                    val currentPublication = transaction.get(publicationRef)
+                    require(currentApplication.exists()) { context.getString(R.string.kr_solicitud_gone) }
+                    require(currentApplication.getString("status") == ApplicationStatus.PENDING) {
+                        context.getString(R.string.kr_solicitud_hecha)
+                    }
+                    require(currentApplication.getString("employerUid") == employerUid) {
+                        context.getString(R.string.kr_solicitud_ajena)
+                    }
+                    require(currentPublication.exists()) { context.getString(R.string.kr_pub_gone) }
+                    require(currentPublication.getString("ownerUid") == employerUid) {
+                        context.getString(R.string.kr_pub_ajena)
+                    }
+                    require(currentPublication.getString("status") == PublicationStatus.ACTIVE) {
+                        context.getString(R.string.kr_no_acepta)
+                    }
 
-                val hired = pub.workersHired + 1
-                runCatching {
-                    Tasks.await(
-                        firestore.collection(PublicationRepository.COLLECTION)
-                            .document(pub.publicationId)
-                            .update("workersHired", hired)
+                    val contratados = (currentPublication.get("workersHired") as? Number)?.toInt() ?: 0
+                    val vacantes = (currentPublication.get("workersNeeded") as? Number)?.toInt() ?: 1
+                    require(contratados < vacantes) { context.getString(R.string.k_vacantes_cubiertas) }
+                    val nuevoTotal = contratados + 1
+                    val ahora = FieldValue.serverTimestamp()
+                    transaction.update(
+                        ref,
+                        mapOf("status" to ApplicationStatus.ACCEPTED, "updatedAt" to ahora)
                     )
-                }
-                var filled = false
-                if (hired >= pub.workersNeeded) {
-                    filled = publications.changeStatus(context, employerUid, pub.publicationId, PublicationStatus.FINISHED)
-                        .isSuccess
-                }
+                    val cambios = mutableMapOf<String, Any>(
+                        "workersHired" to nuevoTotal,
+                        "updatedAt" to ahora
+                    )
+                    val quedanCubiertas = nuevoTotal >= vacantes
+                    if (quedanCubiertas) cambios["status"] = PublicationStatus.FINISHED
+                    transaction.update(publicationRef, cambios)
+                    quedanCubiertas
+                })
+                app = Tasks.await(ref.get()).toJobApplication()
                 notifications.push(
                     recipientUid = app.workerUid,
                     type = NotificationType.APPLICATION_ACCEPTED,
