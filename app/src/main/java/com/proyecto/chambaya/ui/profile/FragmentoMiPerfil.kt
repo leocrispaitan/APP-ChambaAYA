@@ -104,6 +104,8 @@ class FragmentoMiPerfil : Fragment() {
     private var resenasCargadasPara: String? = null
     private var profileApplicationsListener: ListenerRegistration? = null
     private var profilePublicationsListener: ListenerRegistration? = null
+    private var profileRatingSummaryListener: ListenerRegistration? = null
+    private var profileReviewsListener: ListenerRegistration? = null
     private var profileCountersKey: String? = null
 
     // Recoge el resultado de EditarPerfilActivity (layout dialog_editar_perfil)
@@ -476,9 +478,46 @@ class FragmentoMiPerfil : Fragment() {
 
         profileApplicationsListener?.remove()
         profilePublicationsListener?.remove()
+        profileRatingSummaryListener?.remove()
+        profileReviewsListener?.remove()
         profileApplicationsListener = null
         profilePublicationsListener = null
+        profileRatingSummaryListener = null
+        profileReviewsListener = null
         profileCountersKey = key
+
+        profileRatingSummaryListener = FirebaseFirestore.getInstance()
+            .collection(ProfileRepository.COLLECTION_USERS)
+            .document(uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null || perfil?.uid != uid) {
+                    if (error != null) Log.w(TAG, "No se pudo actualizar la calificación del perfil", error)
+                    return@addSnapshotListener
+                }
+                val blockName = if (rol == UserRoles.CONTRATANTE) "employer" else "worker"
+                val block = snapshot.get(blockName) as? Map<*, *> ?: return@addSnapshotListener
+                val average = (block["ratingAverage"] as? Number)?.toDouble() ?: 0.0
+                val count = (block["ratingCount"] as? Number)?.toInt() ?: 0
+                view?.findViewById<TextView>(R.id.tvFollowersCount)?.text = if (count > 0) {
+                    String.format(Locale.US, "%.1f", average)
+                } else getString(R.string.profile_sin_puntuar)
+
+                val current = perfil ?: return@addSnapshotListener
+                val refreshed = if (rol == UserRoles.CONTRATANTE) {
+                    current.copy(employer = current.employer.copy(ratingAverage = average, ratingCount = count))
+                } else {
+                    current.copy(worker = current.worker.copy(ratingAverage = average, ratingCount = count))
+                }
+                perfil = refreshed
+                ProfileCache.perfil = refreshed
+            }
+
+        profileReviewsListener = ratingRepository.listenReceived(
+            uid = uid,
+            limit = 30,
+            onUpdate = { ratings -> pintarResenasEnVivo(uid, ratings) },
+            onError = { error -> Log.w(TAG, "No se pudieron actualizar las reseñas", error) }
+        )
 
         val applicationsField = if (rol == UserRoles.CONTRATANTE) "employerUid" else "workerUid"
         profileApplicationsListener = FirebaseFirestore.getInstance()
@@ -524,11 +563,48 @@ class FragmentoMiPerfil : Fragment() {
         }
     }
 
+    private fun pintarResenasEnVivo(
+        uid: String,
+        ratings: List<com.proyecto.chambaya.data.model.Rating>
+    ) {
+        val root = view ?: return
+        if (!isAdded || perfil?.uid != uid) return
+        val rv = root.findViewById<RecyclerView>(R.id.rvResenas) ?: return
+        val empty = root.findViewById<View>(R.id.layoutEmptyReviews) ?: return
+        if (rv.adapter == null) {
+            rv.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+            rv.isNestedScrollingEnabled = false
+            ratingsAdapter = RatingsAdapter()
+            rv.adapter = ratingsAdapter
+        }
+        if (ratings.isEmpty()) {
+            resenasCargadasPara = uid
+            rv.visibility = View.GONE
+            empty.visibility = View.VISIBLE
+            return
+        }
+        empty.visibility = View.GONE
+        rv.visibility = View.VISIBLE
+        viewLifecycleOwner.lifecycleScope.launch {
+            val authors = mutableMapOf<String, com.proyecto.chambaya.data.model.PublicProfile>()
+            ratings.map { it.fromUid }.distinct().forEach { authorUid ->
+                repository.loadPublicProfile(authorUid).getOrNull()?.let { authors[authorUid] = it }
+            }
+            if (!isAdded || perfil?.uid != uid) return@launch
+            resenasCargadasPara = uid
+            ratingsAdapter?.submitList(ratings.map { RatingRow(it, authors[it.fromUid]) })
+        }
+    }
+
     override fun onDestroyView() {
         profileApplicationsListener?.remove()
         profileApplicationsListener = null
         profilePublicationsListener?.remove()
         profilePublicationsListener = null
+        profileRatingSummaryListener?.remove()
+        profileRatingSummaryListener = null
+        profileReviewsListener?.remove()
+        profileReviewsListener = null
         profileCountersKey = null
         super.onDestroyView()
     }

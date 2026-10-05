@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.proyecto.chambaya.data.model.Job
 import com.proyecto.chambaya.data.model.JobStatus
@@ -52,6 +53,26 @@ class RatingRepository(
             }
         }
 
+    fun listenReceived(
+        uid: String,
+        limit: Long = 30,
+        onUpdate: (List<Rating>) -> Unit,
+        onError: (Exception) -> Unit
+    ): ListenerRegistration = firestore.collection(COLLECTION)
+        .whereEqualTo("toUid", uid)
+        .orderBy("createdAt", Query.Direction.DESCENDING)
+        .limit(limit)
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onError(error)
+                return@addSnapshotListener
+            }
+            if (snapshot == null) return@addSnapshotListener
+            runCatching { snapshot.documents.map { it.toRating() } }
+                .onSuccess(onUpdate)
+                .onFailure { onError(it as? Exception ?: Exception(it)) }
+        }
+
     /** Jobs ya calificados por [fromUid] (para pintar "Calificar" solo si falta). */
     suspend fun ratedJobIds(jobIds: List<String>, fromUid: String): Result<Set<String>> =
         withContext(Dispatchers.IO) {
@@ -93,21 +114,20 @@ class RatingRepository(
                 context.getString(R.string.kr_rate_hecho)
             }
             val toUid = if (fromUid == job.workerUid) job.employerUid else job.workerUid
-            // El agregado lo escribe quien califica (rama isAllowedRatingUpdate):
-            // el destino debe tener sus bloques listos.
-            val targetSnap = Tasks.await(
-                firestore.collection(ProfileRepository.COLLECTION_USERS).document(toUid).get()
-            )
             val toWorker = toUid == job.workerUid
-            require((targetSnap.get(if (toWorker) "worker" else "employer") as? Map<*, *>) != null) {
-                "Ese perfil aún no tiene historial para calificar."
-            }
-            require((targetSnap.get("statistics") as? Map<*, *>) != null) {
-                "Ese perfil aún no está listo para recibir calificaciones."
-            }
+            // El perfil de la contraparte es privado; calcular el agregado desde
+            // sus reseñas evita leer users/{uid}, que las reglas reservan al dueño.
+            val ratingsBefore = Tasks.await(
+                firestore.collection(COLLECTION).whereEqualTo("toUid", toUid).get()
+            ).documents.mapNotNull { (it.get("rating") as? Number)?.toInt() }
             val ref = firestore.collection(COLLECTION).document()
-            Tasks.await(
-                ref.set(
+            val userRef = firestore.collection(ProfileRepository.COLLECTION_USERS).document(toUid)
+            val oldCount = ratingsBefore.size
+            val newAvg = round(((ratingsBefore.sum() + stars).toDouble() / (oldCount + 1)) * 10) / 10.0
+            val prefix = if (toWorker) "worker" else "employer"
+            val batch = firestore.batch().apply {
+                set(
+                    ref,
                     mapOf(
                         "ratingId" to ref.id,
                         "jobId" to job.jobId,
@@ -120,19 +140,8 @@ class RatingRepository(
                         "createdAt" to FieldValue.serverTimestamp()
                     )
                 )
-            )
-            // Promedio del evaluado: al trabajador se le mueve worker.*,
-            // al contratante employer.* (+1 en recibidas en ambos casos).
-            // Se reutiliza targetSnap (leído arriba): evita una lectura y
-            // garantiza que el promedio parte de lo validado.
-            val userRef = firestore.collection(ProfileRepository.COLLECTION_USERS).document(toUid)
-            val block = targetSnap.get(if (toWorker) "worker" else "employer") as? Map<*, *>
-            val oldAvg = (block?.get("ratingAverage") as? Number)?.toDouble() ?: 0.0
-            val oldCount = (block?.get("ratingCount") as? Number)?.toInt() ?: 0
-            val newAvg = round(((oldAvg * oldCount + stars) / (oldCount + 1)) * 10) / 10.0
-            val prefix = if (toWorker) "worker" else "employer"
-            Tasks.await(
-                userRef.update(
+                update(
+                    userRef,
                     mapOf(
                         "$prefix.ratingAverage" to newAvg,
                         "$prefix.ratingCount" to oldCount + 1,
@@ -140,7 +149,8 @@ class RatingRepository(
                         "updatedAt" to FieldValue.serverTimestamp()
                     )
                 )
-            )
+            }
+            Tasks.await(batch.commit())
             // Aviso al evaluado (FASE 14).
             notifications.push(
                 recipientUid = toUid,
