@@ -20,6 +20,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.JobStatus
+import com.proyecto.chambaya.data.model.publicationTimeAgo
 import com.proyecto.chambaya.data.repository.BlockRepository
 import com.proyecto.chambaya.data.repository.JobRepository
 import com.proyecto.chambaya.data.repository.NotificationRepository
@@ -320,6 +321,19 @@ class FragmentoChambas : Fragment() {
         } else {
             pintarEstado(Estado.LISTA)
         }
+        pintarBanner()
+    }
+
+    /**
+     * Banner con datos reales del feed: conteo de publicaciones activas y
+     * hora relativa de la más reciente. Sin números mock.
+     */
+    private fun pintarBanner() {
+        val v = view ?: return
+        v.findViewById<TextView>(R.id.tvBannerPercent)?.text = allItems.size.toString()
+        val newest = allItems.mapNotNull { it.publication.createdAt }.maxOrNull()
+        v.findViewById<TextView>(R.id.tvFlashTimer)?.text =
+            if (allItems.isEmpty()) "—" else publicationTimeAgo(newest)
     }
 
     private enum class Estado { CARGANDO, LISTA, VACIO, ERROR }
