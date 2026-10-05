@@ -6,16 +6,25 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Pantalla completa de idiomas — SOLO DISEÑO.
- * English / Español / Quechua (Perú). La selección es visual, no cambia el locale.
+ * Pantalla completa de idiomas.
+ * Cambia el idioma de TODA la app (español por defecto, inglés, quechua):
+ * guarda y aplica vía [IdiomaManager.setLanguage], que recrea las pantallas
+ * con el nuevo locale. La selección actual se marca al abrir.
  */
 class ActividadIdioma : AppCompatActivity() {
 
-    private var seleccionado = 0 // 0 inglés, 1 español, 2 quechua
+    private var seleccionado = 1 // 0 inglés, 1 español, 2 quechua
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.actividad_idioma)
+
+        seleccionado = when (IdiomaManager.getSavedLanguage(this)) {
+            "en" -> 0
+            "qu" -> 2
+            else -> 1
+        }
 
         val rEn = findViewById<ImageView>(R.id.radioIngles)
         val rEs = findViewById<ImageView>(R.id.radioEspanol)
@@ -27,9 +36,16 @@ class ActividadIdioma : AppCompatActivity() {
             rQu.setImageResource(if (seleccionado == 2) R.drawable.ic_lang_radio_on else R.drawable.ic_lang_radio_off)
         }
 
-        findViewById<View>(R.id.filaIdiomaIngles)?.setOnClickListener { seleccionado = 0; pintar() }
-        findViewById<View>(R.id.filaIdiomaEspanol)?.setOnClickListener { seleccionado = 1; pintar() }
-        findViewById<View>(R.id.filaIdiomaQuechua)?.setOnClickListener { seleccionado = 2; pintar() }
+        fun elegir(cual: Int, codigo: String) {
+            seleccionado = cual
+            pintar()
+            // Aplica en toda la app (la activity se recrea sola con el nuevo idioma).
+            IdiomaManager.setLanguage(this, codigo)
+        }
+
+        findViewById<View>(R.id.filaIdiomaIngles)?.setOnClickListener { elegir(0, "en") }
+        findViewById<View>(R.id.filaIdiomaEspanol)?.setOnClickListener { elegir(1, "es") }
+        findViewById<View>(R.id.filaIdiomaQuechua)?.setOnClickListener { elegir(2, "qu") }
         findViewById<View>(R.id.btnIdiomaAtras)?.setOnClickListener { finish() }
         findViewById<View>(R.id.btnIdiomaListo)?.setOnClickListener { finish() }
 

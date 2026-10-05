@@ -67,6 +67,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.proyecto.chambaya.IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_crear_publicacion)
 

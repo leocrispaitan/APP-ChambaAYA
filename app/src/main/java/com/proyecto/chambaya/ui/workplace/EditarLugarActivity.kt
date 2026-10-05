@@ -125,6 +125,7 @@ class EditarLugarActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.proyecto.chambaya.IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
         BarraEstadoUtils.aplicarColor(this, Color.parseColor("#FFFFFF"))
         setContentView(R.layout.activity_editar_lugar)

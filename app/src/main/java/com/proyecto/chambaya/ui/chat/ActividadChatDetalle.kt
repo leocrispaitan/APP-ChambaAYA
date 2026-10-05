@@ -53,6 +53,7 @@ class ActividadChatDetalle : AppCompatActivity() {
     private var otherName: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.proyecto.chambaya.IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.actividad_chat_detalle)

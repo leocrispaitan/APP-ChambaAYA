@@ -33,6 +33,7 @@ class ActividadPrivacidad : AppCompatActivity() {
     private var guardando = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
         BarraEstadoUtils.aplicarColor(this, android.graphics.Color.parseColor("#F7F8FA"))
         setContentView(R.layout.actividad_privacidad)

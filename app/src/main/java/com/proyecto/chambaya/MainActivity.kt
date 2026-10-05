@@ -261,14 +261,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun switchToTab(tabId: Int) {
+        val fm = supportFragmentManager
+        // Nunca confirmar con el estado ya guardado: era un cierre seguro
+        // ("Can not perform this action after onSaveInstanceState").
+        if (fm.isStateSaved) return
+        // Tras una recreación (p. ej. cambio de idioma) el back stack puede
+        // traer la pantalla de Ajustes: al cambiar de tab se limpia de forma
+        // síncrona para no dejar fragments ocultos peleando por el contenedor.
+        if (fm.backStackEntryCount > 0) {
+            fm.popBackStackImmediate(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        }
         val tag = tabTag(tabId)
-        val fragment = supportFragmentManager.findFragmentByTag(tag) ?: createFragmentForTab(tabId)
-        if (fragment == activeFragment) return
+        val fragment = fm.findFragmentByTag(tag) ?: createFragmentForTab(tabId)
+        // El fragment visible real se resuelve por estado, no por la
+        // referencia guardada: tras recrear, esta puede ser una instancia
+        // obsoleta ya eliminada y ocultarla cerraba la app.
+        val actual = fm.fragments.firstOrNull {
+            it.id == fragmentContainer.id && !it.isHidden && it.isAdded
+        }
+        if (fragment == actual) {
+            activeFragment = fragment
+            return
+        }
 
-        val transaction = supportFragmentManager.beginTransaction()
+        val transaction = fm.beginTransaction()
             .setReorderingAllowed(true)
 
-        activeFragment?.let { current ->
+        actual?.let { current ->
             transaction
                 .hide(current)
                 .setMaxLifecycle(current, Lifecycle.State.STARTED)
@@ -282,7 +301,11 @@ class MainActivity : AppCompatActivity() {
 
         transaction
             .setMaxLifecycle(fragment, Lifecycle.State.RESUMED)
-            .commit()
+        try {
+            transaction.commit()
+        } catch (_: IllegalStateException) {
+            return
+        }
 
         activeFragment = fragment
     }

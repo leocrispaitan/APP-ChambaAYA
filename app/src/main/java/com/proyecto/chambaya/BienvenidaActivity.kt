@@ -351,7 +351,8 @@ class BienvenidaActivity : AppCompatActivity() {
 
     private fun selectLanguage(language: String, popup: PopupWindow) {
         if (IdiomaManager.getSavedLanguage(this) != language) {
-            IdiomaManager.saveLanguage(this, language)
+            // Guarda y aplica en TODA la app (recrea las pantallas con el nuevo idioma).
+            IdiomaManager.setLanguage(this, language)
             updateLocalizedTexts()
         }
         popup.dismiss()

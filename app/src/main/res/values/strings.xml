@@ -360,9 +360,9 @@
     <string name="edit_profile_label_email">Correo Electrónico</string>
     <string name="edit_profile_hint_email">correo@ejemplo.com</string>
     <string name="edit_profile_label_location">Ubicación</string>
-    <string name="edit_profile_default_location">Estados Unidos</string>
+    <string name="edit_profile_default_location">Perú</string>
     <string name="edit_profile_label_phone">Teléfono</string>
-    <string name="edit_profile_hint_phone">+1 111 467 378 399</string>
+    <string name="edit_profile_hint_phone">+51 987 654 321</string>
     <string name="edit_profile_btn_update">Actualizar Perfil</string>
     <string name="edit_profile_photo_desc">Foto de perfil</string>
     <string name="edit_profile_change_photo">Cambiar foto</string>

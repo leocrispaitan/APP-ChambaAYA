@@ -42,4 +42,18 @@ object IdiomaManager {
             .putString(KEY_LANGUAGE, language)
             .apply()
     }
+
+    /**
+     * Guarda y APLICA el idioma en toda la app.
+     * `setApplicationLocales` recrea las activities vivas con el nuevo locale,
+     * por eso el cambio se ve en todas las pantallas, no solo en la actual.
+     */
+    fun setLanguage(context: Context, language: String) {
+        if (language !in LANGUAGES) return
+        saveLanguage(context, language)
+        val current = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+        if (current != language) {
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language))
+        }
+    }
 }

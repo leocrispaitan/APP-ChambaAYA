@@ -51,6 +51,7 @@ class RecortarFotoActivity : AppCompatActivity() {
     private var origen: Bitmap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.proyecto.chambaya.IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
         BarraEstadoUtils.aplicarColor(this, COLOR_FONDO)
 

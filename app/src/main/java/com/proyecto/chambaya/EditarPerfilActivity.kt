@@ -314,6 +314,7 @@ class EditarPerfilActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
 
         // Configurar barra de estado

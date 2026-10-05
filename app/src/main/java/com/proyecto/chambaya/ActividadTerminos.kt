@@ -18,6 +18,7 @@ import com.google.android.material.button.MaterialButton
 class ActividadTerminos : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        IdiomaManager.applySavedLanguage(this)
         super.onCreate(savedInstanceState)
         // Barra de estado del mismo tono que el fondo: la X y el título quedan debajo, nunca encima.
         BarraEstadoUtils.aplicarColor(this, android.graphics.Color.parseColor("#F7F8FA"))
