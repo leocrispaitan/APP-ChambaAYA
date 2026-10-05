@@ -56,12 +56,17 @@ fun List<PublicationFeedItem>.applyFilters(filters: PublicationFilters): List<Pu
     if (filters.onlyNegotiable) {
         list = list.filter { it.publication.payment.negotiable }
     }
-    list = if (filters.sortNewestFirst) {
-        list.sortedByDescending { it.publication.createdAt?.seconds ?: 0 }
+    return if (filters.sortNewestFirst) {
+        list.sortedWith(
+            compareByDescending<PublicationFeedItem> { it.publication.featured }
+                .thenByDescending { it.publication.createdAt?.seconds ?: 0 }
+        )
     } else {
-        list.sortedByDescending { it.likesCount }
+        list.sortedWith(
+            compareByDescending<PublicationFeedItem> { it.publication.featured }
+                .thenByDescending { it.likesCount }
+        )
     }
-    return list
 }
 
 fun formatCount(count: Long): String = when {

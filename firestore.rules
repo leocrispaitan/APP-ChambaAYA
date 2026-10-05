@@ -820,6 +820,7 @@ service cloud.firestore {
         && d.get('workersNeeded', 0) >= 1
         && d.get('workersNeeded', 0) <= 50
         && d.get('requiresExperience', false) is bool
+        && d.get('featured', false) is bool
         && d.get('location', {}).get('district', '') is string
         && d.get('location', {}).get('district', '').size() >= 2
         && isValidPublicationImages(d.get('images', []), request.auth.uid, pubId);

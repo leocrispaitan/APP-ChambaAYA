@@ -47,7 +47,8 @@ class PublicationRepository(
         workplacePhotoUrl: String = "",
         workplaceLat: Double? = null,
         workplaceLng: Double? = null,
-        images: List<PublicationImage> = emptyList()
+        images: List<PublicationImage> = emptyList(),
+        featured: Boolean = false
     ): Result<Publication> = withContext(Dispatchers.IO) {
         runCatching {
             val errores = validatePublicationDraft(context, draft)
@@ -127,7 +128,7 @@ class PublicationRepository(
                     "views" to 0, "likes" to 0, "comments" to 0,
                     "shares" to 0, "saves" to 0, "applications" to 0
                 ),
-                "featured" to false,
+                "featured" to featured,
                 "createdAt" to now,
                 "updatedAt" to now,
                 "expiresAt" to null
@@ -306,17 +307,30 @@ class PublicationRepository(
     suspend fun feed(limit: Long = 30): Result<List<Publication>> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val snap = Tasks.await(
+                val featured = Tasks.await(
+                    firestore.collection(COLLECTION)
+                        .whereEqualTo("featured", true)
+                        .get()
+                ).documents.map { it.toPublication() }
+                val recent = Tasks.await(
                     firestore.collection(COLLECTION)
                         .whereEqualTo("status", PublicationStatus.ACTIVE)
                         .whereEqualTo("visibility", PublicationVisibility.PUBLIC)
                         .orderBy("createdAt", Query.Direction.DESCENDING)
                         .limit(limit)
                         .get()
-                )
-                snap.documents.map { it.toPublication() }
+                ).documents.map { it.toPublication() }
+                sortFeed(featured.filter { it.status == PublicationStatus.ACTIVE && it.visibility == PublicationVisibility.PUBLIC } + recent, limit)
             }
         }
+
+    private fun sortFeed(items: List<Publication>, limit: Long): List<Publication> =
+        items.distinctBy { it.publicationId }
+            .sortedWith(
+                compareByDescending<Publication> { it.featured }
+                    .thenByDescending { it.createdAt?.seconds ?: 0 }
+            )
+            .take(limit.coerceAtLeast(0).toInt())
 
     /** Publicaciones del contratante (todos los estados). */
     suspend fun byOwner(uid: String, limit: Long = 50): Result<List<Publication>> =
@@ -344,18 +358,53 @@ class PublicationRepository(
         onUpdate: (List<Publication>) -> Unit,
         onError: (Exception) -> Unit
     ): com.google.firebase.firestore.ListenerRegistration {
-        return firestore.collection(COLLECTION)
+        val collection = firestore.collection(COLLECTION)
+        val featuredQuery = collection
+            .whereEqualTo("featured", true)
+        val recentQuery = collection
             .whereEqualTo("status", PublicationStatus.ACTIVE)
             .whereEqualTo("visibility", PublicationVisibility.PUBLIC)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .limit(limit)
-            .addSnapshotListener { snap, e ->
-                if (e != null) { onError(e); return@addSnapshotListener }
-                if (snap == null) return@addSnapshotListener
-                runCatching { snap.documents.map { it.toPublication() } }
-                    .onSuccess(onUpdate)
-                    .onFailure { onError(it as? Exception ?: Exception(it)) }
+
+        val lock = Any()
+        var featuredItems: List<Publication>? = null
+        var recentItems: List<Publication>? = null
+        fun mergeIfReady(): List<Publication>? = synchronized(lock) {
+            val featured = featuredItems ?: return@synchronized null
+            val recent = recentItems ?: return@synchronized null
+            sortFeed(
+                featured.filter {
+                    it.status == PublicationStatus.ACTIVE && it.visibility == PublicationVisibility.PUBLIC
+                } + recent,
+                limit
+            )
+        }
+
+        val featuredListener = featuredQuery.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onError(error)
+                return@addSnapshotListener
             }
+            if (snapshot == null) return@addSnapshotListener
+            synchronized(lock) { featuredItems = snapshot.documents.map { it.toPublication() } }
+            mergeIfReady()?.let(onUpdate)
+        }
+        val recentListener = recentQuery.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                onError(error)
+                return@addSnapshotListener
+            }
+            if (snapshot == null) return@addSnapshotListener
+            synchronized(lock) { recentItems = snapshot.documents.map { it.toPublication() } }
+            mergeIfReady()?.let(onUpdate)
+        }
+        return object : com.google.firebase.firestore.ListenerRegistration {
+            override fun remove() {
+                featuredListener.remove()
+                recentListener.remove()
+            }
+        }
     }
 
     /** "Mis publicaciones" en TIEMPO REAL (todos los estados del dueño). */

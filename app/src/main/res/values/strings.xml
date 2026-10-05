@@ -1048,6 +1048,13 @@
     <string name="pub_fotos">Fotos (máx. 3, opcional)</string>
     <string name="pub_agregar">Agregar</string>
     <string name="pub_publicar_btn">Publicar chamba</string>
+    <string name="pub_tipo_titulo">Elige el tipo de publicación</string>
+    <string name="pub_tipo_estandar">Publicación Estándar</string>
+    <string name="pub_tipo_estandar_desc">Visible en el feed y el mapa.</string>
+    <string name="pub_tipo_destacada">Publicación Destacada</string>
+    <string name="pub_tipo_destacada_fuego">Publicación Destacada 🔥</string>
+    <string name="pub_tipo_destacada_desc">Más visibilidad y prioridad.</string>
+    <string name="pub_tipo_destacada_mini">DESTACADA 🔥</string>
     <string name="pub_nota">Se publicará con tu nombre, foto y verificación actuales.</string>
     <string name="mi_sobre">Sobre Mí</string>
     <string name="mi_fotos">Fotos</string>

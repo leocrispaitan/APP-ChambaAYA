@@ -73,6 +73,7 @@ class PublicationAdapter(
         private val tvDesc: TextView = view.findViewById(R.id.tvJobDescription)
         private val btnVerMas: TextView = view.findViewById(R.id.btnVerMas)
         private val frameImage: FrameLayout = view.findViewById(R.id.frameJobImage)
+        private val tvFeaturedBadge: TextView = view.findViewById(R.id.tvFeaturedBadge)
         private val ivPhoto: ImageView = view.findViewById(R.id.ivJobImage)
         private val vpPhotos: ViewPager2 = view.findViewById(R.id.vpJobImages)
         private val dotsPhotos: LinearLayout = view.findViewById(R.id.dotsJobImages)
@@ -104,6 +105,7 @@ class PublicationAdapter(
         fun bind(item: PublicationFeedItem) {
             val p = item.publication
             val ctx = itemView.context
+            tvFeaturedBadge.visibility = if (p.featured) View.VISIBLE else View.GONE
 
             // ── Cabecera ──
             val displayName = p.publisher.name.ifBlank { "Contratante ChambAYA" }

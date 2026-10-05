@@ -54,6 +54,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
     private val fotosUris = mutableListOf<Uri>()
     private var editando: Publication? = null
     private var categoriaElegida = ""
+    private var destacadaSeleccionada = false
     private var publicando = false
 
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -74,6 +75,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
         val editId = intent.getStringExtra(EXTRA_EDIT_ID).orEmpty()
         findViewById<View>(R.id.btnCerrar).setOnClickListener { finish() }
         configurarCampos()
+        configurarTipoPublicacion(editId.isBlank())
 
         if (editId.isNotBlank()) {
             findViewById<TextView>(R.id.tvWorkplaceChip)?.text = getString(R.string.k_crear_editando)
@@ -89,6 +91,33 @@ class CrearPublicacionActivity : AppCompatActivity() {
             else pickPhoto.launch("image/*")
         }
         findViewById<View>(R.id.btnPublicar).setOnClickListener { publicar() }
+    }
+
+    private fun configurarTipoPublicacion(visible: Boolean) {
+        val seccion = findViewById<View>(R.id.layoutPublicationType)
+        seccion.visibility = if (visible) View.VISIBLE else View.GONE
+        val cardEstandar = findViewById<MaterialCardView>(R.id.cardPublicationStandard)
+        val cardDestacada = findViewById<MaterialCardView>(R.id.cardPublicationFeatured)
+        val radioEstandar = findViewById<android.widget.RadioButton>(R.id.radioPublicationStandard)
+        val radioDestacada = findViewById<android.widget.RadioButton>(R.id.radioPublicationFeatured)
+
+        fun seleccionar(destacada: Boolean) {
+            destacadaSeleccionada = destacada
+            radioEstandar.isChecked = !destacada
+            radioDestacada.isChecked = destacada
+            cardEstandar.setCardBackgroundColor(getColor(if (destacada) R.color.white else R.color.brand_container))
+            cardEstandar.strokeColor = getColor(if (destacada) R.color.divider else R.color.brand_color)
+            cardEstandar.strokeWidth = (if (destacada) 1 else 2) * resources.displayMetrics.density.toInt().coerceAtLeast(1)
+            cardDestacada.setCardBackgroundColor(getColor(if (destacada) R.color.brand_container else R.color.white))
+            cardDestacada.strokeColor = getColor(if (destacada) R.color.brand_color else R.color.divider)
+            cardDestacada.strokeWidth = (if (destacada) 2 else 1) * resources.displayMetrics.density.toInt().coerceAtLeast(1)
+        }
+
+        cardEstandar.setOnClickListener { seleccionar(false) }
+        radioEstandar.setOnClickListener { seleccionar(false) }
+        cardDestacada.setOnClickListener { seleccionar(true) }
+        radioDestacada.setOnClickListener { seleccionar(true) }
+        seleccionar(false)
     }
 
     private fun configurarCampos() {
@@ -272,7 +301,8 @@ class CrearPublicacionActivity : AppCompatActivity() {
                     workplacePhotoUrl = lugar?.photoUrl.orEmpty(),
                     workplaceLat = lugar?.location?.latitude,
                     workplaceLng = lugar?.location?.longitude,
-                    images = imagenes
+                    images = imagenes,
+                    featured = destacadaSeleccionada
                 )
                 if (r.isFailure) throw r.exceptionOrNull() ?: Exception(getString(R.string.k_crear_no_publicar_corto))
                 // Caché en caliente: el servidor ya sumó +1 a los contadores.
