@@ -17,11 +17,12 @@
         android:orientation="horizontal"
         android:paddingHorizontal="14dp">
 
-        <ImageView
+        <TextView
             android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:contentDescription="@string/lang_spanish"
-            android:src="@drawable/ic_flag_spain" />
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="🇪🇸"
+            android:textSize="22sp" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -76,11 +77,12 @@
         android:orientation="horizontal"
         android:paddingHorizontal="14dp">
 
-        <ImageView
+        <TextView
             android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:contentDescription="@string/lang_english"
-            android:src="@drawable/ic_flag_united_kingdom" />
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="🇺🇸"
+            android:textSize="22sp" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -135,11 +137,12 @@
         android:orientation="horizontal"
         android:paddingHorizontal="14dp">
 
-        <ImageView
+        <TextView
             android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:contentDescription="@string/lang_quechua"
-            android:src="@drawable/ic_flag_peru" />
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="🇵🇪"
+            android:textSize="22sp" />
 
         <LinearLayout
             android:layout_width="0dp"
