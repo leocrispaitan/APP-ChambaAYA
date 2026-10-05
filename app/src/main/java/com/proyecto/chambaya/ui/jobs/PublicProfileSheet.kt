@@ -206,6 +206,10 @@ class PublicProfileSheet : BottomSheetDialogFragment() {
                         com.proyecto.chambaya.ui.chat.ActividadChatDetalle::class.java
                     ).apply {
                         putExtra(
+                            com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_VOLVER_A_MENSAJES,
+                            true
+                        )
+                        putExtra(
                             com.proyecto.chambaya.ui.chat.ActividadChatDetalle.EXTRA_CONV_ID,
                             conv.conversationId
                         )

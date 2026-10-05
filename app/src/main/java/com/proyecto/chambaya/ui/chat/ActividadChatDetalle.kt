@@ -1,6 +1,7 @@
 package com.proyecto.chambaya.ui.chat
 
 import android.os.Bundle
+import android.content.Intent
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -12,6 +13,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
@@ -75,6 +77,12 @@ class ActividadChatDetalle : AppCompatActivity() {
         val pubTitle = intent.getStringExtra(EXTRA_PUB_TITULO).orEmpty()
         myUid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
 
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                volver()
+            }
+        })
+
         if (conversationId.isBlank() || myUid.isBlank()) {
             Toast.makeText(this, getString(R.string.k_chat_no_abrir), Toast.LENGTH_SHORT).show()
             finish()
@@ -127,13 +135,23 @@ class ActividadChatDetalle : AppCompatActivity() {
         viewDetailOnlineDot.visibility = View.GONE
         tvDetailStatus.text = pubTitle.ifBlank { getString(R.string.k_chat_titulo) }
 
-        btnBack.setOnClickListener { finish() }
+        btnBack.setOnClickListener { volver() }
         btnCall.setOnClickListener {
             Toast.makeText(this, getString(R.string.k_chat_llamadas), Toast.LENGTH_SHORT).show()
         }
         btnMoreOptions.setOnClickListener { menuChat(it) }
         ivDetailAvatar.setOnClickListener { verPerfil() }
         tvDetailName.setOnClickListener { verPerfil() }
+    }
+
+    private fun volver() {
+        if (intent.getBooleanExtra(EXTRA_VOLVER_A_MENSAJES, false)) {
+            startActivity(Intent(this, com.proyecto.chambaya.MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(com.proyecto.chambaya.MainActivity.EXTRA_ABRIR_MENSAJES, true)
+            })
+        }
+        finish()
     }
 
     private fun verPerfil() {
@@ -313,6 +331,7 @@ class ActividadChatDetalle : AppCompatActivity() {
         const val EXTRA_NOMBRE = "extra_nombre"
         const val EXTRA_FOTO = "extra_foto"
         const val EXTRA_PUB_TITULO = "extra_pub_titulo"
+        const val EXTRA_VOLVER_A_MENSAJES = "extra_volver_a_mensajes"
         // Compatibilidad con llamadas antiguas:
         const val EXTRA_AVATAR = "extra_avatar"
         const val EXTRA_ONLINE = "extra_online"

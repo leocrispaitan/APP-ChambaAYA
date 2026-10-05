@@ -32,24 +32,45 @@
             android:paddingEnd="20dp"
             android:paddingBottom="28dp">
 
-            <!-- Fila 1: Ubicación + Campana -->
+            <!-- Fila 1: Marca ChambAYA + Campana -->
             <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/headerTopRow"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp">
+                android:layout_height="68dp">
 
-                <!-- Label "Ubicación" -->
-                <TextView
-                    android:id="@+id/tvLocationLabel"
+                <LinearLayout
+                    android:id="@+id/llBrand"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif"
-                    android:text="@string/home_location_label"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="11sp"
-                    android:letterSpacing="0.04"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent">
+                    <ImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:src="@drawable/logo"
+                        android:contentDescription="@string/app_name"
+                        android:scaleType="fitCenter" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:fontFamily="@font/sora_bold"
+                        android:text="Chamb"
+                        android:textColor="@color/white"
+                        android:textSize="23sp"
+                        android:letterSpacing="0.01" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/sora_bold"
+                        android:text="AYA"
+                        android:textColor="#25D6F4"
+                        android:textSize="23sp"
+                        android:letterSpacing="0.01" />
+                </LinearLayout>
 
                 <!-- Pin + Nombre de ciudad + Chevron -->
                 <LinearLayout
@@ -58,12 +79,13 @@
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tvLocationLabel">
+                    android:layout_marginTop="48dp"
+                    app:layout_constraintStart_toStartOf="@id/llBrand"
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
                         android:src="@drawable/ic_home_location"
                         android:contentDescription="@null" />
 
@@ -74,15 +96,9 @@
                         android:layout_marginStart="4dp"
                         android:fontFamily="sans-serif-medium"
                         android:text="@string/home_location_value"
-                        android:textColor="@color/white"
-                        android:textSize="16sp" />
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="12sp" />
 
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginStart="2dp"
-                        android:src="@drawable/ic_home_chevron_down"
-                        android:contentDescription="@null" />
                 </LinearLayout>
 
                 <!-- Botón campana circular semitransparente -->
@@ -117,6 +133,10 @@
                     app:layout_constraintTop_toTopOf="@id/btnNotifications"
                     app:layout_constraintEnd_toEndOf="@id/btnNotifications" />
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <Space
+                android:layout_width="1dp"
+                android:layout_height="4dp" />
 
             <!-- Fila 2: buscador + filtros. Búsqueda simple por texto. -->
             <LinearLayout

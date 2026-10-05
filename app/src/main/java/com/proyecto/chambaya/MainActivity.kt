@@ -122,6 +122,15 @@ class MainActivity : AppCompatActivity() {
         ajustarMenuPorRol()
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_ABRIR_MENSAJES, false)) {
+            bottomNavigation.selectedItemId = R.id.nav_chat
+            intent.removeExtra(EXTRA_ABRIR_MENSAJES)
+        }
+    }
+
     /**
      * Menú según rol fijo de la cuenta:
      *  - CONTRATANTE → Publicar (crear + gestionar chambas).
@@ -335,6 +344,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        const val EXTRA_ABRIR_MENSAJES = "extra_abrir_mensajes"
         private const val TAG_JOBS = "tab_jobs"
         private const val TAG_MAP = "tab_map"
         private const val TAG_PUBLISH = "tab_publish"
