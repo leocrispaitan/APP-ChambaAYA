@@ -191,11 +191,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
             setOnFocusChangeListener { _, hasFocus ->
                 if (hasFocus) post { if (!isPopupShowing) showDropDown() }
             }
-            if (tipoPublicacion == PublicationType.JOB_OFFER) {
-                setText(getString(R.string.pub_dia), false)
-            } else {
-                setText("", false)
-            }
+            setText("", false)
             tag = periodos
         }
         // Usa las mismas categorías con foto que aparecen en Chambas y Mapas.
@@ -338,11 +334,9 @@ class CrearPublicacionActivity : AppCompatActivity() {
             return
         }
         val draft = armarDraft()
-        if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY &&
-            findViewById<MaterialAutoCompleteTextView>(R.id.actvPeriodo)?.text.isNullOrBlank()
-        ) {
+        if (findViewById<MaterialAutoCompleteTextView>(R.id.actvPeriodo)?.text.isNullOrBlank()) {
             tvError.visibility = View.VISIBLE
-            tvError.text = "Selecciona cada cuánto cobras tu tarifa."
+            tvError.text = "Selecciona el periodo de pago."
             return
         }
         if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY && draft.availableDays.isEmpty()) {
