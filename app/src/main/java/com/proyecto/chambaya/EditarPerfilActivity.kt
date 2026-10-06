@@ -243,6 +243,9 @@ class EditarPerfilActivity : AppCompatActivity() {
     /** Comprobación de disponibilidad del `@usuario`, con retardo para no spamear. */
     private var jobUsername: Job? = null
 
+    /** Último perfil pintado en el formulario. Evita repintar lo que el usuario ya editó. */
+    private var perfilPintado: UserProfile? = null
+
     /** Evita que un watcher dispare actualizaciones durante la carga inicial. */
     private var llenandoFormulario = false
 
@@ -288,28 +291,26 @@ class EditarPerfilActivity : AppCompatActivity() {
     /**
      * Recoge el recorte de la foto.
      *
-     * Cancelar el recorte **no** descarta la foto: se usa la original tal cual,
-     * que es lo mismo que ocurría antes de que existiera el recorte. Tirarla
-     * obligaría a volver a la galería, y cancelar un ajuste no significa
-     * querer deshacer la elección.
+     * Cancelar el recorte (X) **descarta la foto elegida**: no se aplica nada
+     * y se conserva el avatar anterior. Solo lo confirmado con Aplicar llega
+     * a subirse al guardar.
      */
     private val recorteLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val original = uriFotoSinRecortar
         uriFotoSinRecortar = null
-        if (original == null) return@registerForActivityResult
+        if (result.resultCode != Activity.RESULT_OK) return@registerForActivityResult
 
         val recortada = result.data
             ?.getStringExtra(RecortarFotoActivity.EXTRA_RUTA_RECORTE)
             ?.let { ruta -> Uri.fromFile(File(ruta)) }
+            ?: return@registerForActivityResult
 
-        val definitiva = recortada ?: original
-        selectedImageUri = definitiva
+        selectedImageUri = recortada
         fotoPendiente = true
         // Vista previa inmediata: la subida real ocurre al guardar, para no
         // dejar imágenes huérfanas en Cloudinary si el usuario cancela.
-        ivAvatar.load(definitiva) { crossfade(true) }
+        ivAvatar.load(recortada) { crossfade(true) }
         showToast(getString(R.string.edit_perfil_foto_elegida))
     }
 
@@ -335,6 +336,16 @@ class EditarPerfilActivity : AppCompatActivity() {
             .coerceIn(1, PASOS_TOTAL)
         entradaCompletar = inicio == PASO_INICIO_COMPLETAR
         updateStep(inicio)
+
+        // Pintado inmediato desde caché: el perfil casi siempre ya está en
+        // memoria (Main lo precarga y Mi Perfil/Ajustes lo usan), así se evita
+        // el parpadeo de datos mock mientras vuelve Firestore. El refresco de
+        // [cargarPerfil] solo repinta si algo cambió y el usuario aún no editó.
+        ProfileCache.perfil?.let { cacheado ->
+            perfilCargado = cacheado
+            perfilPintado = cacheado
+            llenarFormulario(cacheado)
+        }
 
         cargarPerfil()
     }
@@ -676,7 +687,13 @@ class EditarPerfilActivity : AppCompatActivity() {
                 return@launch
             }
             perfilCargado = inicial
-            llenarFormulario(inicial)
+            // Repintado condicional: si volvió lo mismo no se toca nada, y si
+            // el usuario ya editó no se le pisa lo escrito (al guardar igual se
+            // escribe lo del formulario sobre esta base).
+            if (perfilPintado == null || (inicial != perfilPintado && !formularioModificado())) {
+                perfilPintado = inicial
+                llenarFormulario(inicial)
+            }
             if (entradaCompletar) updateStep(primerPasoIncompleto(inicial))
 
             // 2) Siembra de los bloques de la FASE 2 (escritura opcional).
@@ -974,6 +991,44 @@ class EditarPerfilActivity : AppCompatActivity() {
             getString(R.string.edit_perfil_username_neutro),
             COLOR_NEUTRO
         )
+    }
+
+    /**
+     * ¿Tocó el usuario el formulario desde el último pintado?
+     *
+     * Compara cada campo con lo pintado (no con lo cargado): así el refresco
+     * de [cargarPerfil] solo repinta cuando el servidor trajo algo distinto
+     * Y el usuario aún no escribió nada. Los campos con formato propio
+     * (username sugerido, experiencia, habilidades) se comparan ya
+     * normalizados, igual que los pinta [llenarFormulario].
+     */
+    private fun formularioModificado(): Boolean {
+        val base = perfilPintado ?: return false
+        if (fotoPendiente) return true
+        if (etNombre.text.toString() != base.profile.fullName) return true
+        val esperadoUsername = base.profile.username.ifBlank { repository.sugerirUsername(base) }
+        if (etUsername.text.toString() != esperadoUsername &&
+            etUsername.text.toString() != base.profile.username
+        ) return true
+        if (etTelefono.text.toString() != base.profile.phone) return true
+        if (etBio.text.toString() != base.profile.bio) return true
+        val esperadoExp = when {
+            base.worker.experienceYears > 0 -> base.worker.experienceYears.toString()
+            base.worker.experienceDeclared -> "0"
+            else -> ""
+        }
+        if (etExperiencia.text.toString() != esperadoExp) return true
+        if (repository.parseSkills(etHabilidades.text.toString()) != base.worker.skills) return true
+        if (selectedDate != base.profile.birthDate) return true
+        if (selectedGenero != base.profile.gender) return true
+        if (selectedDepartamento != base.profile.department) return true
+        if (selectedProvincia != base.profile.province) return true
+        if (selectedDistrito != base.profile.district) return true
+        if (especialidadesElegidas.toSet() != base.worker.specialties.toSet()) return true
+        if (switchMostrarTelefono.isChecked != base.privacy.showPhone) return true
+        if (switchMostrarEmail.isChecked != base.privacy.showEmail) return true
+        if (switchMostrarUbicacion.isChecked != base.privacy.showExactAddress) return true
+        return false
     }
 
     /**

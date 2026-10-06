@@ -35,7 +35,7 @@ import kotlin.math.min
  * el usuario cancela), así que esta pantalla solo produce un JPEG cuadrado en
  * el caché y lo devuelve por `result`.
  *
- * Lo que se sube es exactamente el círculo que se ve aquí, sin que nada lo
+ * Lo que se sube es exactamente el cuadrado que se ve aquí, sin que nada lo
  * recorte por sorpresa después: [com.proyecto.chambaya.data.remote.CloudinaryUploader]
  * solo reescala, y al recibir siempre un cuadrado no toca el encuadre.
  *

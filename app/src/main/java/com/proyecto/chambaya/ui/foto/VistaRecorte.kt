@@ -4,9 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -16,35 +17,27 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Vista de recorte **circular** para la foto de perfil.
+ * Vista de recorte **cuadrado** para la foto de perfil.
  *
- * Existe por un motivo concreto: el avatar se pinta en un `ShapeableImageView`
- * con `ShapeAppearance.Circle` y `centerCrop`. Con `centerCrop` una foto
- * vertical de cuerpo entero se recorta sola por el centro y casi siempre deja
- * la cara fuera del círculo, así que el usuario no tiene cómo arreglarlo: no
- * puede decir "centra esto" porque la imagen que él elige no es la que se
- * guarda. Aquí se ve el círculo real, con su rejilla, y lo que queda dentro es
- * exactamente lo que se sube.
+ * Al revés que un visor con zoom: la imagen se muestra **estática y
+ * centrada** (encajada completa, sin recortes), y lo que se mueve es el
+ * **marco**: se arrastra con un dedo para colocarlo, se estira desde las
+ * esquinas o con pellizco para agrandarlo o encogerlo, y el doble toque lo
+ * restablece. Lo que queda dentro del marco es exactamente lo que se sube,
+ * y como ese cuadrado luego se muestra con `centerCrop` dentro del círculo
+ * del perfil, el resultado es un círculo perfecto y bien centrado.
  *
  * Decisiones de diseño:
  *
- *  - **El círculo nunca se sale de la imagen.** Tras cada gesto se fuerzan los
- *    límites de desplazamiento para que el cuadrado de recorte quede siempre
- *    cubierto. Sin eso, al ampliar se ven las esquinas vacías y, peor, se
- *    sube una imagen con fondo negro.
- *  - **Ampliar y desplazar anclados al dedo**, no al centro: al pellizcar,
- *    el punto que hay entre los dedos se queda quieto. Es lo que hace que
- *    "centrar la cara" sea preciso en lugar de aproximado.
- *  - **Zoom relativo al encuadre mínimo**, que es justo el que hace que la
- *    imagen tape el círculo. Así el usuario no puede alejarse más de lo
- *    necesario ni acercarse a un estado degenerado.
- *  - **Doble toque** alterna entre el encuadre completo y un acercamiento.
- *
- * La transformación se guarda como escala + desplazamiento, nunca como una
- * [Matrix] arbitraria. Es lo que permite que [exportar] escriba el recorte con
- * una fórmula cerrada y exacta, sin invertir matrices: como solo hay escala
- * uniforme y traslación, la región del recorte en la imagen es siempre un
- * cuadrado, y la salida no se deforma nunca.
+ *  - **La imagen no se mueve nunca.** Se dibuja encajada (`fit-center`) una
+ *    sola vez; así no hay estado de transformación que se pueda desincronizar
+ *    del marco.
+ *  - **El marco nunca se sale de la imagen.** Tras cada gesto se sujeta
+ *    dentro del área dibujada. Sin eso se subiría una imagen con fondo negro.
+ *  - **Tamaño mínimo** para que el recorte siempre sirva como avatar.
+ *  - **Exportación exacta**: como el ajuste es escala uniforme + traslación
+ *    conocidas, la región del marco en la imagen se calcula con una fórmula
+ *    cerrada, sin invertir matrices, y la salida no se deforma nunca.
  */
 class VistaRecorte @JvmOverloads constructor(
     context: Context,
@@ -54,29 +47,20 @@ class VistaRecorte @JvmOverloads constructor(
 
     private var bitmap: Bitmap? = null
 
-    private val matriz = Matrix()
+    /** Ajuste de imagen completa: escala y origen en píxeles de la vista. */
+    private var escalaAjuste = 1f
+    private var dibujoX = 0f
+    private var dibujoY = 0f
+    private var dibujoAncho = 0f
+    private var dibujoAlto = 0f
 
-    /** Escala mínima: la que hace que la imagen tape justo el círculo. */
-    private var escalaMinima = 1f
-
-    /** Ampliación del usuario sobre [escalaMinima]. 1 = encuadre completo. */
-    private var zoom = 1f
-
-    private var desplazamientoX = 0f
-    private var desplazamientoY = 0f
-
-    /** Lado del cuadrado (y del círculo) de recorte, en píxeles de la vista. */
-    private var ladoRecorte = 0f
-
-    private val centroX: Float get() = width / 2f
-    private val centroY: Float get() = height / 2f
-    private val escalaActual: Float get() = escalaMinima * zoom
-
-    private val rutaCirculo = Path()
+    /** Marco de recorte, en píxeles de la vista. Siempre cuadrado. */
+    private val marco = RectF()
+    private val rutaMarco = Path()
 
     private val pinturaImagen = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
-    /** Velo que atenúa todo lo que queda fuera del círculo. */
+    /** Velo que atenúa todo lo que queda fuera del marco. */
     private val pinturaVelillo = Paint().apply { color = COLOR_VELLO }
 
     private val pinturaBorde = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -92,13 +76,28 @@ class VistaRecorte @JvmOverloads constructor(
         strokeWidth = dp(1f)
     }
 
+    /** Esquinas blancas del marco, como las guías de recorte del sistema. */
+    private val pinturaEsquinas = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.WHITE
+        strokeWidth = dp(4f)
+        strokeCap = Paint.Cap.BUTT
+    }
+
+    // ── Estado del gesto ────────────────────────────────────────────
+
+    private var modo = MODO_NADA
+    private var fijoX = 0f
+    private var fijoY = 0f
+    private var ultimoX = 0f
+    private var ultimoY = 0f
+
     private val detectorEscala = ScaleGestureDetector(
         context,
         object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 if (bitmap == null) return false
-                val nuevo = (zoom * detector.scaleFactor).coerceIn(1f, ZOOM_MAXIMO)
-                aplicarZoomAnclando(nuevo, detector.focusX, detector.focusY)
+                redimensionarAnclando(detector.scaleFactor, detector.focusX, detector.focusY)
                 return true
             }
         }
@@ -108,7 +107,13 @@ class VistaRecorte @JvmOverloads constructor(
         context,
         object : GestureDetector.SimpleOnGestureListener() {
 
-            override fun onDown(e: MotionEvent): Boolean = true
+            override fun onDown(e: MotionEvent): Boolean {
+                if (bitmap == null) return false
+                ultimoX = e.x
+                ultimoY = e.y
+                modo = detectarModo(e.x, e.y)
+                return modo != MODO_NADA
+            }
 
             override fun onScroll(
                 e1: MotionEvent?,
@@ -116,22 +121,36 @@ class VistaRecorte @JvmOverloads constructor(
                 distanceX: Float,
                 distanceY: Float
             ): Boolean {
-                if (bitmap == null) return false
-                // `distanceX/Y` es el desplazamiento del gesto anterior al
-                // actual, o sea lo contrario al dedo: se resta para que la
-                // imagen siga al dedo.
-                desplazamientoX -= distanceX
-                desplazamientoY -= distanceY
-                ajustarDesplazamientos()
-                actualizarMatriz()
+                if (bitmap == null || modo == MODO_NADA) return false
+                if (detectorEscala.isInProgress) return false
+                val dx = e2.x - ultimoX
+                val dy = e2.y - ultimoY
+                ultimoX = e2.x
+                ultimoY = e2.y
+                if (dx == 0f && dy == 0f) return true
+                if (modo == MODO_MOVER) {
+                    marco.offset(dx, dy)
+                } else {
+                    val (fx, fy, sx, sy) = esquina(modo)
+                    fijoX = fx
+                    fijoY = fy
+                    redimensionarEsquina(e2.x, e2.y, sx, sy)
+                    return true
+                }
+                sujetarMarco()
+                actualizarRuta()
                 invalidate()
                 return true
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 if (bitmap == null) return false
-                val objetivo = if (zoom > 1.05f) 1f else ZOOM_DOBLE_TOQUE
-                aplicarZoomAnclando(objetivo, e.x, e.y)
+                reiniciar()
+                return true
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                performClick()
                 return true
             }
         }
@@ -141,65 +160,57 @@ class VistaRecorte @JvmOverloads constructor(
     //  API PÚBLICA
     // ═══════════════════════════════════════════════════════════════
 
-    /** Carga la imagen a recortar y vuelve al encuadre completo. */
+    /** Carga la imagen a recortar y centra el marco a tamaño completo. */
     fun establecerImagen(origen: Bitmap) {
         bitmap = origen
-        reiniciar()
+        encajar()
     }
 
-    /** Vuelve al encuadre completo, sin zoom ni desplazamiento. */
+    /** Vuelve al marco completo, centrado en la imagen. */
     fun reiniciar() {
-        zoom = 1f
-        desplazamientoX = 0f
-        desplazamientoY = 0f
-        recalcularEscalaMinima()
-        ajustarDesplazamientos()
-        actualizarMatriz()
-        invalidate()
+        encajar()
     }
 
     /**
-     * Lado, en píxeles de la imagen, del cuadrado que queda dentro del círculo.
+     * Lado, en píxeles de la imagen, del cuadrado del marco.
      *
      * Sirve para no exportar más resolución de la que hay: si el recorte mide
      * 400 px de lado, ampliar la salida a 1024 solo produciría un JPEG más
      * grande de la misma foto borrosa.
      */
     fun ladoUtilDeRecorte(): Int {
-        val e = escalaActual
-        if (e <= 0f || ladoRecorte <= 0f) return 0
-        return (ladoRecorte / e).toInt().coerceAtLeast(1)
+        val s = escalaAjuste
+        if (s <= 0f || marco.width() <= 0f) return 0
+        return (marco.width() / s).toInt().coerceAtLeast(1)
     }
 
     /**
      * Escribe el recorte en un bitmap cuadrado de [lado] px.
      *
      * `null` si todavía no hay imagen o la vista no tiene tamaño.
-     *
-     * La matriz de la salida sale de la transformación real de la vista, no de
-     * invertirla: como la transformación es `escala uniforme + traslación`, la
-     * región del círculo es un cuadrado en coordenadas de imagen y basta con
-     * escalar ese cuadrado al lienzo de salida.
      */
     fun exportar(lado: Int): Bitmap? {
         val origen = bitmap ?: return null
-        if (lado <= 0 || ladoRecorte <= 0f) return null
+        if (lado <= 0 || marco.width() <= 0f || escalaAjuste <= 0f) return null
 
-        val escalaSalida = lado / ladoRecorte
+        val s = dibujoAncho / origen.width.toFloat()
+        val izq = ((marco.left - dibujoX) / s).toInt().coerceIn(0, origen.width - 1)
+        val arriba = ((marco.top - dibujoY) / s).toInt().coerceIn(0, origen.height - 1)
+        val der = ((marco.right - dibujoX) / s).toInt().coerceIn(izq + 1, origen.width)
+        val abajo = ((marco.bottom - dibujoY) / s).toInt().coerceIn(arriba + 1, origen.height)
+
         val salida = Bitmap.createBitmap(lado, lado, Bitmap.Config.ARGB_8888)
         Canvas(salida).apply {
-            // Negro por si el recorte no llegara a cubrir todo el lienzo. Con
-            // los límites aplicados nunca se ve, pero evita transparencia en
-            // un JPEG, que no la admite.
+            // Negro por si el recorte no llegara a cubrir todo el lienzo.
+            // Con los límites aplicados nunca se ve, pero evita transparencia
+            // en un JPEG, que no la admite.
             drawColor(Color.BLACK)
-
-            val m = Matrix()
-            m.setScale(escalaSalida * escalaActual, escalaSalida * escalaActual)
-            m.postTranslate(
-                escalaSalida * (desplazamientoX + ladoRecorte / 2f - escalaActual * origen.width / 2f),
-                escalaSalida * (desplazamientoY + ladoRecorte / 2f - escalaActual * origen.height / 2f)
+            drawBitmap(
+                origen,
+                Rect(izq, arriba, der, abajo),
+                Rect(0, 0, lado, lado),
+                pinturaImagen
             )
-            drawBitmap(origen, m, pinturaImagen)
         }
         return salida
     }
@@ -210,71 +221,111 @@ class VistaRecorte @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        ladoRecorte = min(w, h) * FRACCION_RECORTE
-        val radio = ladoRecorte / 2f
-        rutaCirculo.reset()
-        rutaCirculo.addCircle(centroX, centroY, radio, Path.Direction.CW)
-        reiniciar()
-    }
-
-    private fun recalcularEscalaMinima() {
-        val b = bitmap ?: return
-        if (ladoRecorte <= 0f) return
-        // La mayor de las dos: la imagen tiene que tapar el círculo por los dos
-        // lados, y la escala que más amplía es la que manda.
-        escalaMinima = max(ladoRecorte / b.width, ladoRecorte / b.height)
+        if (bitmap != null) encajar()
     }
 
     /**
-     * Impide que el círculo se salga de la imagen.
+     * Encaja la imagen completa y centra el marco a su tamaño máximo.
      *
-     * La imagen transformada ocupa `[centro - tamaño/2, centro + tamaño/2]`, y
-     * para que cubra el círculo hace falta que cada semilado de la imagen sea al
-     * menos el semilado del círculo más lo que se haya desplazado. De ahí los
-     * topes `±(ladoImagen - ladoRecorte) / 2`.
+     * El marco nace ocupando todo el lado menor dibujado: en una foto
+     * vertical cubre el ancho, en una horizontal cubre el alto.
      */
-    private fun ajustarDesplazamientos() {
+    private fun encajar() {
         val b = bitmap ?: return
-        val e = escalaActual
-        if (e <= 0f) return
-        val topeX = max(0f, (b.width * e - ladoRecorte) / 2f)
-        val topeY = max(0f, (b.height * e - ladoRecorte) / 2f)
-        desplazamientoX = desplazamientoX.coerceIn(-topeX, topeX)
-        desplazamientoY = desplazamientoY.coerceIn(-topeY, topeY)
-    }
-
-    private fun actualizarMatriz() {
-        val b = bitmap ?: return
-        matriz.reset()
-        matriz.postTranslate(centroX + desplazamientoX, centroY + desplazamientoY)
-        matriz.postScale(escalaActual, escalaActual)
-        matriz.postTranslate(-b.width / 2f, -b.height / 2f)
-    }
-
-    /**
-     * Cambia el zoom dejando fijo el punto [focoX], [focoY] de la vista.
-     *
-     * Sea `u` la posición respecto del centro, `d` el desplazamiento y `e` la
-     * escala, el punto de imagen bajo `u` es `(u - d) / e`. Para que siga bajo
-     * `u` al cambiar a `e'`, hace falta `d' = (u - d) (1 - e' / e)`.
-     */
-    private fun aplicarZoomAnclando(nuevoZoom: Float, focoX: Float, focoY: Float) {
-        val escalaPrevia = escalaMinima * zoom
-        if (escalaPrevia <= 0f) return
-
-        val factor = 1f - (escalaMinima * nuevoZoom) / escalaPrevia
-        val focoRelX = focoX - centroX
-        val focoRelY = focoY - centroY
-
-        desplazamientoX = (focoRelX - desplazamientoX) * factor
-        desplazamientoY = (focoRelY - desplazamientoY) * factor
-        zoom = nuevoZoom
-
-        // El tope manda sobre el anclaje: al llegar al límite, el punto se
-        // despega del dedo, que es lo único posible sin salirse de la imagen.
-        ajustarDesplazamientos()
-        actualizarMatriz()
+        if (width == 0 || height == 0 || b.width == 0 || b.height == 0) return
+        val s = min(width / b.width.toFloat(), height / b.height.toFloat())
+        escalaAjuste = s
+        dibujoAncho = b.width * s
+        dibujoAlto = b.height * s
+        dibujoX = (width - dibujoAncho) / 2f
+        dibujoY = (height - dibujoAlto) / 2f
+        val lado = min(dibujoAncho, dibujoAlto)
+        marco.set(
+            (width - lado) / 2f,
+            (height - lado) / 2f,
+            (width + lado) / 2f,
+            (height + lado) / 2f
+        )
+        actualizarRuta()
         invalidate()
+    }
+
+    private fun ladoMaximo(): Float = min(dibujoAncho, dibujoAlto)
+
+    private fun ladoMinimo(): Float =
+        max(ladoMaximo() * PROPORCION_MINIMA, dp(LADO_MINIMO_DP))
+
+    /** Lado actual sujeto a [ladoMinimo]..[ladoMaximo]. */
+    private fun sujetarMarco() {
+        val lado = marco.width().coerceIn(1f, ladoMaximo())
+        val izq = marco.left.coerceIn(dibujoX, dibujoX + dibujoAncho - lado)
+        val arriba = marco.top.coerceIn(dibujoY, dibujoY + dibujoAlto - lado)
+        marco.set(izq, arriba, izq + lado, arriba + lado)
+    }
+
+    /** Esquina opuesta (fija) y dirección de la esquina [modo]. */
+    private fun esquina(modo: Int): Esquina {
+        return when (modo) {
+            MODO_ESQ_SI -> Esquina(marco.right, marco.bottom, -1f, -1f)
+            MODO_ESQ_SD -> Esquina(marco.left, marco.bottom, 1f, -1f)
+            MODO_ESQ_II -> Esquina(marco.right, marco.top, -1f, 1f)
+            else -> Esquina(marco.left, marco.top, 1f, 1f)
+        }
+    }
+
+    /**
+     * Estira la esquina móvil hasta [mx], [my] manteniendo el cuadrado.
+     *
+     * El lado es el mayor de los dos desplazamientos, para que el dedo nunca
+     * "pierda" la esquina que arrastra.
+     */
+    private fun redimensionarEsquina(mx: Float, my: Float, sx: Float, sy: Float) {
+        if (dibujoAncho <= 0f || dibujoAlto <= 0f) return
+        val deseado = max(sx * (mx - fijoX), sy * (my - fijoY))
+        val maxLadoX = if (sx > 0f) dibujoX + dibujoAncho - fijoX else fijoX - dibujoX
+        val maxLadoY = if (sy > 0f) dibujoY + dibujoAlto - fijoY else fijoY - dibujoY
+        val lado = deseado.coerceIn(ladoMinimo(), min(min(maxLadoX, maxLadoY), ladoMaximo()))
+        marco.set(fijoX, fijoY, fijoX + sx * lado, fijoY + sy * lado)
+        marco.sort()
+        sujetarMarco()
+        actualizarRuta()
+        invalidate()
+    }
+
+    /** Agranda o encoge el marco alrededor del punto de pellizco. */
+    private fun redimensionarAnclando(factor: Float, focoX: Float, focoY: Float) {
+        if (dibujoAncho <= 0f || dibujoAlto <= 0f) return
+        val lado = (marco.width() * factor).coerceIn(ladoMinimo(), ladoMaximo())
+        val cx = focoX.coerceIn(dibujoX + lado / 2f, dibujoX + dibujoAncho - lado / 2f)
+        val cy = focoY.coerceIn(dibujoY + lado / 2f, dibujoY + dibujoAlto - lado / 2f)
+        marco.set(cx - lado / 2f, cy - lado / 2f, cx + lado / 2f, cy + lado / 2f)
+        actualizarRuta()
+        invalidate()
+    }
+
+    /**
+     * Decide qué se arrastra: una esquina cercana al dedo, el interior para
+     * mover, o nada si se toca fuera del marco.
+     */
+    private fun detectarModo(x: Float, y: Float): Int {
+        val alcance = dp(RADIO_ESQUINA_DP)
+        val cercaIzq = kotlin.math.abs(x - marco.left) <= alcance
+        val cercaDer = kotlin.math.abs(x - marco.right) <= alcance
+        val cercaArriba = kotlin.math.abs(y - marco.top) <= alcance
+        val cercaAbajo = kotlin.math.abs(y - marco.bottom) <= alcance
+        return when {
+            cercaIzq && cercaArriba -> MODO_ESQ_SI
+            cercaDer && cercaArriba -> MODO_ESQ_SD
+            cercaIzq && cercaAbajo -> MODO_ESQ_II
+            cercaDer && cercaAbajo -> MODO_ESQ_ID
+            marco.contains(x, y) -> MODO_MOVER
+            else -> MODO_NADA
+        }
+    }
+
+    private fun actualizarRuta() {
+        rutaMarco.reset()
+        rutaMarco.addRect(marco, Path.Direction.CW)
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -286,40 +337,66 @@ class VistaRecorte @JvmOverloads constructor(
         canvas.drawColor(COLOR_FONDO)
 
         val b = bitmap ?: return
-        val cx = centroX
-        val cy = centroY
-        val radio = ladoRecorte / 2f
+        val izq = marco.left
+        val arriba = marco.top
+        val der = marco.right
+        val abajo = marco.bottom
 
-        // 1) La imagen, solo dentro del círculo: lo que se ve aquí es lo que se sube.
-        canvas.save()
-        canvas.clipPath(rutaCirculo)
-        canvas.drawBitmap(b, matriz, pinturaImagen)
-        canvas.restore()
+        // 1) La imagen completa, estática y centrada.
+        canvas.drawBitmap(
+            b, null,
+            RectF(dibujoX, dibujoY, dibujoX + dibujoAncho, dibujoY + dibujoAlto),
+            pinturaImagen
+        )
 
-        // 2) Velo fuera del círculo, con los cuatro rectángulos que lo rodean en
-        //    vez de `clipOutPath`: funciona igual en API 24-25, donde ese método
-        //    todavía no existe, y no necesita capa de composición.
-        canvas.save()
-        canvas.drawRect(0f, 0f, width.toFloat(), cy - radio, pinturaVelillo)
-        canvas.drawRect(0f, cy + radio, width.toFloat(), height.toFloat(), pinturaVelillo)
-        canvas.drawRect(0f, cy - radio, cx - radio, cy + radio, pinturaVelillo)
-        canvas.drawRect(cx + radio, cy - radio, width.toFloat(), cy + radio, pinturaVelillo)
-        canvas.restore()
+        // 2) Velo fuera del marco, con los cuatro rectángulos que lo rodean en
+        //    vez de `clipOutPath`: funciona igual en API 24-25, donde ese
+        //    método todavía no existe, y no necesita capa de composición.
+        canvas.drawRect(0f, 0f, width.toFloat(), arriba, pinturaVelillo)
+        canvas.drawRect(0f, abajo, width.toFloat(), height.toFloat(), pinturaVelillo)
+        canvas.drawRect(0f, arriba, izq, abajo, pinturaVelillo)
+        canvas.drawRect(der, arriba, width.toFloat(), abajo, pinturaVelillo)
 
-        // 3) Rejilla de tercios, recortada al círculo para no asomar.
+        // 3) Rejilla de tercios, recortada al marco para no asomar.
         canvas.save()
-        canvas.clipPath(rutaCirculo)
-        val salto = ladoRecorte / 3f
+        canvas.clipPath(rutaMarco)
+        val salto = marco.width() / 3f
         for (i in 1..2) {
-            val vertical = cx - radio + salto * i
-            canvas.drawLine(vertical, cy - radio, vertical, cy + radio, pinturaRejilla)
-            val horizontal = cy - radio + salto * i
-            canvas.drawLine(cx - radio, horizontal, cx + radio, horizontal, pinturaRejilla)
+            val vertical = izq + salto * i
+            canvas.drawLine(vertical, arriba, vertical, abajo, pinturaRejilla)
+            val horizontal = arriba + salto * i
+            canvas.drawLine(izq, horizontal, der, horizontal, pinturaRejilla)
         }
         canvas.restore()
 
-        // 4) Borde del círculo, para que se vea el límite exacto del recorte.
-        canvas.drawCircle(cx, cy, radio, pinturaBorde)
+        // 4) Borde fino del marco + esquinas gruesas, como la referencia.
+        canvas.drawRect(izq, arriba, der, abajo, pinturaBorde)
+        dibujarEsquinas(canvas, izq, arriba, der, abajo)
+    }
+
+    /**
+     * Las cuatro eles de las esquinas. [largo] es la longitud de cada trazo.
+     */
+    private fun dibujarEsquinas(
+        canvas: Canvas,
+        izq: Float,
+        arriba: Float,
+        der: Float,
+        abajo: Float
+    ) {
+        val largo = min(marco.width() * 0.14f, dp(30f))
+        // Superior izquierda.
+        canvas.drawLine(izq, arriba, izq + largo, arriba, pinturaEsquinas)
+        canvas.drawLine(izq, arriba, izq, arriba + largo, pinturaEsquinas)
+        // Superior derecha.
+        canvas.drawLine(der - largo, arriba, der, arriba, pinturaEsquinas)
+        canvas.drawLine(der, arriba, der, arriba + largo, pinturaEsquinas)
+        // Inferior izquierda.
+        canvas.drawLine(izq, abajo, izq + largo, abajo, pinturaEsquinas)
+        canvas.drawLine(izq, abajo, izq, abajo - largo, pinturaEsquinas)
+        // Inferior derecha.
+        canvas.drawLine(der - largo, abajo, der, abajo, pinturaEsquinas)
+        canvas.drawLine(der, abajo, der, abajo - largo, pinturaEsquinas)
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -328,37 +405,42 @@ class VistaRecorte @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         // Sin esto, un `ScrollView` vertical en el mismo layout se queda con el
-        // gesto a mitad de camino y la imagen no llega a desplazarse del todo.
+        // gesto a mitad de camino y el marco no llega a desplazarse del todo.
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> parent?.requestDisallowInterceptTouchEvent(true)
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 parent?.requestDisallowInterceptTouchEvent(false)
+                modo = MODO_NADA
+            }
         }
 
+        detectorEscala.onTouchEvent(event)
         val manejadoGesto = detectorGesto.onTouchEvent(event)
-        val manejadoEscala = detectorEscala.onTouchEvent(event)
-        return manejadoGesto || manejadoEscala || super.onTouchEvent(event)
+        return manejadoGesto || super.onTouchEvent(event)
     }
 
     override fun performClick(): Boolean = super.performClick()
 
     private fun dp(valor: Float): Float = valor * resources.displayMetrics.density
 
+    private data class Esquina(val fijoX: Float, val fijoY: Float, val sx: Float, val sy: Float)
+
     private companion object {
-        /**
-         * Fracción del lado menor de la vista que ocupa el círculo.
-         *
-         * Antes de 0.82 el círculo se comía demasiado borde: en un móvil alto
-         * sobraba espacio vertical y el avatar quedaba pequeño, y el usuario
-         * tenía que ampliar para ver nada. Ahora el velillo es una franja fina.
-         */
-        const val FRACCION_RECORTE = 0.82f
+        const val MODO_NADA = 0
+        const val MODO_MOVER = 1
+        const val MODO_ESQ_SI = 2
+        const val MODO_ESQ_SD = 3
+        const val MODO_ESQ_II = 4
+        const val MODO_ESQ_ID = 5
 
-        /** Zoom máximo sobre la escala mínima: 8x ya es un encuadre muy cerrado. */
-        const val ZOOM_MAXIMO = 8f
+        /** Radio táctil para agarrar una esquina. */
+        const val RADIO_ESQUINA_DP = 32f
 
-        /** Al que salta el doble toque. */
-        const val ZOOM_DOBLE_TOQUE = 2.5f
+        /** Lado mínimo del marco, en dp. */
+        const val LADO_MINIMO_DP = 72f
+
+        /** Fracción del lado dibujado por debajo de la cual no se encoge. */
+        const val PROPORCION_MINIMA = 0.2f
 
         const val COLOR_FONDO = 0xFF0B0B0F.toInt()
         const val COLOR_VELLO = 0xA6000000.toInt()
