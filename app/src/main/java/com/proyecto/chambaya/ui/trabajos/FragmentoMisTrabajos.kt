@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
  */
 class FragmentoMisTrabajos : Fragment() {
 
-    private var seccionActual = SECCION_SOLICITUDES
+    private var seccionActual = SECCION_PUBLICAR_TIEMPO
 
     private lateinit var tabs: List<View>
     private lateinit var iconos: List<ImageView>
@@ -101,11 +101,11 @@ class FragmentoMisTrabajos : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         seccionActual = savedInstanceState?.getInt(KEY_SECCION_V2)
-            ?: when (savedInstanceState?.getInt(KEY_SECCION_V1, SECCION_SOLICITUDES)) {
+            ?: when (savedInstanceState?.getInt(KEY_SECCION_V1, SECCION_PUBLICAR_TIEMPO)) {
                 0 -> SECCION_PUBLICAR_TIEMPO
                 1 -> SECCION_SOLICITUDES
                 2 -> SECCION_HISTORIAL
-                else -> SECCION_SOLICITUDES
+                else -> SECCION_PUBLICAR_TIEMPO
             }
         colorActivo = requireContext().getColor(R.color.profile_tab_active)
         colorInactivo = requireContext().getColor(R.color.profile_tab_inactive)
@@ -190,6 +190,7 @@ class FragmentoMisTrabajos : Fragment() {
         super.onResume()
         BarraEstadoUtils.aplicarColor(requireActivity(), requireContext().getColor(R.color.white))
         if (::barraTabs.isInitialized) {
+            seleccionar(SECCION_PUBLICAR_TIEMPO, animar = false)
             cargarSolicitudes()
             cargarHistorial()
         }

@@ -58,6 +58,7 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/tvTitleLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
@@ -67,6 +68,7 @@
             android:textSize="14sp" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutTitleInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -91,6 +93,7 @@
             android:textSize="14sp" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutDescriptionInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -145,6 +148,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvPaymentLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
@@ -175,6 +179,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/tvPeriodLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
@@ -193,7 +198,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="none"
-                        android:text="@string/pub_dia" />
+                        android:minHeight="56dp"
+                        android:hint="Seleccionar periodo" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </LinearLayout>
@@ -206,6 +212,7 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/tvNegotiableLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -226,6 +233,7 @@
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/layoutVacantesField"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -255,6 +263,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/layoutDistritoField"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -279,8 +288,10 @@
                         android:id="@+id/actvDistrito"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:minHeight="56dp"
                         android:hint="@string/pub_distrito_hint"
-                        android:inputType="text" />
+                        android:inputType="text"
+                        android:textSize="14sp" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </LinearLayout>
@@ -341,9 +352,11 @@
                 android:id="@+id/actvDiasDisponibles"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
                 android:hint="Seleccionar días disponibles"
                 android:inputType="none"
-                android:focusable="false" />
+                android:focusable="false"
+                android:textSize="14sp" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView

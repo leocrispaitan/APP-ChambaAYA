@@ -86,6 +86,24 @@ class CrearPublicacionActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.btnPublicar)?.text = "Publicar disponibilidad"
             findViewById<View>(R.id.tvExperienciaLabel)?.visibility = View.GONE
             findViewById<View>(R.id.groupExperienceRequirement)?.visibility = View.GONE
+            findViewById<View>(R.id.layoutVacantesField)?.visibility = View.GONE
+            findViewById<TextView>(R.id.tvTitleLabel)?.text = "Título de tu servicio"
+            findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutTitleInput)
+                ?.hint = "Ej. Ofrezco servicios de pintura profesional"
+            findViewById<TextInputEditText>(R.id.etTitulo)?.hint = null
+            findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutDescriptionInput)
+                ?.hint = "Describe tu experiencia y los servicios que ofreces"
+            findViewById<TextInputEditText>(R.id.etDescripcion)?.hint = null
+            findViewById<TextView>(R.id.tvPaymentLabel)?.text = "Tarifa esperada (S/)"
+            findViewById<TextView>(R.id.tvPeriodLabel)?.text = "Tarifa por"
+            findViewById<TextView>(R.id.tvNegotiableLabel)?.text = "Tarifa negociable"
+            findViewById<View>(R.id.layoutDistritoField)?.let { districtField ->
+                (districtField.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
+                    params.weight = 2f
+                    params.marginStart = 0
+                    districtField.layoutParams = params
+                }
+            }
         }
         findViewById<View>(R.id.btnCerrar).setOnClickListener { finish() }
         configurarCampos()
@@ -168,7 +186,16 @@ class CrearPublicacionActivity : AppCompatActivity() {
         val periodos = mapOf(getString(R.string.k_pern_hora) to PaymentPeriod.HOUR, getString(R.string.k_pern_dia) to PaymentPeriod.DAY, getString(R.string.k_pern_semana) to PaymentPeriod.WEEK, getString(R.string.k_pern_mes) to PaymentPeriod.MONTH, getString(R.string.k_pern_trabajo) to PaymentPeriod.JOB)
         findViewById<MaterialAutoCompleteTextView>(R.id.actvPeriodo)?.apply {
             setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, periodos.keys.toList()))
+            dropDownHeight = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
             setOnClickListener { showDropDown() }
+            setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) post { if (!isPopupShowing) showDropDown() }
+            }
+            if (tipoPublicacion == PublicationType.JOB_OFFER) {
+                setText(getString(R.string.pub_dia), false)
+            } else {
+                setText("", false)
+            }
             tag = periodos
         }
         // Usa las mismas categorías con foto que aparecen en Chambas y Mapas.
@@ -311,6 +338,13 @@ class CrearPublicacionActivity : AppCompatActivity() {
             return
         }
         val draft = armarDraft()
+        if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY &&
+            findViewById<MaterialAutoCompleteTextView>(R.id.actvPeriodo)?.text.isNullOrBlank()
+        ) {
+            tvError.visibility = View.VISIBLE
+            tvError.text = "Selecciona cada cuánto cobras tu tarifa."
+            return
+        }
         if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY && draft.availableDays.isEmpty()) {
             tvError.visibility = View.VISIBLE
             tvError.text = "Selecciona al menos un día disponible."
