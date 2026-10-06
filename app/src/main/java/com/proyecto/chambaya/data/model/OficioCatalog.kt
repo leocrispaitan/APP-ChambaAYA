@@ -69,6 +69,54 @@ object OficioCatalog {
     fun nombres(context: Context): List<String> =
         load(context).map { it.categoria }.distinct()
 
+    /** Categorías de trabajo disponibles para las especialidades del perfil. */
+    fun especialidades(context: Context): List<OficioCategoria> {
+        val catalogo = load(context)
+        val nombres = listOf(
+            "Pintor", "Albañil", "Limpieza", "Mozo/a", "Ayudante de cocina",
+            "Atención en eventos", "Reparto y delivery", "Mudanzas y carga",
+            "Cuidado de niños", "Cuidado de adultos mayores", "Paseo y cuidado de mascotas",
+            "Ventas y promoción", "Volanteo", "Lavado de autos", "Apoyo en tienda",
+            "Empaque y almacén", "Mandados y compras", "Jardinería ocasional",
+            "Control de grass deportivo", "Otro trabajo", "Mecánica"
+        )
+        return nombres.mapIndexed { index, nombre ->
+            val existente = catalogo.firstOrNull { normalizar(it.categoria) == normalizar(nombre) }
+                ?: catalogo.firstOrNull { normalizar(it.categoria) == aliasNormalizado(nombre) }
+            existente?.copy(categoria = nombre, id = index + 1)
+                ?: OficioCategoria(index + 1, nombre, nombre, "", "", emptyList())
+        }
+    }
+
+    /** Normaliza nombres anteriores del catálogo a las etiquetas del feed. */
+    fun etiquetaEspecialidad(nombre: String): String? {
+        val normalizado = normalizar(nombre)
+        return when (normalizado) {
+            "construccion" -> "Albañil"
+            "pintura" -> "Pintor"
+            "delivery" -> "Reparto y delivery"
+            "jardineria" -> "Jardinería ocasional"
+            else -> especialidadesNombres.firstOrNull { normalizar(it) == normalizado }
+        }
+    }
+
+    private val especialidadesNombres = listOf(
+        "Pintor", "Albañil", "Limpieza", "Mozo/a", "Ayudante de cocina",
+        "Atención en eventos", "Reparto y delivery", "Mudanzas y carga",
+        "Cuidado de niños", "Cuidado de adultos mayores", "Paseo y cuidado de mascotas",
+        "Ventas y promoción", "Volanteo", "Lavado de autos", "Apoyo en tienda",
+        "Empaque y almacén", "Mandados y compras", "Jardinería ocasional",
+        "Control de grass deportivo", "Otro trabajo", "Mecánica"
+    )
+
+    private fun aliasNormalizado(nombre: String): String = when (normalizar(nombre)) {
+        "albanil" -> "construccion"
+        "pintor" -> "pintura"
+        "reparto y delivery" -> "delivery"
+        "jardineria ocasional" -> "jardineria"
+        else -> normalizar(nombre)
+    }
+
     /**
      * Busca una categoría ignorando mayúsculas, acentos y espacios extra.
      *

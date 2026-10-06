@@ -146,9 +146,12 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         // ── Contenido ──
         view.findViewById<TextView>(R.id.tvDetailTitle).text = pub.title
         view.findViewById<TextView>(R.id.tvDetailCategory).text = pub.category.ifBlank { getString(R.string.k_detalle_chamba) }
+        val esTiempoLibre = pub.type == com.proyecto.chambaya.data.model.PublicationType.WORKER_AVAILABILITY
         val libres = (pub.workersNeeded - pub.workersHired).coerceAtLeast(0)
-        view.findViewById<TextView>(R.id.tvDetailStatus).text =
-            if (libres <= 0) getString(R.string.k_vacantes_cubiertas) else if (libres == 1) getString(R.string.k_vacantes_1) else getString(R.string.k_vacantes_n, libres)
+        view.findViewById<TextView>(R.id.tvDetailStatus).apply {
+            visibility = if (esTiempoLibre) View.GONE else View.VISIBLE
+            text = if (libres <= 0) getString(R.string.k_vacantes_cubiertas) else if (libres == 1) getString(R.string.k_vacantes_1) else getString(R.string.k_vacantes_n, libres)
+        }
 
         val urls = pub.images.mapNotNull { it.url.takeIf { u -> u.isNotBlank() } }
         montarCarruselFotos(view, urls)
@@ -165,11 +168,14 @@ class JobDetailSheet : BottomSheetDialogFragment() {
                 .filter { it.isNotBlank() }.joinToString(" – "))
         }.filter { it.isNotBlank() }.joinToString(" · ")
         view.findViewById<TextView>(R.id.tvDetailSchedule).text = horario.ifBlank { getString(R.string.k_detalle_convenir) }
-        view.findViewById<TextView>(R.id.tvDetailWorkers).text =
-            (if (libres == 1) getString(R.string.k_personas_1) else getString(R.string.k_personas_n, libres))
-        view.findViewById<TextView>(R.id.tvDetailExperience).text = getString(
-            if (pub.requiresExperience) R.string.k_experiencia_requerida else R.string.k_experiencia_no_requerida
-        )
+        view.findViewById<TextView>(R.id.tvDetailWorkers).apply {
+            (parent as? View)?.visibility = if (esTiempoLibre) View.GONE else View.VISIBLE
+            text = if (libres == 1) getString(R.string.k_personas_1) else getString(R.string.k_personas_n, libres)
+        }
+        view.findViewById<TextView>(R.id.tvDetailExperience).apply {
+            (parent as? View)?.visibility = if (esTiempoLibre) View.GONE else View.VISIBLE
+            text = getString(if (pub.requiresExperience) R.string.k_experiencia_requerida else R.string.k_experiencia_no_requerida)
+        }
         view.findViewById<TextView>(R.id.tvDetailDate).text = publicationTimeAgo(pub.createdAt)
         val wp = pub.workplaceName.ifBlank { getString(R.string.k_por_definir) }
         view.findViewById<TextView>(R.id.tvDetailWorkplace).text = wp

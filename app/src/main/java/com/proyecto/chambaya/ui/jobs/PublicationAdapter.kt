@@ -230,7 +230,11 @@ class PublicationAdapter(
 
             // ── Apertura del detalle ──
             card.setOnClickListener { onOpenDetail(item) }
-            btnVer.text = ctx.getString(R.string.item_ver_chamba)
+            btnVer.text = ctx.getString(
+                if (p.type == com.proyecto.chambaya.data.model.PublicationType.WORKER_AVAILABILITY)
+                    R.string.item_ver_tiempo_libre
+                else R.string.item_ver_chamba
+            )
             btnVer.setOnClickListener { onOpenDetail(item) }
 
             btnMore.setOnClickListener {

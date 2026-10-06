@@ -947,11 +947,11 @@ class EditarPerfilActivity : AppCompatActivity() {
 
         // Solo se ofrecen las especialidades que siguen en el catálogo: si el
         // JSON cambia, no se obligatorio elegir un oficio que ya no existe.
-        val validas = OficioCatalog.load(this)
+        val validas = OficioCatalog.especialidades(this)
         especialidadesElegidas.clear()
         perfil.worker.specialties.forEach { elegida ->
             val oficial = validas.firstOrNull {
-                OficioCatalog.normalizar(it.categoria) == OficioCatalog.normalizar(elegida)
+                it.categoria == OficioCatalog.etiquetaEspecialidad(elegida)
             }
             if (oficial != null) especialidadesElegidas += oficial.categoria
         }
@@ -1902,7 +1902,7 @@ class EditarPerfilActivity : AppCompatActivity() {
      * pocas categorías que tiene el catálogo, no hace falta paginar.
      */
     private fun filtrarOficios(texto: String) {
-        val todos = OficioCatalog.load(this)
+        val todos = OficioCatalog.especialidades(this)
         val consulta = OficioCatalog.normalizar(texto)
 
         val filtrados = if (consulta.isEmpty()) {
