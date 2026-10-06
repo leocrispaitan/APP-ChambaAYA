@@ -199,6 +199,9 @@
                         android:layout_height="wrap_content"
                         android:inputType="none"
                         android:minHeight="56dp"
+                        android:textSize="16sp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
                         android:hint="Seleccionar periodo" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
@@ -291,7 +294,9 @@
                         android:minHeight="56dp"
                         android:hint="@string/pub_distrito_hint"
                         android:inputType="text"
-                        android:textSize="14sp" />
+                        android:textSize="16sp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </LinearLayout>
@@ -356,7 +361,9 @@
                 android:hint="Seleccionar días disponibles"
                 android:inputType="none"
                 android:focusable="false"
-                android:textSize="14sp" />
+                android:textSize="16sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
