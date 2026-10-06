@@ -374,15 +374,18 @@ class PublicationRepository(
      */
     fun listenFeed(
         limit: Long = 40,
+        type: String? = null,
         onUpdate: (List<Publication>) -> Unit,
         onError: (Exception) -> Unit
     ): com.google.firebase.firestore.ListenerRegistration {
         val collection = firestore.collection(COLLECTION)
         val featuredQuery = collection
             .whereEqualTo("featured", true)
+            .let { query -> if (type.isNullOrBlank()) query else query.whereEqualTo("type", type) }
         val recentQuery = collection
             .whereEqualTo("status", PublicationStatus.ACTIVE)
             .whereEqualTo("visibility", PublicationVisibility.PUBLIC)
+            .let { query -> if (type.isNullOrBlank()) query else query.whereEqualTo("type", type) }
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .limit(limit)
 

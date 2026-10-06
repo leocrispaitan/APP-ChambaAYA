@@ -234,7 +234,8 @@ class FragmentoChambas : Fragment() {
         if (feedListener != null) return
         if (allItems.isEmpty()) pintarEstado(Estado.CARGANDO)
         feedListener = pubRepo.listenFeed(
-            40,
+            limit = 40,
+            type = if (showingFreeTime) "WORKER_AVAILABILITY" else "JOB_OFFER",
             onUpdate = { pubs -> integrarSnapshot(pubs) },
             onError = { e ->
                 if (isAdded) pintarEstado(Estado.ERROR, e.message)
@@ -381,6 +382,7 @@ class FragmentoChambas : Fragment() {
                 filters = filters.copy(category = "")
                 categoriaAdapter?.setSeleccionada("Todas")
                 actualizar()
+                recargarFeed()
             }
         }
         tiempo.setOnClickListener {
@@ -390,6 +392,7 @@ class FragmentoChambas : Fragment() {
                 filters = filters.copy(category = "")
                 categoriaAdapter?.setSeleccionada("Todas")
                 actualizar()
+                recargarFeed()
             }
         }
         actualizar()

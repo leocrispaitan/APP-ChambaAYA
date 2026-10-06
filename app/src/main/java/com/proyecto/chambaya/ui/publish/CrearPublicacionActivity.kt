@@ -368,11 +368,11 @@ class CrearPublicacionActivity : AppCompatActivity() {
             try {
                 val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
                 require(uid.isNotBlank()) { getString(R.string.k_rate_sesion) }
-                var perfil = ProfileCache.perfil
-                if (perfil == null) {
-                    perfil = profileRepo.loadProfile(uid).getOrNull()
-                    if (perfil != null) ProfileCache.perfil = perfil
-                }
+                // Relee el perfil del servidor antes de validar roles: una caché
+                // vieja podía mostrar el formulario, pero Firestore autoriza con
+                // los roles habilitados que tiene guardados actualmente.
+                val perfil = profileRepo.loadProfile(uid).getOrNull()
+                if (perfil != null) ProfileCache.perfil = perfil
                 require(perfil != null) { getString(R.string.k_pub_no_perfil) }
                 val lugar = placeRepo.loadByOwner(uid).getOrNull()
 
