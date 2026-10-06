@@ -147,6 +147,10 @@ class EditarLugarActivity : AppCompatActivity() {
             toast(getString(R.string.lugar_gps_ok))
         }
         enlazar()
+        // El estado inicial del XML no conoce si el lugar es nuevo o ya existe.
+        // Pinta la cascada vacía desde el primer frame; al editar, cargar() la
+        // vuelve a pintar con los datos guardados.
+        pintarUbicacion()
         escuchar()
         construirChipsTipo()
         construirChipsSector()
@@ -193,14 +197,10 @@ class EditarLugarActivity : AppCompatActivity() {
         }
         pasoDep.setOnClickListener { elegirDepartamento() }
         pasoProv.setOnClickListener {
-            if (depElegido.isBlank()) elegirDepartamento() else elegirProvincia()
+            if (depElegido.isNotBlank()) elegirProvincia()
         }
         pasoDist.setOnClickListener {
-            when {
-                depElegido.isBlank() -> elegirDepartamento()
-                provElegida.isBlank() -> elegirProvincia()
-                else -> elegirDistrito()
-            }
+            if (provElegida.isNotBlank()) elegirDistrito()
         }
         btnGps.setOnClickListener { pedirMapa() }
         btnGuardar.setOnClickListener { guardar() }
@@ -512,6 +512,9 @@ class EditarLugarActivity : AppCompatActivity() {
         desbloqueado: Boolean
     ) {
         contenedor.alpha = if (desbloqueado) 1f else 0.45f
+        contenedor.isEnabled = desbloqueado
+        contenedor.isClickable = desbloqueado
+        contenedor.isFocusable = desbloqueado
         if (texto.isNotBlank()) {
             valor.text = texto
             valor.setTextColor(Color.parseColor("#111827"))
