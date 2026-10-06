@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
+import com.google.android.material.button.MaterialButton
 import com.proyecto.chambaya.BarraEstadoUtils
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.JobStatus
@@ -66,6 +67,7 @@ class FragmentoChambas : Fragment() {
     private var filters = PublicationFilters()
     private var searchJob: Job? = null
     private var selectedCategory: String = ""
+    private var showingFreeTime: Boolean = false
 
     // ── Tiempo real: el listener se engancha en onResume y se suelta en
     // onPause. Los flags like/save se cachean por id para no releerlos en
@@ -106,6 +108,7 @@ class FragmentoChambas : Fragment() {
         setupCategorias(view)
         setupSearch(view)
         setupChips(view)
+        configurarModoFeed(view)
         setupHeaderActions(view)
 
         view.findViewById<Button>(R.id.btnFeedRetry)?.setOnClickListener { recargarFeed() }
@@ -300,11 +303,12 @@ class FragmentoChambas : Fragment() {
     }
 
     private fun aplicarFiltros() {
+        val tipoEsperado = if (showingFreeTime) "WORKER_AVAILABILITY" else "JOB_OFFER"
         val efectivo = filters.copy(
             category = filters.category.ifBlank { selectedCategory }
         )
         // Búsqueda simple solo por texto/categoría.
-        val filtrada = allItems.applyFilters(efectivo)
+        val filtrada = allItems.filter { it.publication.type == tipoEsperado }.applyFilters(efectivo)
         android.util.Log.d(
             "FragmentoChambas",
             "aplicarFiltros all=${allItems.size} filtrada=${filtrada.size} " +
@@ -332,10 +336,63 @@ class FragmentoChambas : Fragment() {
      */
     private fun pintarBanner() {
         val v = view ?: return
+        v.findViewById<TextView>(R.id.tvBannerTitle)?.text = if (showingFreeTime)
+            "¿Tienes tiempo libre hoy?" else "Chambas cerca de ti"
+        v.findViewById<TextView>(R.id.tvBannerBadge)?.visibility = View.GONE
+        v.findViewById<TextView>(R.id.tvBannerPercent)?.visibility = View.GONE
+        v.findViewById<TextView>(R.id.tvBannerSubtitle)?.text = if (showingFreeTime)
+            "Publica tus horas y disponibilidad para que te contraten." else "Encuentra oportunidades en tu zona."
+        v.findViewById<TextView>(R.id.tvBannerLegal)?.visibility = View.GONE
+        v.findViewById<Button>(R.id.btnBannerCta)?.text = if (showingFreeTime)
+            "Ofrecer mi tiempo" else "Publicar chamba"
+        v.findViewById<android.widget.ImageView>(R.id.ivBannerPhoto)?.setImageResource(
+            if (showingFreeTime) R.drawable.chamba_banner_tiempo_libre
+            else R.drawable.chamba_banner_chambas_cerca
+        )
         v.findViewById<TextView>(R.id.tvBannerPercent)?.text = allItems.size.toString()
         val newest = allItems.mapNotNull { it.publication.createdAt }.maxOrNull()
         v.findViewById<TextView>(R.id.tvFlashTimer)?.text =
             if (allItems.isEmpty()) "—" else publicationTimeAgo(newest)
+    }
+
+    private fun configurarModoFeed(view: View) {
+        val empleos = view.findViewById<MaterialButton>(R.id.tabBusinessJobs)
+        val tiempo = view.findViewById<MaterialButton>(R.id.tabFreeTime)
+        fun actualizar() {
+            val azul = requireContext().getColor(R.color.brand_color)
+            val gris = requireContext().getColor(R.color.text_secondary)
+            empleos.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                if (showingFreeTime) android.graphics.Color.parseColor("#EEF2F8") else azul
+            )
+            empleos.setTextColor(if (showingFreeTime) gris else android.graphics.Color.WHITE)
+            empleos.iconTint = android.content.res.ColorStateList.valueOf(if (showingFreeTime) gris else android.graphics.Color.WHITE)
+            tiempo.backgroundTintList = android.content.res.ColorStateList.valueOf(
+                if (showingFreeTime) azul else android.graphics.Color.parseColor("#EEF2F8")
+            )
+            tiempo.setTextColor(if (showingFreeTime) android.graphics.Color.WHITE else gris)
+            tiempo.iconTint = android.content.res.ColorStateList.valueOf(if (showingFreeTime) android.graphics.Color.WHITE else gris)
+            pintarBanner()
+            aplicarFiltros()
+        }
+        empleos.setOnClickListener {
+            if (showingFreeTime) {
+                showingFreeTime = false
+                selectedCategory = ""
+                filters = filters.copy(category = "")
+                categoriaAdapter?.setSeleccionada("Todas")
+                actualizar()
+            }
+        }
+        tiempo.setOnClickListener {
+            if (!showingFreeTime) {
+                showingFreeTime = true
+                selectedCategory = ""
+                filters = filters.copy(category = "")
+                categoriaAdapter?.setSeleccionada("Todas")
+                actualizar()
+            }
+        }
+        actualizar()
     }
 
     private enum class Estado { CARGANDO, LISTA, VACIO, ERROR }
@@ -396,12 +453,6 @@ class FragmentoChambas : Fragment() {
     private fun setupChips(view: View) {
         // Los chips horizontales se eliminaron del layout: el filtro por
         // categoría ahora es solo el grid con imágenes.
-        view.findViewById<View>(R.id.tvSpecialSeeAll)?.setOnClickListener {
-            selectedCategory = ""; filters = PublicationFilters()
-            categoriaAdapter?.setSeleccionada("Todas")
-            view.findViewById<EditText>(R.id.etSearch)?.setText("")
-            aplicarFiltros()
-        }
         view.findViewById<View>(R.id.btnBannerCta)?.setOnClickListener {
             scrollView?.smoothScrollTo(0, recyclerView?.top ?: 0)
         }

@@ -1,7 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
-    fragmento_chambas.xml — Home Screen de ChambAYA
-    Diseño optimizado con CoordinatorLayout para scroll fluido y rendimiento mejorado.
+    fragmento_chambas.xml â€” Home Screen de ChambAYA
+    DiseÃ±o optimizado con CoordinatorLayout para scroll fluido y rendimiento mejorado.
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -11,10 +11,6 @@
     android:layout_height="match_parent"
     android:background="#FFFFFF"
     tools:context=".ui.jobs.FragmentoChambas">
-
-    <!-- ════════════════════════════════════════════════════════
-         CABECERA (Header con ubicación + buscador) — color brand_color
-         ════════════════════════════════════════════════════════ -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -101,7 +97,7 @@
 
                 </LinearLayout>
 
-                <!-- Botón campana circular semitransparente -->
+                <!-- BotÃ³n campana circular semitransparente -->
                 <ImageButton
                     android:id="@+id/btnNotifications"
                     android:layout_width="44dp"
@@ -114,7 +110,7 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-                <!-- FASE 14 · Badge de no leídos -->
+                <!-- FASE 14 Â· Badge de no leÃ­dos -->
                 <TextView
                     android:id="@+id/tvNotifBadge"
                     android:layout_width="20dp"
@@ -138,14 +134,14 @@
                 android:layout_width="1dp"
                 android:layout_height="4dp" />
 
-            <!-- Fila 2: buscador + filtros. Búsqueda simple por texto. -->
+            <!-- Fila 2: buscador + filtros. BÃºsqueda simple por texto. -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <!-- Barra de búsqueda -->
+                <!-- Barra de bÃºsqueda -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
@@ -179,7 +175,7 @@
                         android:singleLine="true" />
                 </LinearLayout>
 
-                <!-- Botón filtro cuadrado redondeado -->
+                <!-- BotÃ³n filtro cuadrado redondeado -->
                 <ImageButton
                     android:id="@+id/btnFilter"
                     android:layout_width="52dp"
@@ -197,10 +193,6 @@
             android:layout_height="1dp"
             android:background="@android:color/transparent" />
     </com.google.android.material.appbar.AppBarLayout>
-
-    <!-- ════════════════════════════════════════════════════════
-         SCROLL PRINCIPAL (todo el contenido debajo del header)
-         ════════════════════════════════════════════════════════ -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollMain"
         android:layout_width="match_parent"
@@ -213,42 +205,8 @@
             android:orientation="vertical"
             android:paddingBottom="80dp">
 
-            <!-- ──────────────────────────────────────────
-                 SECCIÓN: #EspecialParaTi + Banner
-                 ────────────────────────────────────────── -->
-
-            <!-- Título + Ver todo -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp">
-
-                <TextView
-                    android:id="@+id/tvSpecialTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-black"
-                    android:text="@string/home_special_title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <TextView
-                    android:id="@+id/tvSpecialSeeAll"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:text="@string/home_see_all"
-                    android:textColor="@color/brand_color"
-                    android:textSize="13sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- TÃ­tulo + Ver todo -->
+            
 
             <!-- Banner Principal de Oferta -->
             <androidx.cardview.widget.CardView
@@ -261,156 +219,117 @@
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
-                <!-- Fondo oscuro del banner -->
-                <FrameLayout
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/frameBannerBackground"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_profile_header_art">
+                    android:background="@color/brand_color">
 
-                    <!-- Degradado superpuesto (izquierda oscuro → transparente derecha) -->
+                    <ImageView
+                        android:id="@+id/ivBannerPhoto"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:contentDescription="@null"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/chamba_banner_chambas_cerca"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintWidth_percent="0.48" />
+
                     <View
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@drawable/bg_banner_gradient" />
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:background="@color/brand_color"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintWidth_percent="0.60" />
 
-                    <!-- Contenido del banner -->
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="horizontal">
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:paddingStart="18dp"
+                        android:paddingTop="12dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="12dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintWidth_percent="0.60">
 
-                        <!-- Columna izquierda: texto -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1.1"
-                            android:gravity="center_vertical"
-                            android:orientation="vertical"
-                            android:paddingStart="18dp"
-                            android:paddingTop="16dp"
-                            android:paddingBottom="16dp">
+                        <TextView
+                            android:id="@+id/tvBannerBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_badge_white"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingStart="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="10dp"
+                            android:paddingBottom="4dp"
+                            android:text="@string/home_banner_badge"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp"
+                            android:visibility="gone" />
 
-                            <!-- Badge "¡Por tiempo limitado!" -->
-                            <TextView
-                                android:id="@+id/tvBannerBadge"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_badge_white"
-                                android:fontFamily="sans-serif-medium"
-                                android:paddingStart="10dp"
-                                android:paddingTop="4dp"
-                                android:paddingEnd="10dp"
-                                android:paddingBottom="4dp"
-                                android:text="@string/home_banner_badge"
-                                android:textColor="@color/text_primary"
-                                android:textSize="11sp" />
+                        <TextView
+                            android:id="@+id/tvBannerTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:fontFamily="sans-serif-black"
+                            android:lineSpacingMultiplier="1.05"
+                            android:text="@string/home_banner_title"
+                            android:textColor="@color/white"
+                            android:textSize="18sp" />
 
-                            <!-- Título grande -->
-                            <TextView
-                                android:id="@+id/tvBannerTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:fontFamily="sans-serif-black"
-                                android:text="@string/home_banner_title"
-                                android:textColor="@color/white"
-                                android:textSize="16sp"
-                                android:lineSpacingMultiplier="1.1" />
+                        <TextView
+                            android:id="@+id/tvBannerSubtitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:fontFamily="sans-serif"
+                            android:text="@string/home_banner_subtitle"
+                            android:textColor="#E6FFFFFF"
+                            android:textSize="13sp" />
 
-                            <!-- "Hasta un 40%" -->
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:layout_marginTop="2dp">
+                        <TextView
+                            android:id="@+id/tvBannerPercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:visibility="gone" />
 
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:fontFamily="sans-serif"
-                                    android:text="@string/home_banner_subtitle"
-                                    android:textColor="#CCFFFFFF"
-                                    android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/tvBannerLegal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:fontFamily="sans-serif"
+                            android:text="@string/home_banner_legal"
+                            android:textColor="#B3FFFFFF"
+                            android:textSize="9sp" />
 
-                                <TextView
-                                    android:id="@+id/tvBannerPercent"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="6dp"
-                                    android:fontFamily="sans-serif-black"
-                                    android:text="@string/home_banner_percent"
-                                    android:textColor="@color/white"
-                                    android:textSize="38sp" />
-                            </LinearLayout>
-
-                            <!-- Texto legal -->
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif"
-                                android:text="@string/home_banner_legal"
-                                android:textColor="#99FFFFFF"
-                                android:textSize="9sp"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
-
-                        <!-- Columna derecha: botón Postular alineado abajo -->
-                        <FrameLayout
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="0.9">
-
-                            <Button
-                                android:id="@+id/btnBannerCta"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:layout_gravity="bottom|center_horizontal"
-                                android:layout_marginBottom="18dp"
-                                android:background="@drawable/bg_btn_claim"
-                                android:fontFamily="sans-serif-medium"
-                                android:paddingStart="20dp"
-                                android:paddingEnd="20dp"
-                                android:text="@string/home_banner_cta"
-                                android:textColor="@color/white"
-                                android:textSize="13sp"
-                                android:stateListAnimator="@null" />
-                        </FrameLayout>
+                        <Button
+                            android:id="@+id/btnBannerCta"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_badge_white"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp"
+                            android:stateListAnimator="@null"
+                            android:text="@string/home_banner_cta"
+                            android:textColor="@color/brand_color"
+                            android:textSize="12sp" />
                     </LinearLayout>
-                </FrameLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Indicadores del carrusel (dots) -->
-            <LinearLayout
-                android:id="@+id/llBannerDots"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="10dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <View
-                    android:layout_width="10dp"
-                    android:layout_height="8dp"
-                    android:layout_marginEnd="5dp"
-                    android:background="@drawable/bg_carousel_dot_active" />
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:layout_marginEnd="5dp"
-                    android:background="@drawable/bg_carousel_dot_inactive" />
-
-                <View
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
-                    android:background="@drawable/bg_carousel_dot_inactive" />
-            </LinearLayout>
-
-            <!-- ──────────────────────────────────────────
-                 SECCIÓN: Categorías (mismo estilo que ChambAYA-APP-main)
-                 ────────────────────────────────────────── -->
+            
 
             <TextView
                 android:layout_width="match_parent"
@@ -431,7 +350,7 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
-            <!-- Grid de categorías (horizontal) - mismas imágenes que ChambAYA-APP-main -->
+            <!-- Grid de categorÃ­as (horizontal) - mismas imÃ¡genes que ChambAYA-APP-main -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvCategories"
                 android:layout_width="match_parent"
@@ -444,11 +363,56 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_categoria" />
 
-            <!-- ──────────────────────────────────────────
-                 SECCIÓN: Chambas Nuevas (Flash Sale)
-                 ────────────────────────────────────────── -->
+            <LinearLayout
+                android:id="@+id/feedModeTabs"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="18dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:padding="0dp">
 
-            <!-- Título + Temporizador -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tabBusinessJobs"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:elevation="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null"
+                    android:text="Empleos"
+                    android:textAllCaps="false"
+                    android:textSize="13sp"
+                    app:cornerRadius="14dp"
+                    app:icon="@drawable/ic_tab_publicar"
+                    app:iconGravity="textStart"
+                    app:iconSize="18dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/tabFreeTime"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:elevation="0dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:stateListAnimator="@null"
+                    android:text="Tiempo Libre"
+                    android:textAllCaps="false"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp"
+                    app:cornerRadius="14dp"
+                    app:icon="@drawable/ic_calendar_small"
+                    app:iconGravity="textStart"
+                    app:iconSize="18dp"
+                    app:strokeWidth="0dp" />
+            </LinearLayout>
+
+            <!-- TÃ­tulo + Temporizador -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -497,13 +461,7 @@
                         android:textSize="13sp" />
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
-
-            
-
-            <!-- ──────────────────────────────────────────
-                 LISTA DE JOB CARDS (RecyclerView optimizado)
-                 ────────────────────────────────────────── -->
-            <!-- Feed de trabajos estilo Instagram — 1 tarjeta por fila, ancho completo -->
+            <!-- Feed de trabajos estilo Instagram â€” 1 tarjeta por fila, ancho completo -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvJobs"
                 android:layout_width="match_parent"
@@ -516,7 +474,7 @@
                 tools:listitem="@layout/item_job_card"
                 tools:itemCount="3" />
 
-            <!-- FASE 6 · Estado de carga del feed -->
+            <!-- FASE 6 Â· Estado de carga del feed -->
             <LinearLayout
                 android:id="@+id/layoutFeedLoading"
                 android:layout_width="match_parent"
@@ -540,7 +498,7 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- FASE 6 · Estado vacío del feed -->
+            <!-- FASE 6 Â· Estado vacÃ­o del feed -->
             <LinearLayout
                 android:id="@+id/layoutFeedEmpty"
                 android:layout_width="match_parent"
@@ -589,7 +547,7 @@
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- FASE 6 · Estado de error del feed -->
+            <!-- FASE 6 Â· Estado de error del feed -->
             <LinearLayout
                 android:id="@+id/layoutFeedError"
                 android:layout_width="match_parent"
