@@ -72,7 +72,8 @@ class FragmentoChambas : Fragment() {
     // ── Tiempo real: el listener se engancha en onResume y se suelta en
     // onPause. Los flags like/save se cachean por id para no releerlos en
     // cada snapshot; solo se consultan los ids nuevos.
-    private var feedListener: com.google.firebase.firestore.ListenerRegistration? = null
+    private val feedListeners = mutableListOf<com.google.firebase.firestore.ListenerRegistration>()
+    private val feedByType = mutableMapOf<String, List<com.proyecto.chambaya.data.model.Publication>>()
     private var badgeListener: com.google.firebase.firestore.ListenerRegistration? = null
     private var badgeUid: String? = null
     private val stateCache = mutableMapOf<String, Pair<Boolean, Boolean>>()
@@ -231,22 +232,28 @@ class FragmentoChambas : Fragment() {
     }
 
     private fun attachFeed() {
-        if (feedListener != null) return
+        if (feedListeners.isNotEmpty()) return
         if (allItems.isEmpty()) pintarEstado(Estado.CARGANDO)
-        feedListener = pubRepo.listenFeed(
-            limit = 40,
-            type = if (showingFreeTime) "WORKER_AVAILABILITY" else "JOB_OFFER",
-            onUpdate = { pubs -> integrarSnapshot(pubs) },
-            onError = { e ->
-                android.util.Log.e("FragmentoChambas", "No se pudo cargar el feed", e)
-                if (isAdded) pintarEstado(Estado.ERROR)
-            }
-        )
+        listOf("JOB_OFFER", "WORKER_AVAILABILITY").forEach { type ->
+            val listener = pubRepo.listenFeed(
+                limit = 40,
+                type = type,
+                onUpdate = { pubs ->
+                    feedByType[type] = pubs
+                    integrarSnapshot(feedByType.values.flatten().distinctBy { it.publicationId })
+                },
+                onError = { e ->
+                    android.util.Log.e("FragmentoChambas", "No se pudo cargar el feed $type", e)
+                    if (isAdded) pintarEstado(Estado.ERROR)
+                }
+            )
+            feedListeners += listener
+        }
     }
 
     private fun detachFeed() {
-        feedListener?.remove()
-        feedListener = null
+        feedListeners.forEach { it.remove() }
+        feedListeners.clear()
     }
 
     /** Fusiona el snapshot con los flags cacheados y repinta. */
@@ -383,7 +390,6 @@ class FragmentoChambas : Fragment() {
                 filters = filters.copy(category = "")
                 categoriaAdapter?.setSeleccionada("Todas")
                 actualizar()
-                recargarFeed()
             }
         }
         tiempo.setOnClickListener {
@@ -393,7 +399,6 @@ class FragmentoChambas : Fragment() {
                 filters = filters.copy(category = "")
                 categoriaAdapter?.setSeleccionada("Todas")
                 actualizar()
-                recargarFeed()
             }
         }
         actualizar()
@@ -745,6 +750,7 @@ class FragmentoChambas : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         detachFeed()
+        feedByType.clear()
         badgeListener?.remove()
         badgeListener = null
         badgeUid = null
