@@ -80,23 +80,23 @@ class CrearPublicacionActivity : AppCompatActivity() {
 
         val editId = intent.getStringExtra(EXTRA_EDIT_ID).orEmpty()
         if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY) {
-            findViewById<TextView>(R.id.tvWorkplaceChip)?.text = "Tu perfil"
-            findViewById<TextView>(R.id.tvPublicationScreenTitle)?.text = "Ofrecer mi tiempo"
+            findViewById<TextView>(R.id.tvWorkplaceChip)?.text = getString(R.string.pub_tu_perfil)
+            findViewById<TextView>(R.id.tvPublicationScreenTitle)?.text = getString(R.string.pub_ofrecer_titulo)
             findViewById<View>(R.id.layoutPublicationType)?.visibility = View.GONE
-            findViewById<TextView>(R.id.btnPublicar)?.text = "Publicar disponibilidad"
+            findViewById<TextView>(R.id.btnPublicar)?.text = getString(R.string.pub_disponibilidad_btn)
             findViewById<View>(R.id.tvExperienciaLabel)?.visibility = View.GONE
             findViewById<View>(R.id.groupExperienceRequirement)?.visibility = View.GONE
             findViewById<View>(R.id.layoutVacantesField)?.visibility = View.GONE
-            findViewById<TextView>(R.id.tvTitleLabel)?.text = "Título de tu servicio"
+            findViewById<TextView>(R.id.tvTitleLabel)?.text = getString(R.string.pub_titulo_servicio)
             findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutTitleInput)
-                ?.hint = "Ej. Ofrezco servicios de pintura profesional"
+                ?.hint = getString(R.string.pub_hint_servicio)
             findViewById<TextInputEditText>(R.id.etTitulo)?.hint = null
             findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.layoutDescriptionInput)
-                ?.hint = "Describe tu experiencia y los servicios que ofreces"
+                ?.hint = getString(R.string.pub_hint_experiencia)
             findViewById<TextInputEditText>(R.id.etDescripcion)?.hint = null
-            findViewById<TextView>(R.id.tvPaymentLabel)?.text = "Tarifa esperada (S/)"
-            findViewById<TextView>(R.id.tvPeriodLabel)?.text = "Tarifa por"
-            findViewById<TextView>(R.id.tvNegotiableLabel)?.text = "Tarifa negociable"
+            findViewById<TextView>(R.id.tvPaymentLabel)?.text = getString(R.string.pub_tarifa)
+            findViewById<TextView>(R.id.tvPeriodLabel)?.text = getString(R.string.pub_tarifa_por)
+            findViewById<TextView>(R.id.tvNegotiableLabel)?.text = getString(R.string.pub_tarifa_negociable)
             findViewById<View>(R.id.layoutDistritoField)?.let { districtField ->
                 (districtField.layoutParams as? LinearLayout.LayoutParams)?.let { params ->
                     params.weight = 2f
@@ -170,7 +170,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
             return
         }
         if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY) {
-            button.text = "Publicar disponibilidad"
+            button.text = getString(R.string.pub_disponibilidad_btn)
             return
         }
         button.text = getString(
@@ -205,14 +205,14 @@ class CrearPublicacionActivity : AppCompatActivity() {
             setOnClickListener { showDropDown() }
         }
         findViewById<MaterialAutoCompleteTextView>(R.id.actvDiasDisponibles)?.setOnClickListener {
-            val dias = arrayOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+            val dias = arrayOf(getString(R.string.k_dia_lunes), getString(R.string.k_dia_martes), getString(R.string.k_dia_miercoles), getString(R.string.k_dia_jueves), getString(R.string.k_dia_viernes), getString(R.string.k_dia_sabado), getString(R.string.k_dia_domingo))
             val marcados = BooleanArray(dias.size) { dias[it] in diasDisponibles }
             AlertDialog.Builder(this)
-                .setTitle("¿Qué días tienes libres?")
+                .setTitle(R.string.pub_dias_titulo)
                 .setMultiChoiceItems(dias, marcados) { _, which, checked ->
                     if (checked) diasDisponibles.add(dias[which]) else diasDisponibles.remove(dias[which])
                 }
-                .setPositiveButton("Aceptar") { _, _ ->
+                .setPositiveButton(R.string.item_aceptar) { _, _ ->
                     findViewById<MaterialAutoCompleteTextView>(R.id.actvDiasDisponibles)
                         ?.setText(dias.filter { it in diasDisponibles }.joinToString(", "), false)
                 }
@@ -336,12 +336,12 @@ class CrearPublicacionActivity : AppCompatActivity() {
         val draft = armarDraft()
         if (findViewById<MaterialAutoCompleteTextView>(R.id.actvPeriodo)?.text.isNullOrBlank()) {
             tvError.visibility = View.VISIBLE
-            tvError.text = "Selecciona el periodo de pago."
+            tvError.text = getString(R.string.pub_periodo_requerido)
             return
         }
         if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY && draft.availableDays.isEmpty()) {
             tvError.visibility = View.VISIBLE
-            tvError.text = "Selecciona al menos un día disponible."
+            tvError.text = getString(R.string.pub_dias_requeridos)
             return
         }
         val errores = validatePublicationDraft(this, draft)
@@ -362,7 +362,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
         }
         tvError.visibility = View.GONE
         publicando = true
-        (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply { isEnabled = false; text = "Publicando…" }
+        (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply { isEnabled = false; text = getString(R.string.k_crear_publicando) }
 
         lifecycleScope.launch {
             try {
@@ -424,7 +424,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
                 finish()
             } catch (e: Exception) {
                 tvError.visibility = View.VISIBLE
-                tvError.text = e.message ?: getString(R.string.k_crear_no_publicar)
+                tvError.text = if (e.message?.contains("PERMISSION_DENIED") == true) getString(R.string.k_pub_sin_permiso) else e.message ?: getString(R.string.k_crear_no_publicar)
             } finally {
                 publicando = false
                 (findViewById<View>(R.id.btnPublicar) as? MaterialButton)?.apply {

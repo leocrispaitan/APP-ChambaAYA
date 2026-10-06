@@ -141,13 +141,13 @@ class FragmentoMisTrabajos : Fragment() {
 
         val publicarTiempoPanel = view.findViewById<View>(R.id.emptyPublicarTiempo)
         publicarTiempoPanel.findViewById<TextView>(R.id.tvVacioTitulo)?.apply {
-            text = "Ofrece tu tiempo libre"
+            text = getString(R.string.pub_tiempo_libre_titulo)
         }
         publicarTiempoPanel.findViewById<TextView>(R.id.tvVacioSubtitulo)?.apply {
-            text = "Publica tu experiencia y disponibilidad para que puedan contratarte."
+            text = getString(R.string.pub_tiempo_libre_sub)
         }
         publicarTiempoPanel.findViewById<MaterialButton>(R.id.btnVacioAccion)?.apply {
-            text = "Publicar disponibilidad"
+            text = getString(R.string.pub_disponibilidad_btn)
             setOnClickListener {
                 startActivity(
                     Intent(requireContext(), CrearPublicacionActivity::class.java)

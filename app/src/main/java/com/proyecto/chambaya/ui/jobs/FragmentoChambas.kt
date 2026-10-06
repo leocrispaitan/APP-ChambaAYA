@@ -346,14 +346,14 @@ class FragmentoChambas : Fragment() {
     private fun pintarBanner() {
         val v = view ?: return
         v.findViewById<TextView>(R.id.tvBannerTitle)?.text = if (showingFreeTime)
-            "¿Tienes tiempo libre hoy?" else "Chambas cerca de ti"
+            getString(R.string.feed_banner_tiempo_titulo) else getString(R.string.feed_banner_chambas_titulo)
         v.findViewById<TextView>(R.id.tvBannerBadge)?.visibility = View.GONE
         v.findViewById<TextView>(R.id.tvBannerPercent)?.visibility = View.GONE
         v.findViewById<TextView>(R.id.tvBannerSubtitle)?.text = if (showingFreeTime)
-            "Publica tus horas y disponibilidad para que te contraten." else "Encuentra oportunidades en tu zona."
+            getString(R.string.pub_tus_horas) else getString(R.string.pub_encuentra_zona)
         v.findViewById<TextView>(R.id.tvBannerLegal)?.visibility = View.GONE
         v.findViewById<Button>(R.id.btnBannerCta)?.text = if (showingFreeTime)
-            "Ofrecer mi tiempo" else "Publicar chamba"
+            getString(R.string.pub_ofrecer_titulo) else getString(R.string.k_pub_cta)
         v.findViewById<android.widget.ImageView>(R.id.ivBannerPhoto)?.setImageResource(
             if (showingFreeTime) R.drawable.chamba_banner_tiempo_libre
             else R.drawable.chamba_banner_chambas_cerca

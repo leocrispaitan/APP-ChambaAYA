@@ -70,7 +70,7 @@ class PublicationRepository(
                         context.getString(R.string.kr_pub_empleador)
                     }
                 }
-                else -> error("Tipo de publicación no válido")
+                else -> error(context.getString(R.string.pub_tipo_invalido))
             }
             // Las fotos deben venir de chambaya/fotos-publicaciones/{uid}/{publicationId}/
             // (misma carpeta que CloudinaryUploader.carpetaDePublicacion y firestore.rules).

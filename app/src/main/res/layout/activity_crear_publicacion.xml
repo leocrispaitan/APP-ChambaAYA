@@ -202,7 +202,7 @@
                         android:textSize="16sp"
                         android:paddingStart="16dp"
                         android:paddingEnd="16dp"
-                        android:hint="Seleccionar periodo" />
+                        android:hint="@string/pub_periodo_hint" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </LinearLayout>
@@ -342,7 +342,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="¿Qué días tienes libres?"
+            android:text="@string/pub_dias_titulo"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 
@@ -358,7 +358,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="56dp"
-                android:hint="Seleccionar días disponibles"
+                android:hint="@string/pub_dias_hint"
                 android:inputType="none"
                 android:focusable="false"
                 android:textSize="16sp"
@@ -371,7 +371,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
-            android:text="¿Cuál es tu horario disponible?"
+            android:text="@string/pub_horario_titulo"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
 

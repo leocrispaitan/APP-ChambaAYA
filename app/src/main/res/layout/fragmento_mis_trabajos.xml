@@ -63,7 +63,7 @@
             android:layout_height="52dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
-            android:contentDescription="Ofrecer mi tiempo"
+            android:contentDescription="@string/pub_ofrecer_titulo"
             android:focusable="true"
             android:clickable="true">
 
