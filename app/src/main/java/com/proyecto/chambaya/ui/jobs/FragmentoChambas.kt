@@ -238,7 +238,8 @@ class FragmentoChambas : Fragment() {
             type = if (showingFreeTime) "WORKER_AVAILABILITY" else "JOB_OFFER",
             onUpdate = { pubs -> integrarSnapshot(pubs) },
             onError = { e ->
-                if (isAdded) pintarEstado(Estado.ERROR, e.message)
+                android.util.Log.e("FragmentoChambas", "No se pudo cargar el feed", e)
+                if (isAdded) pintarEstado(Estado.ERROR)
             }
         )
     }

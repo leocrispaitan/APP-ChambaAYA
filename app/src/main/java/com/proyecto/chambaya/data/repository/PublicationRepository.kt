@@ -380,14 +380,15 @@ class PublicationRepository(
     ): com.google.firebase.firestore.ListenerRegistration {
         val collection = firestore.collection(COLLECTION)
         val featuredQuery = collection
+            // Filtrar el tipo en el cliente evita depender de un índice
+            // compuesto featured + type que puede no estar desplegado aún.
             .whereEqualTo("featured", true)
-            .let { query -> if (type.isNullOrBlank()) query else query.whereEqualTo("type", type) }
         val recentQuery = collection
             .whereEqualTo("status", PublicationStatus.ACTIVE)
             .whereEqualTo("visibility", PublicationVisibility.PUBLIC)
-            .let { query -> if (type.isNullOrBlank()) query else query.whereEqualTo("type", type) }
             .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(limit)
+            // Se amplía porque el tipo se filtra después de descargar el lote.
+            .limit((limit * 3).coerceAtMost(120))
 
         val lock = Any()
         var featuredItems: List<Publication>? = null
@@ -409,7 +410,10 @@ class PublicationRepository(
                 return@addSnapshotListener
             }
             if (snapshot == null) return@addSnapshotListener
-            synchronized(lock) { featuredItems = snapshot.documents.map { it.toPublication() } }
+            synchronized(lock) {
+                featuredItems = snapshot.documents.map { it.toPublication() }
+                    .filter { type.isNullOrBlank() || it.type == type }
+            }
             mergeIfReady()?.let(onUpdate)
         }
         val recentListener = recentQuery.addSnapshotListener { snapshot, error ->
@@ -418,7 +422,10 @@ class PublicationRepository(
                 return@addSnapshotListener
             }
             if (snapshot == null) return@addSnapshotListener
-            synchronized(lock) { recentItems = snapshot.documents.map { it.toPublication() } }
+            synchronized(lock) {
+                recentItems = snapshot.documents.map { it.toPublication() }
+                    .filter { type.isNullOrBlank() || it.type == type }
+            }
             mergeIfReady()?.let(onUpdate)
         }
         return object : com.google.firebase.firestore.ListenerRegistration {
