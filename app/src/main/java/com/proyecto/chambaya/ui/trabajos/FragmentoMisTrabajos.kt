@@ -113,19 +113,24 @@ class FragmentoMisTrabajos : Fragment() {
         }
         ViewCompat.requestApplyInsets(barraTabs)
         tabs = listOf(
+            view.findViewById(R.id.tabPublicarTiempo),
             view.findViewById(R.id.tabSolicitudes),
             view.findViewById(R.id.tabHistorial),
-            view.findViewById(R.id.tabPublicarTiempo)
         )
+        // En el rol trabajador, ofrecer disponibilidad ocupa la primera pestaña.
+        (barraTabs as? android.widget.LinearLayout)?.let { barra ->
+            tabs.forEach { barra.removeView(it) }
+            tabs.forEach { barra.addView(it) }
+        }
         iconos = listOf(
+            view.findViewById(R.id.iconoPublicarTiempo),
             view.findViewById(R.id.iconoSolicitudes),
             view.findViewById(R.id.iconoHistorial),
-            view.findViewById(R.id.iconoPublicarTiempo)
         )
         paneles = listOf(
+            view.findViewById(R.id.panelPublicarTiempo),
             view.findViewById(R.id.panelSolicitudes),
             view.findViewById(R.id.panelHistorial),
-            view.findViewById(R.id.panelPublicarTiempo)
         )
 
         val publicarTiempoPanel = view.findViewById<View>(R.id.emptyPublicarTiempo)
@@ -542,7 +547,8 @@ class FragmentoMisTrabajos : Fragment() {
 
     private companion object {
         const val KEY_SECCION = "mistrabajos_seccion"
-        const val SECCION_SOLICITUDES = 0
-        const val SECCION_HISTORIAL = 1
+        const val SECCION_PUBLICAR_TIEMPO = 0
+        const val SECCION_SOLICITUDES = 1
+        const val SECCION_HISTORIAL = 2
     }
 }
