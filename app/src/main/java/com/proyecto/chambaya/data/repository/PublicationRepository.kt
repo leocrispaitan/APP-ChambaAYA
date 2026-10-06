@@ -113,7 +113,9 @@ class PublicationRepository(
                     "startDate" to null,
                     "endDate" to null,
                     "startTime" to draft.startTime.trim(),
-                    "endTime" to draft.endTime.trim()
+                    "endTime" to draft.endTime.trim(),
+                    "availableDays" to draft.availableDays,
+                    "scheduleNotes" to ""
                 ),
                 "workersNeeded" to draft.workersNeeded,
                 "requiresExperience" to draft.requiresExperience,
@@ -199,6 +201,7 @@ class PublicationRepository(
                 "location.exactAddress" to draft.exactAddress.trim(),
                 "schedule.startTime" to draft.startTime.trim(),
                 "schedule.endTime" to draft.endTime.trim(),
+                "schedule.availableDays" to draft.availableDays,
                 "updatedAt" to FieldValue.serverTimestamp()
             )
             if (images != null) {

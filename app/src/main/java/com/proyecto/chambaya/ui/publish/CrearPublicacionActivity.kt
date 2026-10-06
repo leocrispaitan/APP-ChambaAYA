@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import coil.load
@@ -58,6 +59,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
     private var destacadaSeleccionada = false
     private var pagoDemoConfirmado = false
     private var publicando = false
+    private val diasDisponibles = mutableSetOf<String>()
     private val tipoPublicacion: String
         get() = intent.getStringExtra(EXTRA_PUBLICATION_TYPE) ?: PublicationType.JOB_OFFER
 
@@ -82,6 +84,8 @@ class CrearPublicacionActivity : AppCompatActivity() {
             findViewById<TextView>(R.id.tvPublicationScreenTitle)?.text = "Ofrecer mi tiempo"
             findViewById<View>(R.id.layoutPublicationType)?.visibility = View.GONE
             findViewById<TextView>(R.id.btnPublicar)?.text = "Publicar disponibilidad"
+            findViewById<View>(R.id.tvExperienciaLabel)?.visibility = View.GONE
+            findViewById<View>(R.id.groupExperienceRequirement)?.visibility = View.GONE
         }
         findViewById<View>(R.id.btnCerrar).setOnClickListener { finish() }
         configurarCampos()
@@ -177,6 +181,21 @@ class CrearPublicacionActivity : AppCompatActivity() {
             setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, distritos))
             setOnClickListener { showDropDown() }
         }
+        findViewById<MaterialAutoCompleteTextView>(R.id.actvDiasDisponibles)?.setOnClickListener {
+            val dias = arrayOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+            val marcados = BooleanArray(dias.size) { dias[it] in diasDisponibles }
+            AlertDialog.Builder(this)
+                .setTitle("¿Qué días tienes libres?")
+                .setMultiChoiceItems(dias, marcados) { _, which, checked ->
+                    if (checked) diasDisponibles.add(dias[which]) else diasDisponibles.remove(dias[which])
+                }
+                .setPositiveButton("Aceptar") { _, _ ->
+                    findViewById<MaterialAutoCompleteTextView>(R.id.actvDiasDisponibles)
+                        ?.setText(dias.filter { it in diasDisponibles }.joinToString(", "), false)
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
     }
 
     private fun agregarChipCategoria(
@@ -244,6 +263,10 @@ class CrearPublicacionActivity : AppCompatActivity() {
             findViewById<MaterialAutoCompleteTextView>(R.id.actvDistrito)?.setText(pub.location.district, false)
             findViewById<TextInputEditText>(R.id.etHoraInicio)?.setText(pub.schedule.startTime)
             findViewById<TextInputEditText>(R.id.etHoraFin)?.setText(pub.schedule.endTime)
+            diasDisponibles.clear()
+            diasDisponibles.addAll(pub.schedule.availableDays)
+            findViewById<MaterialAutoCompleteTextView>(R.id.actvDiasDisponibles)
+                ?.setText(pub.schedule.availableDays.joinToString(", "), false)
             findViewById<TextInputEditText>(R.id.etHabilidades)?.setText(pub.skillsRequired.joinToString(", "))
             // Marca la categoría.
             val group = findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupCategoria)
@@ -273,7 +296,8 @@ class CrearPublicacionActivity : AppCompatActivity() {
             requiresExperience = findViewById<android.widget.RadioGroup>(R.id.groupExperienceRequirement)?.checkedRadioButtonId == R.id.radioExperienceRequired,
             district = findViewById<MaterialAutoCompleteTextView>(R.id.actvDistrito)?.text?.toString().orEmpty(),
             startTime = findViewById<TextInputEditText>(R.id.etHoraInicio)?.text?.toString().orEmpty().trim(),
-            endTime = findViewById<TextInputEditText>(R.id.etHoraFin)?.text?.toString().orEmpty().trim()
+            endTime = findViewById<TextInputEditText>(R.id.etHoraFin)?.text?.toString().orEmpty().trim(),
+            availableDays = diasDisponibles.toList()
         )
     }
 
@@ -281,12 +305,17 @@ class CrearPublicacionActivity : AppCompatActivity() {
         if (publicando) return
         val tvError = findViewById<TextView>(R.id.tvFormError)
         val experienceGroup = findViewById<android.widget.RadioGroup>(R.id.groupExperienceRequirement)
-        if (experienceGroup?.checkedRadioButtonId == -1) {
+        if (tipoPublicacion == PublicationType.JOB_OFFER && experienceGroup?.checkedRadioButtonId == -1) {
             tvError.visibility = View.VISIBLE
             tvError.text = getString(R.string.pub_experiencia_seleccion_requerida)
             return
         }
         val draft = armarDraft()
+        if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY && draft.availableDays.isEmpty()) {
+            tvError.visibility = View.VISIBLE
+            tvError.text = "Selecciona al menos un día disponible."
+            return
+        }
         val errores = validatePublicationDraft(this, draft)
         if (errores.isNotEmpty()) {
             tvError.visibility = View.VISIBLE
@@ -355,9 +384,9 @@ class CrearPublicacionActivity : AppCompatActivity() {
                 if (r.isFailure) throw r.exceptionOrNull() ?: Exception(getString(R.string.k_crear_no_publicar_corto))
                 // Caché en caliente: el servidor ya sumó +1 a los contadores.
                 ProfileCache.perfil = perfil.copy(
-                    employer = perfil.employer.copy(
-                        publishedCount = perfil.employer.publishedCount + 1
-                    ),
+                    employer = if (tipoPublicacion == PublicationType.JOB_OFFER) {
+                        perfil.employer.copy(publishedCount = perfil.employer.publishedCount + 1)
+                    } else perfil.employer,
                     statistics = perfil.statistics.copy(
                         publicationsCount = perfil.statistics.publicationsCount + 1
                     )

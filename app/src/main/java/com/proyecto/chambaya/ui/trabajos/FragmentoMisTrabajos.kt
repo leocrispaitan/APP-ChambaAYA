@@ -100,7 +100,13 @@ class FragmentoMisTrabajos : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        seccionActual = savedInstanceState?.getInt(KEY_SECCION, SECCION_SOLICITUDES) ?: SECCION_SOLICITUDES
+        seccionActual = savedInstanceState?.getInt(KEY_SECCION_V2)
+            ?: when (savedInstanceState?.getInt(KEY_SECCION_V1, SECCION_SOLICITUDES)) {
+                0 -> SECCION_PUBLICAR_TIEMPO
+                1 -> SECCION_SOLICITUDES
+                2 -> SECCION_HISTORIAL
+                else -> SECCION_SOLICITUDES
+            }
         colorActivo = requireContext().getColor(R.color.profile_tab_active)
         colorInactivo = requireContext().getColor(R.color.profile_tab_inactive)
 
@@ -114,8 +120,8 @@ class FragmentoMisTrabajos : Fragment() {
         ViewCompat.requestApplyInsets(barraTabs)
         tabs = listOf(
             view.findViewById(R.id.tabPublicarTiempo),
-            view.findViewById(R.id.tabSolicitudes),
             view.findViewById(R.id.tabHistorial),
+            view.findViewById(R.id.tabSolicitudes),
         )
         // En el rol trabajador, ofrecer disponibilidad ocupa la primera pestaña.
         (barraTabs as? android.widget.LinearLayout)?.let { barra ->
@@ -124,13 +130,13 @@ class FragmentoMisTrabajos : Fragment() {
         }
         iconos = listOf(
             view.findViewById(R.id.iconoPublicarTiempo),
-            view.findViewById(R.id.iconoSolicitudes),
             view.findViewById(R.id.iconoHistorial),
+            view.findViewById(R.id.iconoSolicitudes),
         )
         paneles = listOf(
             view.findViewById(R.id.panelPublicarTiempo),
-            view.findViewById(R.id.panelSolicitudes),
             view.findViewById(R.id.panelHistorial),
+            view.findViewById(R.id.panelSolicitudes),
         )
 
         val publicarTiempoPanel = view.findViewById<View>(R.id.emptyPublicarTiempo)
@@ -177,7 +183,7 @@ class FragmentoMisTrabajos : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(KEY_SECCION, seccionActual)
+        outState.putInt(KEY_SECCION_V2, seccionActual)
     }
 
     override fun onResume() {
@@ -546,9 +552,10 @@ class FragmentoMisTrabajos : Fragment() {
     }
 
     private companion object {
-        const val KEY_SECCION = "mistrabajos_seccion"
+        const val KEY_SECCION_V1 = "mistrabajos_seccion"
+        const val KEY_SECCION_V2 = "mistrabajos_seccion_v2"
         const val SECCION_PUBLICAR_TIEMPO = 0
-        const val SECCION_SOLICITUDES = 1
-        const val SECCION_HISTORIAL = 2
+        const val SECCION_HISTORIAL = 1
+        const val SECCION_SOLICITUDES = 2
     }
 }

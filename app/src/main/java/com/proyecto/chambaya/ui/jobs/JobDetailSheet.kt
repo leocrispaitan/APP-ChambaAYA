@@ -159,8 +159,11 @@ class JobDetailSheet : BottomSheetDialogFragment() {
         view.findViewById<TextView>(R.id.tvDetailDistrict).text =
             pub.location.district.ifBlank { "Ayacucho" }
 
-        val horario = listOf(pub.schedule.startTime, pub.schedule.endTime)
-            .filter { it.isNotBlank() }.joinToString(" – ")
+        val horario = buildList {
+            if (pub.schedule.availableDays.isNotEmpty()) add(pub.schedule.availableDays.joinToString(", "))
+            add(listOf(pub.schedule.startTime, pub.schedule.endTime)
+                .filter { it.isNotBlank() }.joinToString(" – "))
+        }.filter { it.isNotBlank() }.joinToString(" · ")
         view.findViewById<TextView>(R.id.tvDetailSchedule).text = horario.ifBlank { getString(R.string.k_detalle_convenir) }
         view.findViewById<TextView>(R.id.tvDetailWorkers).text =
             (if (libres == 1) getString(R.string.k_personas_1) else getString(R.string.k_personas_n, libres))

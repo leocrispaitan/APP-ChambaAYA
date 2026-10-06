@@ -58,7 +58,9 @@ data class ScheduleBlock(
     val startDate: Timestamp? = null,
     val endDate: Timestamp? = null,
     val startTime: String = "",
-    val endTime: String = ""
+    val endTime: String = "",
+    val availableDays: List<String> = emptyList(),
+    val scheduleNotes: String = ""
 )
 
 data class PublicationLocation(
@@ -136,7 +138,8 @@ data class PublicationDraft(
     val district: String = "",
     val exactAddress: String = "",
     val startTime: String = "",
-    val endTime: String = ""
+    val endTime: String = "",
+    val availableDays: List<String> = emptyList()
 )
 
 object PublicationLimits {
@@ -215,7 +218,9 @@ fun DocumentSnapshot.toPublication(): Publication {
             startDate = schMap?.get("startDate") as? Timestamp,
             endDate = schMap?.get("endDate") as? Timestamp,
             startTime = (schMap?.get("startTime") as? String).orEmpty(),
-            endTime = (schMap?.get("endTime") as? String).orEmpty()
+            endTime = (schMap?.get("endTime") as? String).orEmpty(),
+            availableDays = (schMap?.get("availableDays") as? List<*>)?.mapNotNull { it?.toString() }.orEmpty(),
+            scheduleNotes = (schMap?.get("scheduleNotes") as? String).orEmpty()
         ),
         workersNeeded = (get("workersNeeded") as? Number)?.toInt() ?: 1,
         requiresExperience = (get("requiresExperience") as? Boolean) ?: false,
