@@ -29,6 +29,7 @@ import com.proyecto.chambaya.data.model.ApplicationStatus
 import com.proyecto.chambaya.data.model.Job
 import com.proyecto.chambaya.data.model.JobApplication
 import com.proyecto.chambaya.data.model.JobStatus
+import com.proyecto.chambaya.data.model.PublicationType
 import com.proyecto.chambaya.data.repository.ApplicationRepository
 import com.proyecto.chambaya.data.repository.ChatRepository
 import com.proyecto.chambaya.data.repository.JobRepository
@@ -36,6 +37,7 @@ import com.proyecto.chambaya.data.repository.ProfileRepository
 import com.proyecto.chambaya.data.repository.RatingRepository
 import com.proyecto.chambaya.ui.jobs.JobDetailSheet
 import com.proyecto.chambaya.ui.jobs.RateSheet
+import com.proyecto.chambaya.ui.publish.CrearPublicacionActivity
 import com.proyecto.chambaya.ui.publish.MyApplicationsAdapter
 import com.proyecto.chambaya.ui.publish.MyAppRow
 import kotlinx.coroutines.launch
@@ -110,9 +112,38 @@ class FragmentoMisTrabajos : Fragment() {
             insets
         }
         ViewCompat.requestApplyInsets(barraTabs)
-        tabs = listOf(view.findViewById(R.id.tabSolicitudes), view.findViewById(R.id.tabHistorial))
-        iconos = listOf(view.findViewById(R.id.iconoSolicitudes), view.findViewById(R.id.iconoHistorial))
-        paneles = listOf(view.findViewById(R.id.panelSolicitudes), view.findViewById(R.id.panelHistorial))
+        tabs = listOf(
+            view.findViewById(R.id.tabSolicitudes),
+            view.findViewById(R.id.tabHistorial),
+            view.findViewById(R.id.tabPublicarTiempo)
+        )
+        iconos = listOf(
+            view.findViewById(R.id.iconoSolicitudes),
+            view.findViewById(R.id.iconoHistorial),
+            view.findViewById(R.id.iconoPublicarTiempo)
+        )
+        paneles = listOf(
+            view.findViewById(R.id.panelSolicitudes),
+            view.findViewById(R.id.panelHistorial),
+            view.findViewById(R.id.panelPublicarTiempo)
+        )
+
+        val publicarTiempoPanel = view.findViewById<View>(R.id.emptyPublicarTiempo)
+        publicarTiempoPanel.findViewById<TextView>(R.id.tvVacioTitulo)?.apply {
+            text = "Ofrece tu tiempo libre"
+        }
+        publicarTiempoPanel.findViewById<TextView>(R.id.tvVacioSubtitulo)?.apply {
+            text = "Publica tu experiencia y disponibilidad para que puedan contratarte."
+        }
+        publicarTiempoPanel.findViewById<MaterialButton>(R.id.btnVacioAccion)?.apply {
+            text = "Publicar disponibilidad"
+            setOnClickListener {
+                startActivity(
+                    Intent(requireContext(), CrearPublicacionActivity::class.java)
+                        .putExtra(CrearPublicacionActivity.EXTRA_PUBLICATION_TYPE, PublicationType.WORKER_AVAILABILITY)
+                )
+            }
+        }
 
         configurarSolicitudes(view)
         configurarHistorial(view)

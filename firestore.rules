@@ -560,7 +560,8 @@ service cloud.firestore {
       let afterEmp = request.resource.data.get('employer', '');
       let beforeStat = resource.data.get('statistics', '');
       let afterStat = request.resource.data.get('statistics', '');
-      return touched.hasOnly(['employer', 'statistics', 'updatedAt'])
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return (touched.hasOnly(['employer', 'statistics', 'updatedAt'])
         && beforeEmp is map && afterEmp is map
         && beforeStat is map && afterStat is map
         && afterEmp.diff(beforeEmp).affectedKeys().hasOnly(['publishedCount'])
@@ -568,7 +569,14 @@ service cloud.firestore {
           || afterEmp.get('publishedCount', 0) == beforeEmp.get('publishedCount', 0) - 1)
         && afterStat.diff(beforeStat).affectedKeys().hasOnly(['publicationsCount'])
         && (afterStat.get('publicationsCount', 0) == beforeStat.get('publicationsCount', 0) + 1
-          || afterStat.get('publicationsCount', 0) == beforeStat.get('publicationsCount', 0) - 1);
+          || afterStat.get('publicationsCount', 0) == beforeStat.get('publicationsCount', 0) - 1))
+        || (user.get('roles', []).hasAny(['TRABAJADOR'])
+          && user.get('worker', {}).get('enabled', false) == true
+          && touched.hasOnly(['statistics', 'updatedAt'])
+          && beforeStat is map && afterStat is map
+          && afterStat.diff(beforeStat).affectedKeys().hasOnly(['publicationsCount'])
+          && (afterStat.get('publicationsCount', 0) == beforeStat.get('publicationsCount', 0) + 1
+            || afterStat.get('publicationsCount', 0) == beforeStat.get('publicationsCount', 0) - 1));
     }
 
     // Rama FASE 2 de la actualización de `users/{uid}`.
@@ -799,13 +807,19 @@ service cloud.firestore {
         && user.get('employer', {}).get('enabled', false) == true;
     }
 
+    function isWorkerCreator() {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return user.get('roles', []).hasAny(['TRABAJADOR'])
+        && user.get('worker', {}).get('enabled', false) == true;
+    }
+
     function hasValidPublicationFields(pubId) {
       let d = request.resource.data;
       return d.get('publicationId', '') == pubId
         && d.get('ownerUid', '') == request.auth.uid
         && isValidPublicationStatus(d.get('status', ''))
         && d.get('visibility', '') in ['PUBLIC', 'HIDDEN']
-        && d.get('type', '') == 'JOB_OFFER'
+        && d.get('type', '') in ['JOB_OFFER', 'WORKER_AVAILABILITY']
         && d.get('title', '') is string
         && d.get('title', '').size() >= 8
         && d.get('title', '').size() <= 100
@@ -848,8 +862,9 @@ service cloud.firestore {
       allow list: if request.auth != null;
 
       allow create: if request.auth != null
-        && isEmployerCreator()
         && hasValidPublicationFields(publicationId)
+        && ((request.resource.data.get('type', '') == 'JOB_OFFER' && isEmployerCreator())
+          || (request.resource.data.get('type', '') == 'WORKER_AVAILABILITY' && isWorkerCreator()))
         && request.resource.data.get('workersHired', 0) == 0
         && request.resource.data.get('createdAt', null) != null
         && request.resource.data.get('updatedAt', null) != null;

@@ -9,7 +9,9 @@ import com.proyecto.chambaya.data.model.Publication
 import com.proyecto.chambaya.data.model.PublicationDraft
 import com.proyecto.chambaya.data.model.PublicationImage
 import com.proyecto.chambaya.data.model.PublicationStatus
+import com.proyecto.chambaya.data.model.PublicationType
 import com.proyecto.chambaya.data.model.PublicationVisibility
+import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.data.model.UserProfile
 import com.proyecto.chambaya.data.model.toPublication
 import com.proyecto.chambaya.data.model.validatePublicationDraft
@@ -48,7 +50,8 @@ class PublicationRepository(
         workplaceLat: Double? = null,
         workplaceLng: Double? = null,
         images: List<PublicationImage> = emptyList(),
-        featured: Boolean = false
+        featured: Boolean = false,
+        type: String = PublicationType.JOB_OFFER
     ): Result<Publication> = withContext(Dispatchers.IO) {
         runCatching {
             val errores = validatePublicationDraft(context, draft)
@@ -56,9 +59,19 @@ class PublicationRepository(
             require(uid.isNotBlank()) { context.getString(R.string.k_rate_sesion) }
             require(publicationId.isNotBlank()) { context.getString(R.string.kr_pub_id) }
             require(images.size <= 3) { context.getString(R.string.kr_pub_fotos_max) }
-            // Endurecido Fase 5/16: solo contratante habilitado publica.
-            require(perfil.roles.contains("CONTRATANTE")) { context.getString(R.string.kr_pub_empleador) }
-            require(perfil.employer.enabled) { context.getString(R.string.kr_pub_empleador) }
+            when (type) {
+                PublicationType.JOB_OFFER -> {
+                    require(perfil.roles.contains(UserRoles.CONTRATANTE) && perfil.employer.enabled) {
+                        context.getString(R.string.kr_pub_empleador)
+                    }
+                }
+                PublicationType.WORKER_AVAILABILITY -> {
+                    require(perfil.roles.contains(UserRoles.TRABAJADOR) && perfil.worker.enabled) {
+                        context.getString(R.string.kr_pub_empleador)
+                    }
+                }
+                else -> error("Tipo de publicación no válido")
+            }
             // Las fotos deben venir de chambaya/fotos-publicaciones/{uid}/{publicationId}/
             // (misma carpeta que CloudinaryUploader.carpetaDePublicacion y firestore.rules).
             val prefijo = "chambaya/fotos-publicaciones/$uid/$publicationId/"
@@ -70,8 +83,10 @@ class PublicationRepository(
             // cuando existe; el nombre personal solo como respaldo si el
             // contratante aún no registró su entidad.
             val nombreEntidad = workplaceName.trim()
-            val nombrePublicador = nombreEntidad.ifBlank {
-                perfil.employer.businessName.ifBlank { perfil.profile.fullName }
+            val nombrePublicador = if (type == PublicationType.WORKER_AVAILABILITY) {
+                perfil.profile.fullName
+            } else {
+                nombreEntidad.ifBlank { perfil.employer.businessName.ifBlank { perfil.profile.fullName } }
             }
             val fotoPublicador = workplacePhotoUrl.ifBlank { perfil.profile.profilePhotoUrl }
 
@@ -82,7 +97,7 @@ class PublicationRepository(
                 "ownerUid" to uid,
                 "status" to PublicationStatus.ACTIVE,
                 "visibility" to PublicationVisibility.PUBLIC,
-                "type" to "JOB_OFFER",
+                "type" to type,
                 "title" to draft.title.trim(),
                 "description" to draft.description.trim(),
                 "category" to draft.category.trim(),
@@ -121,8 +136,8 @@ class PublicationRepository(
                     "username" to perfil.profile.username,
                     "photoUrl" to fotoPublicador,
                     "verified" to perfil.identity.identityVerified,
-                    "employerType" to perfil.employer.employerType,
-                    "sector" to perfil.employer.sector
+                    "employerType" to if (type == PublicationType.JOB_OFFER) perfil.employer.employerType else "",
+                    "sector" to if (type == PublicationType.JOB_OFFER) perfil.employer.sector else ""
                 ),
                 "statistics" to mapOf(
                     "views" to 0, "likes" to 0, "comments" to 0,
@@ -136,15 +151,16 @@ class PublicationRepository(
             Tasks.await(ref.set(payload))
             // Contador del perfil (mejor esfuerzo: no bloquea la publicación).
             runCatching {
+                val updates = mutableMapOf<String, Any?>(
+                    "statistics.publicationsCount" to FieldValue.increment(1),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+                if (type == PublicationType.JOB_OFFER) {
+                    updates["employer.publishedCount"] = FieldValue.increment(1)
+                }
                 Tasks.await(
                     firestore.collection(ProfileRepository.COLLECTION_USERS).document(uid)
-                        .update(
-                            mapOf(
-                                "employer.publishedCount" to FieldValue.increment(1),
-                                "statistics.publicationsCount" to FieldValue.increment(1),
-                                "updatedAt" to FieldValue.serverTimestamp()
-                            )
-                        )
+                        .update(updates)
                 )
             }
             Tasks.await(ref.get()).toPublication()

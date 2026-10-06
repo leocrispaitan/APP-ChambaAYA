@@ -56,6 +56,25 @@
                 android:importantForAccessibility="no"
                 android:src="@drawable/ic_tab_publicaciones" />
         </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/tabPublicarTiempo"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Ofrecer mi tiempo"
+            android:focusable="true"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/iconoPublicarTiempo"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_tab_publicar" />
+        </FrameLayout>
     </LinearLayout>
 
     <FrameLayout
@@ -269,6 +288,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:visibility="gone" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/panelPublicarTiempo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <include
+                android:id="@+id/emptyPublicarTiempo"
+                layout="@layout/item_publicar_vacio"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
         </FrameLayout>
     </com.proyecto.chambaya.ui.publish.ContenedorDeslizable>
 

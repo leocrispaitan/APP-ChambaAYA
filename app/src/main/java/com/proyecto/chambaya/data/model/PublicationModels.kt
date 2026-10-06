@@ -27,6 +27,7 @@ object PublicationVisibility {
 
 object PublicationType {
     const val JOB_OFFER = "JOB_OFFER"
+    const val WORKER_AVAILABILITY = "WORKER_AVAILABILITY"
 }
 
 object PaymentPeriod {

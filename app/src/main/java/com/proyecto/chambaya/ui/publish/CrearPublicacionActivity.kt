@@ -26,6 +26,7 @@ import com.proyecto.chambaya.data.model.PaymentPeriod
 import com.proyecto.chambaya.data.model.Publication
 import com.proyecto.chambaya.data.model.PublicationDraft
 import com.proyecto.chambaya.data.model.PublicationImage
+import com.proyecto.chambaya.data.model.PublicationType
 import com.proyecto.chambaya.data.model.validatePublicationDraft
 import com.proyecto.chambaya.data.remote.CloudinaryUploader
 import com.proyecto.chambaya.data.remote.PhotoUploadResult
@@ -57,6 +58,8 @@ class CrearPublicacionActivity : AppCompatActivity() {
     private var destacadaSeleccionada = false
     private var pagoDemoConfirmado = false
     private var publicando = false
+    private val tipoPublicacion: String
+        get() = intent.getStringExtra(EXTRA_PUBLICATION_TYPE) ?: PublicationType.JOB_OFFER
 
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -74,6 +77,12 @@ class CrearPublicacionActivity : AppCompatActivity() {
         setContentView(R.layout.activity_crear_publicacion)
 
         val editId = intent.getStringExtra(EXTRA_EDIT_ID).orEmpty()
+        if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY) {
+            findViewById<TextView>(R.id.tvWorkplaceChip)?.text = "Tu perfil"
+            findViewById<TextView>(R.id.tvPublicationScreenTitle)?.text = "Ofrecer mi tiempo"
+            findViewById<View>(R.id.layoutPublicationType)?.visibility = View.GONE
+            findViewById<TextView>(R.id.btnPublicar)?.text = "Publicar disponibilidad"
+        }
         findViewById<View>(R.id.btnCerrar).setOnClickListener { finish() }
         configurarCampos()
         configurarTipoPublicacion(editId.isBlank())
@@ -106,7 +115,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
 
     private fun configurarTipoPublicacion(visible: Boolean) {
         val seccion = findViewById<View>(R.id.layoutPublicationType)
-        seccion.visibility = if (visible) View.VISIBLE else View.GONE
+        seccion.visibility = if (visible && tipoPublicacion == PublicationType.JOB_OFFER) View.VISIBLE else View.GONE
         val cardEstandar = findViewById<MaterialCardView>(R.id.cardPublicationStandard)
         val cardDestacada = findViewById<MaterialCardView>(R.id.cardPublicationFeatured)
         val radioEstandar = findViewById<android.widget.RadioButton>(R.id.radioPublicationStandard)
@@ -136,6 +145,10 @@ class CrearPublicacionActivity : AppCompatActivity() {
         val button = findViewById<MaterialButton>(R.id.btnPublicar) ?: return
         if (editando != null) {
             button.setText(R.string.k_crear_guardar)
+            return
+        }
+        if (tipoPublicacion == PublicationType.WORKER_AVAILABILITY) {
+            button.text = "Publicar disponibilidad"
             return
         }
         button.text = getString(
@@ -280,7 +293,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
             tvError.text = errores.first()
             return
         }
-        if (editando == null && !pagoDemoConfirmado) {
+        if (editando == null && tipoPublicacion == PublicationType.JOB_OFFER && !pagoDemoConfirmado) {
             findViewById<View>(R.id.btnPublicar)?.isEnabled = false
             ConfirmarPagoDemoSheet.newInstance(
                 title = draft.title,
@@ -336,7 +349,8 @@ class CrearPublicacionActivity : AppCompatActivity() {
                     workplaceLat = lugar?.location?.latitude,
                     workplaceLng = lugar?.location?.longitude,
                     images = imagenes,
-                    featured = destacadaSeleccionada
+                    featured = destacadaSeleccionada,
+                    type = tipoPublicacion
                 )
                 if (r.isFailure) throw r.exceptionOrNull() ?: Exception(getString(R.string.k_crear_no_publicar_corto))
                 // Caché en caliente: el servidor ya sumó +1 a los contadores.
@@ -403,6 +417,7 @@ class CrearPublicacionActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_EDIT_ID = "edit_publication_id"
+        const val EXTRA_PUBLICATION_TYPE = "publication_type"
         fun editarIntent(activity: Activity, publicationId: String): Intent {
             return Intent(activity, CrearPublicacionActivity::class.java)
                 .putExtra(EXTRA_EDIT_ID, publicationId)
