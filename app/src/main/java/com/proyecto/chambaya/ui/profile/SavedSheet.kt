@@ -32,6 +32,8 @@ class SavedSheet : BottomSheetDialogFragment() {
     private val pubRepo = PublicationRepository()
     private val interRepo = PublicationInteractionRepository()
     private var adapter: PublicationAdapter? = null
+    private val likeSync = mutableSetOf<String>()
+    private val likeWant = mutableMapOf<String, Boolean>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.bottom_sheet_saved, container, false)
@@ -98,8 +100,8 @@ class SavedSheet : BottomSheetDialogFragment() {
                             p,
                             liked = p.publicationId in liked,
                             saved = true,
-                            likesCount = p.statistics.likes,
-                            savesCount = p.statistics.saves
+                            likesCount = p.statistics.likes.coerceAtLeast(0L),
+                            savesCount = p.statistics.saves.coerceAtLeast(0L)
                         )
                     }
                 )
@@ -108,16 +110,42 @@ class SavedSheet : BottomSheetDialogFragment() {
     }
 
     private fun toggleLike(uid: String, item: PublicationFeedItem) {
+        val pid = item.publication.publicationId
+        // Visual instantáneo en cada tap; el servidor se alcanza en serie.
         item.liked = !item.liked
-        item.likesCount += if (item.liked) 1 else -1
-        adapter?.notifyDataSetChanged()
-        viewLifecycleOwner.lifecycleScope.launch {
-            if (interRepo.toggleLike(requireContext(), item.publication.publicationId, uid).isFailure) {
-                item.liked = !item.liked
-                item.likesCount += if (item.liked) 1 else -1
-                adapter?.notifyDataSetChanged()
+        item.likesCount = (item.likesCount.coerceAtLeast(0L) + if (item.liked) 1 else -1).coerceAtLeast(0L)
+        likeWant[pid] = item.liked
+        refrescarFila(pid)
+        if (pid !in likeSync) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                likeSync += pid
+                try {
+                    while (likeWant.containsKey(pid)) {
+                        val deseado = likeWant[pid] ?: break
+                        val r = interRepo.toggleLike(requireContext(), pid, uid)
+                        if (!isAdded) return@launch
+                        if (r.isSuccess) {
+                            if (r.getOrDefault(deseado) == likeWant[pid]) likeWant.remove(pid)
+                        } else {
+                            likeWant.remove(pid)
+                            val real = runCatching { interRepo.isLiked(pid, uid) }.getOrNull()
+                            if (real != null) item.liked = real else item.liked = !deseado
+                            refrescarFila(pid)
+                            return@launch
+                        }
+                    }
+                } finally {
+                    likeSync -= pid
+                }
+                refrescarFila(pid)
             }
         }
+    }
+
+    private fun refrescarFila(publicationId: String) {
+        val list = adapter?.currentList ?: return
+        val idx = list.indexOfFirst { it.publication.publicationId == publicationId }
+        if (idx >= 0) adapter?.notifyItemChanged(idx)
     }
 
     private fun toggleSave(uid: String, item: PublicationFeedItem) {

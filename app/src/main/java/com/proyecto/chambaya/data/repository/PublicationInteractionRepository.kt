@@ -44,23 +44,51 @@ class PublicationInteractionRepository(
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COL_LIKES).document(docId(publicationId, uid))
-                val existe = Tasks.await(ref.get()).exists()
                 val pubRef = firestore.collection(PublicationRepository.COLLECTION).document(publicationId)
-                if (existe) {
-                    Tasks.await(ref.delete())
-                    runCatching { Tasks.await(pubRef.update("statistics.likes", FieldValue.increment(-1))) }
-                    false
-                } else {
-                    Tasks.await(
-                        ref.set(
-                            mapOf(
-                                "publicationId" to publicationId,
-                                "userUid" to uid,
-                                "createdAt" to FieldValue.serverTimestamp()
+                // Transacción atómica: el doc de like y el contador se mueven
+                // juntos. Sin esto, dos toques rápidos leen el mismo estado y
+                // ambos suman (o restan), dejando el contador en +2 / -1.
+                // El contador nunca baja de 0 (clamp): publicar nace en 0 y un
+                // unlike sin like previo no puede dejarlo en -1.
+                val finalState = Tasks.await(
+                    firestore.runTransaction { tx ->
+                        val likeSnap = tx.get(ref)
+                        val pubSnap = tx.get(pubRef)
+                        require(pubSnap.exists()) { "La publicación ya no existe." }
+                        val stats = pubSnap.get("statistics") as? Map<*, *>
+                        val cur = (stats?.get("likes") as? Number)?.toLong() ?: 0L
+                        if (likeSnap.exists()) {
+                            tx.delete(ref)
+                            val nuevo = (cur - 1).coerceAtLeast(0L)
+                            tx.update(
+                                pubRef,
+                                mapOf(
+                                    "statistics.likes" to nuevo,
+                                    "updatedAt" to FieldValue.serverTimestamp()
+                                )
                             )
-                        )
-                    )
-                    runCatching { Tasks.await(pubRef.update("statistics.likes", FieldValue.increment(1))) }
+                            false
+                        } else {
+                            tx.set(
+                                ref,
+                                mapOf(
+                                    "publicationId" to publicationId,
+                                    "userUid" to uid,
+                                    "createdAt" to FieldValue.serverTimestamp()
+                                )
+                            )
+                            tx.update(
+                                pubRef,
+                                mapOf(
+                                    "statistics.likes" to cur + 1,
+                                    "updatedAt" to FieldValue.serverTimestamp()
+                                )
+                            )
+                            true
+                        }
+                    }
+                )
+                if (finalState) {
                     // Aviso al dueño (mejor esfuerzo; push ignora si es su propio like).
                     runCatching {
                         val pub = Tasks.await(pubRef.get())
@@ -77,8 +105,8 @@ class PublicationInteractionRepository(
                             )
                         }
                     }
-                    true
                 }
+                finalState
             }
         }
 
@@ -143,25 +171,46 @@ class PublicationInteractionRepository(
         withContext(Dispatchers.IO) {
             runCatching {
                 val ref = firestore.collection(COL_SAVES).document(docId(publicationId, uid))
-                val existe = Tasks.await(ref.get()).exists()
                 val pubRef = firestore.collection(PublicationRepository.COLLECTION).document(publicationId)
-                if (existe) {
-                    Tasks.await(ref.delete())
-                    runCatching { Tasks.await(pubRef.update("statistics.saves", FieldValue.increment(-1))) }
-                    false
-                } else {
-                    Tasks.await(
-                        ref.set(
-                            mapOf(
-                                "publicationId" to publicationId,
-                                "userUid" to uid,
-                                "createdAt" to FieldValue.serverTimestamp()
+                // Misma atomicidad que toggleLike: evita +2 / -1 con doble tap
+                // y clampea el contador a >= 0.
+                Tasks.await(
+                    firestore.runTransaction { tx ->
+                        val saveSnap = tx.get(ref)
+                        val pubSnap = tx.get(pubRef)
+                        require(pubSnap.exists()) { "La publicación ya no existe." }
+                        val stats = pubSnap.get("statistics") as? Map<*, *>
+                        val cur = (stats?.get("saves") as? Number)?.toLong() ?: 0L
+                        if (saveSnap.exists()) {
+                            tx.delete(ref)
+                            tx.update(
+                                pubRef,
+                                mapOf(
+                                    "statistics.saves" to (cur - 1).coerceAtLeast(0L),
+                                    "updatedAt" to FieldValue.serverTimestamp()
+                                )
                             )
-                        )
-                    )
-                    runCatching { Tasks.await(pubRef.update("statistics.saves", FieldValue.increment(1))) }
-                    true
-                }
+                            false
+                        } else {
+                            tx.set(
+                                ref,
+                                mapOf(
+                                    "publicationId" to publicationId,
+                                    "userUid" to uid,
+                                    "createdAt" to FieldValue.serverTimestamp()
+                                )
+                            )
+                            tx.update(
+                                pubRef,
+                                mapOf(
+                                    "statistics.saves" to cur + 1,
+                                    "updatedAt" to FieldValue.serverTimestamp()
+                                )
+                            )
+                            true
+                        }
+                    }
+                )
             }
         }
 

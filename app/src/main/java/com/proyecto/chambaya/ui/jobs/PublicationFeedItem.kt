@@ -69,10 +69,13 @@ fun List<PublicationFeedItem>.applyFilters(filters: PublicationFilters): List<Pu
     }
 }
 
-fun formatCount(count: Long): String = when {
-    count >= 1_000_000 -> String.format("%.1fM", count / 1_000_000.0)
-    count >= 1_000 -> String.format("%.1fk", count / 1_000.0)
-    else -> count.toString()
+fun formatCount(count: Long): String {
+    val c = count.coerceAtLeast(0L)
+    return when {
+        c >= 1_000_000 -> String.format("%.1fM", c / 1_000_000.0)
+        c >= 1_000 -> String.format("%.1fk", c / 1_000.0)
+        else -> c.toString()
+    }
 }
 
 /**

@@ -208,7 +208,9 @@ class PublicationAdapter(
                 tvPrice.text = p.precioTexto(ctx)
             }
 
-            // ── Guardar (bookmark superpuesto) ──
+            // ── Guardar (bookmark superpuesto, esquina superior derecha) ──
+            // item_job_card.xml: btnFavoriteOverlay = GUARDAR (bookmark),
+            // btnLike (barra inferior) = ME GUSTA (corazón). No intercambiar.
             btnFav.setImageResource(
                 if (item.saved) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark_outline
             )
@@ -216,14 +218,15 @@ class PublicationAdapter(
             btnFav.setOnClickListener { onToggleSave(item) }
 
             // ── Barra inferior: Me gusta + comentarios + ver ──
+            // El contador nunca muestra negativos (datos viejos podían traer -1).
             btnLike.setImageResource(
                 if (item.liked) R.drawable.ic_heart_filled else R.drawable.ic_heart_outline
             )
-            tvLikes.text = formatCount(item.likesCount)
+            tvLikes.text = formatCount(item.likesCount.coerceAtLeast(0L))
             btnLike.setOnClickListener { onToggleLike(item) }
-            tvComments.text = formatCount(p.statistics.comments)
+            tvComments.text = formatCount(p.statistics.comments.coerceAtLeast(0L))
             btnComment.setOnClickListener { onOpenComments(item) }
-            tvRating.text = ctx.getString(R.string.k_pub_stats_fmt, formatCount(item.savesCount), publicationTimeAgo(p.createdAt))
+            tvRating.text = ctx.getString(R.string.k_pub_stats_fmt, formatCount(item.savesCount.coerceAtLeast(0L)), publicationTimeAgo(p.createdAt))
 
             // ── Apertura del detalle ──
             card.setOnClickListener { onOpenDetail(item) }

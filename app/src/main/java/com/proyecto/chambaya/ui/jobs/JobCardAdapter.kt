@@ -63,10 +63,13 @@ class JobCardAdapter(
         private val tvJobCategory: TextView = itemView.findViewById(R.id.tvJobCategory)
         private val tvJobPrice: TextView = itemView.findViewById(R.id.tvJobPrice)
 
-        // Botón de favorito superpuesto (nuevo diseño)
+        // Botón de guardado superpuesto (esquina superior derecha, bookmark).
+        // item_job_card.xml: overlay = GUARDAR, barra inferior = ME GUSTA.
         private val btnFavoriteOverlay: ImageButton = itemView.findViewById(R.id.btnFavoriteOverlay)
         
-        // Barra de interacciones (simplificada)
+        // Barra de interacciones (corazón + comentarios)
+        private val btnLike: ImageButton = itemView.findViewById(R.id.btnLike)
+        private val tvLikesCount: TextView = itemView.findViewById(R.id.tvLikesCount)
         private val btnComment: ImageButton = itemView.findViewById(R.id.btnComment)
         private val tvCommentsCount: TextView = itemView.findViewById(R.id.tvCommentsCount)
         private val btnVerTrabajo: com.google.android.material.button.MaterialButton = itemView.findViewById(R.id.btnVerTrabajo)
@@ -133,18 +136,25 @@ class JobCardAdapter(
             tvJobCategory.text = jobCard.categoria
             tvJobPrice.text = jobCard.precio
 
-            // ── Interacciones (Solo comentarios) ──
-            // Actualizar botón de favorito superpuesto
-            val iconoFavorito = if (jobCard.isFavorito) {
-                R.drawable.ic_heart_filled
-            } else {
-                R.drawable.ic_heart_outline
+            // ── Interacciones: overlay = guardar (bookmark), barra = like (corazón) ──
+            // Ambos quedan sincronizados con isFavorito (datos demo sin backend).
+            fun pintarInteracciones() {
+                btnFavoriteOverlay.setImageResource(
+                    if (jobCard.isFavorito) R.drawable.ic_bookmark_filled
+                    else R.drawable.ic_bookmark_outline
+                )
+                btnLike.setImageResource(
+                    if (jobCard.isFavorito) R.drawable.ic_heart_filled
+                    else R.drawable.ic_heart_outline
+                )
+                val likes = ((jobCard.rating * 720).toInt() + if (jobCard.isFavorito) 1 else 0)
+                    .coerceAtLeast(0)
+                tvLikesCount.text = formatLikes(likes)
             }
-            btnFavoriteOverlay.setImageResource(iconoFavorito)
+            pintarInteracciones()
 
-            // Contadores de Comentarios
-            var likesSimulados = (jobCard.rating * 720).toInt() + if (jobCard.isFavorito) 1 else 0
-            val comentariosSimulados = (jobCard.rating * 28).toInt()
+            // Contador de comentarios (simulado, nunca negativo)
+            val comentariosSimulados = ((jobCard.rating * 28).toInt()).coerceAtLeast(0)
 
             tvCommentsCount.text = formatLikes(comentariosSimulados)
 
@@ -165,10 +175,12 @@ class JobCardAdapter(
 
             btnFavoriteOverlay.setOnClickListener {
                 jobCard.isFavorito = !jobCard.isFavorito
-                val nuevoIcono = if (jobCard.isFavorito) R.drawable.ic_heart_filled
-                                 else R.drawable.ic_heart_outline
-                btnFavoriteOverlay.setImageResource(nuevoIcono)
-                
+                pintarInteracciones()
+                onFavoriteClick(jobCard)
+            }
+            btnLike.setOnClickListener {
+                jobCard.isFavorito = !jobCard.isFavorito
+                pintarInteracciones()
                 onFavoriteClick(jobCard)
             }
         }

@@ -80,6 +80,14 @@ class FragmentoChambas : Fragment() {
     private val hiddenCache = mutableSetOf<String>()
     private val blockedCache = mutableSetOf<String>()
     private var statesLoaded = false
+    // Toques rápidos: la UI cambia al instante en cada tap y el servidor se
+    // sincroniza en serie por publicación. [likeWant] guarda el estado deseado
+    // más reciente; el loop repite el toggle hasta alcanzarlo. Nunca se ignora
+    // un tap (eso obligaba a "esperar y reintentar").
+    private val likeSync = mutableSetOf<String>()
+    private val saveSync = mutableSetOf<String>()
+    private val likeWant = mutableMapOf<String, Boolean>()
+    private val saveWant = mutableMapOf<String, Boolean>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragmento_chambas, container, false)
@@ -287,6 +295,7 @@ class FragmentoChambas : Fragment() {
                     }
                 }
                 if (!isAdded) return@launch
+                val previos = allItems.associateBy { it.publication.publicationId }
                 allItems = pubs
                     .filter { it.publicationId !in hiddenCache }
                     .filter { p ->
@@ -294,8 +303,27 @@ class FragmentoChambas : Fragment() {
                         owner.isBlank() || owner !in blockedCache
                     }
                     .map { p ->
-                        val (l, s) = stateCache[p.publicationId] ?: (false to false)
-                        PublicationFeedItem(p, l, s, p.statistics.likes, p.statistics.saves)
+                        val pid = p.publicationId
+                        val anterior = previos[pid]
+                        // Si hay un toggle en vuelo, el snapshot aún trae el
+                        // contador viejo: se conserva el estado optimista para
+                        // no parpadear ni revertir el corazón.
+                        if (anterior != null && (likeWant.containsKey(pid) || pid in likeSync || saveWant.containsKey(pid) || pid in saveSync)) {
+                            PublicationFeedItem(
+                                publication = p,
+                                liked = anterior.liked,
+                                saved = anterior.saved,
+                                likesCount = anterior.likesCount.coerceAtLeast(0L),
+                                savesCount = anterior.savesCount.coerceAtLeast(0L)
+                            )
+                        } else {
+                            val (l, s) = stateCache[pid] ?: (false to false)
+                            PublicationFeedItem(
+                                p, l, s,
+                                p.statistics.likes.coerceAtLeast(0L),
+                                p.statistics.saves.coerceAtLeast(0L)
+                            )
+                        }
                     }
             } catch (e: Exception) {
                 android.util.Log.e("FragmentoChambas", "integrarSnapshot falló", e)
@@ -545,27 +573,64 @@ class FragmentoChambas : Fragment() {
 
     // ── Interacciones ───────────────────────────────────────
 
+    private fun buscarItem(pid: String): PublicationFeedItem? =
+        allItems.firstOrNull { it.publication.publicationId == pid }
+
     private fun toggleLike(item: PublicationFeedItem) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid.isNullOrBlank()) {
             Toast.makeText(requireContext(), getString(R.string.k_like_login), Toast.LENGTH_SHORT).show()
             return
         }
-        // Optimista.
-        item.liked = !item.liked
-        item.likesCount += if (item.liked) 1 else -1
-        stateCache[item.publication.publicationId] = item.liked to item.saved
-        adapter?.notifyDataSetChanged()
-        viewLifecycleOwner.lifecycleScope.launch {
-            val r = interRepo.toggleLike(requireContext(), item.publication.publicationId, uid)
-            if (r.isFailure) {
-                item.liked = !item.liked
-                item.likesCount += if (item.liked) 1 else -1
-                stateCache[item.publication.publicationId] = item.liked to item.saved
-                adapter?.notifyDataSetChanged()
-                Toast.makeText(requireContext(), getString(R.string.k_like_error), Toast.LENGTH_SHORT).show()
-            }
+        val pid = item.publication.publicationId
+        // Cambio visual INSTANTÁNEO en cada tap (nunca se bloquea ni se ignora).
+        val actual = buscarItem(pid) ?: item
+        actual.liked = !actual.liked
+        actual.likesCount = (actual.likesCount.coerceAtLeast(0L) + if (actual.liked) 1 else -1).coerceAtLeast(0L)
+        stateCache[pid] = actual.liked to actual.saved
+        likeWant[pid] = actual.liked
+        refrescarFila(pid)
+        if (pid !in likeSync) {
+            viewLifecycleOwner.lifecycleScope.launch { sincronizarLike(pid, uid) }
         }
+    }
+
+    /** Lleva el servidor al estado deseado, un toggle atómico a la vez. */
+    private suspend fun sincronizarLike(pid: String, uid: String) {
+        likeSync += pid
+        try {
+            while (likeWant.containsKey(pid)) {
+                val deseado = likeWant[pid] ?: break
+                val r = interRepo.toggleLike(requireContext(), pid, uid)
+                if (!isAdded) return
+                if (r.isSuccess) {
+                    if (r.getOrDefault(deseado) == likeWant[pid]) {
+                        // Servidor ya coincide con lo deseado: listo.
+                        likeWant.remove(pid)
+                        buscarItem(pid)?.let { stateCache[pid] = it.liked to it.saved }
+                    }
+                    // Si difiere, el usuario tocó durante la llamada: el while
+                    // repite un toggle más sin tocar la UI (ya está al día).
+                } else {
+                    // Fallo de red/permiso: se anula lo pendiente y se revierte
+                    // la UI a la verdad del servidor (mejor esfuerzo).
+                    likeWant.remove(pid)
+                    val real = runCatching { interRepo.isLiked(pid, uid) }.getOrNull()
+                    buscarItem(pid)?.let {
+                        if (real != null) it.liked = real
+                        else it.liked = !deseado
+                        stateCache[pid] = it.liked to it.saved
+                    }
+                    refrescarFila(pid)
+                    Toast.makeText(requireContext(), getString(R.string.k_like_error), Toast.LENGTH_SHORT).show()
+                    return
+                }
+            }
+        } finally {
+            likeSync -= pid
+        }
+        // El conteo exacto lo confirma el snapshot en vivo; se repinta por si acaso.
+        refrescarFila(pid)
     }
 
     private fun toggleSave(item: PublicationFeedItem) {
@@ -574,25 +639,62 @@ class FragmentoChambas : Fragment() {
             Toast.makeText(requireContext(), getString(R.string.k_guardar_login), Toast.LENGTH_SHORT).show()
             return
         }
-        item.saved = !item.saved
-        item.savesCount += if (item.saved) 1 else -1
-        stateCache[item.publication.publicationId] = item.liked to item.saved
-        adapter?.notifyDataSetChanged()
-        viewLifecycleOwner.lifecycleScope.launch {
-            val r = interRepo.toggleSave(item.publication.publicationId, uid)
-            if (r.isSuccess) {
-                Toast.makeText(
-                    requireContext(),
-                    if (r.getOrDefault(false)) "Guardado en tu lista." else "Quitado de guardados.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                item.saved = !item.saved
-                item.savesCount += if (item.saved) 1 else -1
-                stateCache[item.publication.publicationId] = item.liked to item.saved
-                adapter?.notifyDataSetChanged()
-            }
+        val pid = item.publication.publicationId
+        val actual = buscarItem(pid) ?: item
+        actual.saved = !actual.saved
+        actual.savesCount = (actual.savesCount.coerceAtLeast(0L) + if (actual.saved) 1 else -1).coerceAtLeast(0L)
+        stateCache[pid] = actual.liked to actual.saved
+        saveWant[pid] = actual.saved
+        refrescarFila(pid)
+        if (pid !in saveSync) {
+            viewLifecycleOwner.lifecycleScope.launch { sincronizarSave(pid, uid) }
         }
+    }
+
+    private suspend fun sincronizarSave(pid: String, uid: String) {
+        saveSync += pid
+        try {
+            while (saveWant.containsKey(pid)) {
+                val deseado = saveWant[pid] ?: break
+                val r = interRepo.toggleSave(pid, uid)
+                if (!isAdded) return
+                if (r.isSuccess) {
+                    if (r.getOrDefault(deseado) == saveWant[pid]) {
+                        saveWant.remove(pid)
+                        buscarItem(pid)?.let { stateCache[pid] = it.liked to it.saved }
+                    }
+                } else {
+                    saveWant.remove(pid)
+                    val real = runCatching { interRepo.isSaved(pid, uid) }.getOrNull()
+                    buscarItem(pid)?.let {
+                        if (real != null) it.saved = real
+                        else it.saved = !deseado
+                        stateCache[pid] = it.liked to it.saved
+                    }
+                    refrescarFila(pid)
+                    Toast.makeText(requireContext(), getString(R.string.k_like_error), Toast.LENGTH_SHORT).show()
+                    return
+                }
+            }
+        } finally {
+            saveSync -= pid
+        }
+        // Un solo aviso con el estado final (no un toast por cada tap).
+        buscarItem(pid)?.let {
+            refrescarFila(pid)
+            Toast.makeText(
+                requireContext(),
+                if (it.saved) "Guardado en tu lista." else "Quitado de guardados.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    /** Repinta solo la fila afectada (sin notifyDataSetChanged global). */
+    private fun refrescarFila(publicationId: String) {
+        val list = adapter?.currentList ?: return
+        val idx = list.indexOfFirst { it.publication.publicationId == publicationId }
+        if (idx >= 0) adapter?.notifyItemChanged(idx)
     }
 
     private fun compartir(item: PublicationFeedItem) {
@@ -757,6 +859,10 @@ class FragmentoChambas : Fragment() {
         stateCache.clear()
         hiddenCache.clear()
         blockedCache.clear()
+        likeSync.clear()
+        saveSync.clear()
+        likeWant.clear()
+        saveWant.clear()
         statesLoaded = false
         searchJob?.cancel()
         scrollView = null
