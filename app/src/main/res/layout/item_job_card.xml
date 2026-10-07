@@ -114,7 +114,8 @@
                         android:contentDescription="Verificado" />
                 </LinearLayout>
 
-                <!-- Fila: Distrito + Tiempo transcurrido -->
+                <!-- Fila: Distrito + Tiempo
+                transcurrido -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

@@ -1469,6 +1469,7 @@
     <string name="feed_tab_empleos">Empleos</string>
     <string name="feed_tab_tiempo">Tiempo Libre</string>
     <string name="feed_banner_tiempo_titulo">¿Tienes tiempo libre hoy?</string>
+    <string name="feed_banner_tiempo_sub">Descubre quiénes están disponibles hoy en tu zona.</string>
     <string name="feed_banner_chambas_titulo">Chambas cerca de ti</string>
     <string name="k_dia_lunes">Lunes</string>
     <string name="k_dia_martes">Martes</string>

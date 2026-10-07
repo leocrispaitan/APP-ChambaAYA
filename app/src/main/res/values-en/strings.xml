@@ -1359,6 +1359,7 @@
     <string name="feed_tab_empleos">Jobs</string>
     <string name="feed_tab_tiempo">Free Time</string>
     <string name="feed_banner_tiempo_titulo">Do you have free time today?</string>
+    <string name="feed_banner_tiempo_sub">See who\'s available today in your area.</string>
     <string name="feed_banner_chambas_titulo">Chambas near you</string>
     <string name="k_dia_lunes">Monday</string>
     <string name="k_dia_martes">Tuesday</string>

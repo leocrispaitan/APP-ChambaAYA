@@ -2,11 +2,14 @@ package com.proyecto.chambaya.ui.jobs
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -16,6 +19,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.firebase.auth.FirebaseAuth
 import com.google.android.material.button.MaterialButton
 import com.proyecto.chambaya.BarraEstadoUtils
@@ -89,6 +93,30 @@ class FragmentoChambas : Fragment() {
     private val likeWant = mutableMapOf<String, Boolean>()
     private val saveWant = mutableMapOf<String, Boolean>()
 
+    // ── Carrusel de banners (Empleos + Tiempo libre, fijo: no depende del toggle)
+    private var vpBanner: ViewPager2? = null
+    private var bannerAdapter: BannerPromoAdapter? = null
+    private var llBannerDots: LinearLayout? = null
+    private var btnTabEmpleos: MaterialButton? = null
+    private var btnTabTiempo: MaterialButton? = null
+    private val bannerHandler = Handler(Looper.getMainLooper())
+    private var bannerPageCallback: ViewPager2.OnPageChangeCallback? = null
+    private var bannerAutoScroll = false
+    private val bannerAvanzar = object : Runnable {
+        override fun run() {
+            val vp = vpBanner ?: return
+            val total = bannerAdapter?.itemCount ?: 0
+            if (bannerAutoScroll && total > 1 && vp.isAttachedToWindow) {
+                vp.setCurrentItem((vp.currentItem + 1) % total, true)
+            }
+            if (bannerAutoScroll) bannerHandler.postDelayed(this, BANNER_INTERVALO_MS)
+        }
+    }
+
+    companion object {
+        private const val BANNER_INTERVALO_MS = 5000L
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragmento_chambas, container, false)
     }
@@ -118,6 +146,7 @@ class FragmentoChambas : Fragment() {
         setupSearch(view)
         setupChips(view)
         configurarModoFeed(view)
+        setupBannerCarousel(view)
         setupHeaderActions(view)
 
         view.findViewById<Button>(R.id.btnFeedRetry)?.setOnClickListener { recargarFeed() }
@@ -368,68 +397,162 @@ class FragmentoChambas : Fragment() {
     }
 
     /**
-     * Banner con datos reales del feed: conteo de publicaciones activas y
-     * hora relativa de la más reciente. Sin números mock.
+     * Carrusel fijo con las 2 tarjetas (Empleos + Tiempo libre).
+     *
+     * Ya NO cambia con el toggle de feedModeTabs: ambas tarjetas viven en el
+     * carrusel y rotan solas cada 5 s (más swipe manual). El toggle solo filtra
+     * el feed. Los conteos se actualizan con datos reales vía [pintarBanner].
+     */
+    private fun setupBannerCarousel(view: View) {
+        vpBanner = view.findViewById(R.id.vpBanner)
+        llBannerDots = view.findViewById(R.id.llBannerDots)
+        val vp = vpBanner ?: return
+        bannerAdapter = BannerPromoAdapter(onCtaClick = { esTiempo -> irAModoBanner(esTiempo) }).also {
+            it.submitList(
+                listOf(
+                    BannerPromo(
+                        esTiempoLibre = false,
+                        badge = getString(R.string.home_banner_badge),
+                        titulo = getString(R.string.feed_banner_chambas_titulo),
+                        subtitulo = getString(R.string.pub_encuentra_zona),
+                        textoCta = getString(R.string.home_banner_cta),
+                        legal = getString(R.string.home_banner_legal)
+                    ),
+                    BannerPromo(
+                        esTiempoLibre = true,
+                        badge = getString(R.string.home_banner_badge),
+                        titulo = getString(R.string.feed_banner_tiempo_titulo),
+                        subtitulo = getString(R.string.feed_banner_tiempo_sub),
+                        textoCta = getString(R.string.home_banner_cta),
+                        legal = getString(R.string.home_banner_legal)
+                    )
+                )
+            )
+            vp.adapter = it
+        }
+        vp.offscreenPageLimit = 1
+        runCatching { (vp.getChildAt(0) as? RecyclerView)?.overScrollMode = View.OVER_SCROLL_NEVER }
+        // Efecto carrusel: tarjetas separadas + escala sutil al desplazar.
+        vp.setPageTransformer(
+            BannerCarouselTransformer((14 * resources.displayMetrics.density).toInt())
+        )
+        pintarDotsBanner(0)
+        bannerPageCallback?.let { vp.unregisterOnPageChangeCallback(it) }
+        bannerPageCallback = object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                pintarDotsBanner(position)
+            }
+
+            override fun onPageScrollStateChanged(state: Int) {
+                // Pausa el avance mientras el usuario arrastra; al soltar se retoma.
+                bannerHandler.removeCallbacks(bannerAvanzar)
+                if (bannerAutoScroll && state == ViewPager2.SCROLL_STATE_IDLE) {
+                    bannerHandler.postDelayed(bannerAvanzar, BANNER_INTERVALO_MS)
+                }
+            }
+        }.also(vp::registerOnPageChangeCallback)
+        // Pinta los conteos si el feed ya tenía datos.
+        pintarBanner()
+        iniciarBannerAutoScroll()
+    }
+
+    private fun pintarDotsBanner(activo: Int) {
+        val dots = llBannerDots ?: return
+        val total = bannerAdapter?.itemCount ?: 0
+        if (total <= 1) {
+            dots.visibility = View.GONE
+            return
+        }
+        dots.visibility = View.VISIBLE
+        dots.removeAllViews()
+        val density = dots.resources.displayMetrics.density
+        repeat(total) { i ->
+            val esActivo = i == (activo % total)
+            dots.addView(View(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    ((if (esActivo) 10 else 8) * density).toInt(),
+                    (8 * density).toInt()
+                ).apply {
+                    if (i > 0) marginStart = (5 * density).toInt()
+                }
+                setBackgroundResource(
+                    if (esActivo) R.drawable.bg_carousel_dot_active
+                    else R.drawable.bg_carousel_dot_inactive
+                )
+            })
+        }
+    }
+
+    private fun iniciarBannerAutoScroll() {
+        bannerHandler.removeCallbacks(bannerAvanzar)
+        if (isAdded && view != null && (bannerAdapter?.itemCount ?: 0) > 1) {
+            bannerAutoScroll = true
+            bannerHandler.postDelayed(bannerAvanzar, BANNER_INTERVALO_MS)
+        }
+    }
+
+    private fun detenerBannerAutoScroll() {
+        bannerAutoScroll = false
+        bannerHandler.removeCallbacks(bannerAvanzar)
+    }
+
+    /** CTA del banner: activa el modo de su tarjeta y baja al feed. */
+    private fun irAModoBanner(esTiempo: Boolean) {
+        if (showingFreeTime != esTiempo) {
+            cambiarModo(esTiempo)
+        }
+        scrollView?.smoothScrollTo(0, recyclerView?.top ?: 0)
+    }
+
+    /**
+     * Actualiza el carrusel con datos reales del feed (conteos por tipo) y la
+     * hora de la publicación más reciente. Ya NO cambia textos con el toggle:
+     * las 2 tarjetas son fijas en el carrusel.
      */
     private fun pintarBanner() {
         val v = view ?: return
-        v.findViewById<TextView>(R.id.tvBannerTitle)?.text = if (showingFreeTime)
-            getString(R.string.feed_banner_tiempo_titulo) else getString(R.string.feed_banner_chambas_titulo)
-        v.findViewById<TextView>(R.id.tvBannerBadge)?.visibility = View.GONE
-        v.findViewById<TextView>(R.id.tvBannerPercent)?.visibility = View.GONE
-        v.findViewById<TextView>(R.id.tvBannerSubtitle)?.text = if (showingFreeTime)
-            getString(R.string.pub_tus_horas) else getString(R.string.pub_encuentra_zona)
-        v.findViewById<TextView>(R.id.tvBannerLegal)?.visibility = View.GONE
-        v.findViewById<Button>(R.id.btnBannerCta)?.text = if (showingFreeTime)
-            getString(R.string.pub_ofrecer_titulo) else getString(R.string.k_pub_cta)
-        v.findViewById<android.widget.ImageView>(R.id.ivBannerPhoto)?.setImageResource(
-            if (showingFreeTime) R.drawable.chamba_banner_tiempo_libre
-            else R.drawable.chamba_banner_chambas_cerca
-        )
-        v.findViewById<TextView>(R.id.tvBannerPercent)?.text = allItems.size.toString()
+        val empleos = allItems.count { it.publication.type == "JOB_OFFER" }
+        val libres = allItems.count { it.publication.type == "WORKER_AVAILABILITY" }
+        bannerAdapter?.actualizarConteos(empleos, libres)
         val newest = allItems.mapNotNull { it.publication.createdAt }.maxOrNull()
         v.findViewById<TextView>(R.id.tvFlashTimer)?.text =
             if (allItems.isEmpty()) "—" else publicationTimeAgo(newest)
     }
 
+    /** Cambia el modo del feed (toggle Empleos / Tiempo libre). */
+    private fun cambiarModo(esTiempo: Boolean) {
+        if (showingFreeTime == esTiempo) return
+        showingFreeTime = esTiempo
+        selectedCategory = ""
+        filters = filters.copy(category = "")
+        categoriaAdapter?.setSeleccionada("Todas")
+        pintarTabsModo()
+        aplicarFiltros()
+    }
+
+    private fun pintarTabsModo() {
+        val empleos = btnTabEmpleos ?: return
+        val tiempo = btnTabTiempo ?: return
+        val azul = requireContext().getColor(R.color.brand_color)
+        val gris = requireContext().getColor(R.color.text_secondary)
+        empleos.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            if (showingFreeTime) android.graphics.Color.parseColor("#EEF2F8") else azul
+        )
+        empleos.setTextColor(if (showingFreeTime) gris else android.graphics.Color.WHITE)
+        empleos.iconTint = android.content.res.ColorStateList.valueOf(if (showingFreeTime) gris else android.graphics.Color.WHITE)
+        tiempo.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            if (showingFreeTime) azul else android.graphics.Color.parseColor("#EEF2F8")
+        )
+        tiempo.setTextColor(if (showingFreeTime) android.graphics.Color.WHITE else gris)
+        tiempo.iconTint = android.content.res.ColorStateList.valueOf(if (showingFreeTime) android.graphics.Color.WHITE else gris)
+    }
+
     private fun configurarModoFeed(view: View) {
-        val empleos = view.findViewById<MaterialButton>(R.id.tabBusinessJobs)
-        val tiempo = view.findViewById<MaterialButton>(R.id.tabFreeTime)
-        fun actualizar() {
-            val azul = requireContext().getColor(R.color.brand_color)
-            val gris = requireContext().getColor(R.color.text_secondary)
-            empleos.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (showingFreeTime) android.graphics.Color.parseColor("#EEF2F8") else azul
-            )
-            empleos.setTextColor(if (showingFreeTime) gris else android.graphics.Color.WHITE)
-            empleos.iconTint = android.content.res.ColorStateList.valueOf(if (showingFreeTime) gris else android.graphics.Color.WHITE)
-            tiempo.backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (showingFreeTime) azul else android.graphics.Color.parseColor("#EEF2F8")
-            )
-            tiempo.setTextColor(if (showingFreeTime) android.graphics.Color.WHITE else gris)
-            tiempo.iconTint = android.content.res.ColorStateList.valueOf(if (showingFreeTime) android.graphics.Color.WHITE else gris)
-            pintarBanner()
-            aplicarFiltros()
-        }
-        empleos.setOnClickListener {
-            if (showingFreeTime) {
-                showingFreeTime = false
-                selectedCategory = ""
-                filters = filters.copy(category = "")
-                categoriaAdapter?.setSeleccionada("Todas")
-                actualizar()
-            }
-        }
-        tiempo.setOnClickListener {
-            if (!showingFreeTime) {
-                showingFreeTime = true
-                selectedCategory = ""
-                filters = filters.copy(category = "")
-                categoriaAdapter?.setSeleccionada("Todas")
-                actualizar()
-            }
-        }
-        actualizar()
+        btnTabEmpleos = view.findViewById(R.id.tabBusinessJobs)
+        btnTabTiempo = view.findViewById(R.id.tabFreeTime)
+        btnTabEmpleos?.setOnClickListener { cambiarModo(false) }
+        btnTabTiempo?.setOnClickListener { cambiarModo(true) }
+        pintarTabsModo()
     }
 
     private enum class Estado { CARGANDO, LISTA, VACIO, ERROR }
@@ -489,9 +612,10 @@ class FragmentoChambas : Fragment() {
 
     private fun setupChips(view: View) {
         // Los chips horizontales se eliminaron del layout: el filtro por
-        // categoría ahora es solo el grid con imágenes.
-        view.findViewById<View>(R.id.btnBannerCta)?.setOnClickListener {
-            scrollView?.smoothScrollTo(0, recyclerView?.top ?: 0)
+        // categoría ahora es solo el grid con imágenes. El CTA del banner vive
+        // en cada página del carrusel (BannerPromoAdapter), no aquí.
+        view.findViewById<View>(R.id.tvSpecialSeeAll)?.setOnClickListener {
+            limpiarFiltros(view)
         }
     }
 
@@ -839,9 +963,11 @@ class FragmentoChambas : Fragment() {
         // cerrar la app.
         if (view != null) attachFeed()
         actualizarBadge()
+        iniciarBannerAutoScroll()
     }
 
     override fun onPause() {
+        detenerBannerAutoScroll()
         detachFeed()
         badgeListener?.remove()
         badgeListener = null
@@ -851,6 +977,15 @@ class FragmentoChambas : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        detenerBannerAutoScroll()
+        bannerPageCallback?.let { cb -> vpBanner?.unregisterOnPageChangeCallback(cb) }
+        bannerPageCallback = null
+        vpBanner?.adapter = null
+        vpBanner = null
+        bannerAdapter = null
+        llBannerDots = null
+        btnTabEmpleos = null
+        btnTabTiempo = null
         detachFeed()
         feedByType.clear()
         badgeListener?.remove()

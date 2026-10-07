@@ -3,7 +3,17 @@
     android:height="16dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+
+    <!-- Insignia de 10 puntas con puntas redondeadas -->
     <path
-        android:fillColor="#1877F2"
-        android:pathData="M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41,-1.41z"/>
+        android:fillColor="#1268F2"
+        android:pathData="M11.35,0.32 Q12,-0.4 12.65,0.32 L14.97,2.87 L18.34,2.17 Q19.29,1.97 19.4,2.94 L19.77,6.36 L22.91,7.77 Q23.79,8.17 23.31,9.01 L21.6,12 L23.31,14.99 Q23.79,15.83 22.91,16.23 L19.77,17.64 L19.4,21.06 Q19.29,22.03 18.34,21.83 L14.97,21.13 L12.65,23.68 Q12,24.4 11.35,23.68 L9.03,21.13 L5.66,21.83 Q4.71,22.03 4.6,21.06 L4.23,17.64 L1.09,16.23 Q0.21,15.83 0.69,14.99 L2.4,12 L0.69,9.01 Q0.21,8.17 1.09,7.77 L4.23,6.36 L4.6,2.94 Q4.71,1.97 5.66,2.17 L9.03,2.87 Z" />
+
+    <!-- Check blanco con bordes redondeados -->
+    <path
+        android:pathData="M7,12.7 L10.4,15.9 L17,9.3"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.1"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 </vector>

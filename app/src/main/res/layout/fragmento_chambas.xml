@@ -205,129 +205,60 @@
             android:orientation="vertical"
             android:paddingBottom="80dp">
 
-            <!-- TÃ­tulo + Ver todo -->
-            
+﻿            <!-- Título + Ver todo -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp">
 
-            <!-- Banner Principal de Oferta -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardBannerMain"
+                <TextView
+                    android:id="@+id/tvSpecialTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:text="@string/home_special_title"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tvSpecialSeeAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/home_see_all"
+                    android:textColor="@color/brand_color"
+                    android:textSize="13sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Carrusel de banners: Empleos + Tiempo libre (rotan solos).
+                 El toggle feedModeTabs SOLO filtra el feed, ya no toca el banner. -->
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/vpBanner"
                 android:layout_width="match_parent"
                 android:layout_height="175dp"
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="12dp"
                 android:layout_marginEnd="20dp"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                android:clipChildren="false"
+                android:clipToPadding="false" />
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/frameBannerBackground"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@color/brand_color">
-
-                    <ImageView
-                        android:id="@+id/ivBannerPhoto"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:contentDescription="@null"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/chamba_banner_chambas_cerca"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintWidth_percent="0.48" />
-
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:background="@color/brand_color"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintWidth_percent="0.60" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:gravity="center_vertical"
-                        android:orientation="vertical"
-                        android:paddingStart="18dp"
-                        android:paddingTop="12dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="12dp"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintWidth_percent="0.60">
-
-                        <TextView
-                            android:id="@+id/tvBannerBadge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_badge_white"
-                            android:fontFamily="sans-serif-medium"
-                            android:paddingStart="10dp"
-                            android:paddingTop="4dp"
-                            android:paddingEnd="10dp"
-                            android:paddingBottom="4dp"
-                            android:text="@string/home_banner_badge"
-                            android:textColor="@color/text_primary"
-                            android:textSize="11sp"
-                            android:visibility="gone" />
-
-                        <TextView
-                            android:id="@+id/tvBannerTitle"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:fontFamily="sans-serif-black"
-                            android:lineSpacingMultiplier="1.05"
-                            android:text="@string/home_banner_title"
-                            android:textColor="@color/white"
-                            android:textSize="18sp" />
-
-                        <TextView
-                            android:id="@+id/tvBannerSubtitle"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:fontFamily="sans-serif"
-                            android:text="@string/home_banner_subtitle"
-                            android:textColor="#E6FFFFFF"
-                            android:textSize="13sp" />
-
-                        <TextView
-                            android:id="@+id/tvBannerPercent"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:visibility="gone" />
-
-                        <TextView
-                            android:id="@+id/tvBannerLegal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:fontFamily="sans-serif"
-                            android:text="@string/home_banner_legal"
-                            android:textColor="#B3FFFFFF"
-                            android:textSize="9sp" />
-
-                        <Button
-                            android:id="@+id/btnBannerCta"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:layout_marginTop="8dp"
-                            android:background="@drawable/bg_badge_white"
-                            android:fontFamily="sans-serif-medium"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:stateListAnimator="@null"
-                            android:text="@string/home_banner_cta"
-                            android:textColor="@color/brand_color"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </androidx.cardview.widget.CardView>
+            <!-- Indicadores del carrusel (dots, se pueblan en código) -->
+            <LinearLayout
+                android:id="@+id/llBannerDots"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:orientation="horizontal" />
 
             
 
