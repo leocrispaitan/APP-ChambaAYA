@@ -24,17 +24,28 @@ object OficioIcons {
     fun local(categoria: String): Int {
         val c = OficioCatalog.normalizar(categoria)
         return when {
-            c.contains("construccion") -> R.drawable.ic_skill_masonry
-            c.contains("pintura") -> R.drawable.ic_skill_paint_roller
+            c.contains("construccion") || c.contains("albanil") -> R.drawable.ic_skill_masonry
+            c.contains("pintura") || c.contains("pintor") -> R.drawable.ic_skill_paint_roller
             c.contains("jardin") -> R.drawable.ic_skill_gardening
+            c.contains("grass") || c.contains("cesped") -> R.drawable.ic_pin_park
             c.contains("limpieza") -> R.drawable.ic_cat_limpieza
             c.contains("tecnico") || c.contains("electricidad") ||
-                c.contains("gasfiteria") || c.contains("plomeria") ->
+                c.contains("gasfiteria") || c.contains("plomeria") ||
+                c.contains("mecanica") || c.contains("lavado de autos") ->
                 R.drawable.ic_cat_tecnico
             c.contains("transporte") || c.contains("delivery") ||
-                c.contains("reparto") || c.contains("carga") ->
+                c.contains("reparto") || c.contains("mudanza") || c.contains("carga") ->
                 R.drawable.ic_cat_delivery
+            c.contains("mozo") || c.contains("cocina") -> R.drawable.ic_pin_restaurant
+            c.contains("evento") -> R.drawable.ic_calendar
+            c.contains("ninos") || c.contains("adultos mayores") -> R.drawable.ic_role_worker
+            c.contains("mascotas") -> R.drawable.ic_pin_park
+            c.contains("venta") || c.contains("tienda") || c.contains("compras") -> R.drawable.ic_pin_shopping
+            c.contains("volanteo") || c.contains("promocion") -> R.drawable.ic_nav_publish
+            c.contains("empaque") || c.contains("almacen") -> R.drawable.ic_lugar_local
+            c.contains("mandados") -> R.drawable.ic_home_location
             c.contains("ayudante") || c.contains("general") -> R.drawable.ic_skill_helper
+            c.contains("otro trabajo") -> R.drawable.ic_profile_wrench
             else -> R.drawable.ic_profile_wrench
         }
     }

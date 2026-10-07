@@ -874,12 +874,10 @@ class ProfileRepository(
      * con las categorías de las publicaciones.
      */
     fun filtrarEspecialidades(context: android.content.Context, candidatas: List<String>): List<String> {
-        val validas = OficioCatalog.load(context).map { it.categoria }
+        val validas = OficioCatalog.especialidades(context).map { it.categoria }
         return candidatas
             .map { it.trim() }
-            .filter { texto ->
-                validas.any { OficioCatalog.normalizar(it) == OficioCatalog.normalizar(texto) }
-            }
+            .mapNotNull { texto -> OficioCatalog.etiquetaEspecialidad(texto)?.takeIf { it in validas } }
             .distinctBy { OficioCatalog.normalizar(it) }
             .take(ProfileLimits.SPECIALTY_MAX)
     }

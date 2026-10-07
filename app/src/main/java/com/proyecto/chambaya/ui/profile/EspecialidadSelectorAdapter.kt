@@ -79,10 +79,10 @@ class EspecialidadSelectorAdapter(
             itemView.contentDescription = oficio.categoria
 
             val request = ImageRequest.Builder(itemView.context)
-                .data(oficio.icono)
+                .data(oficio.icono.takeIf { it.isNotBlank() } ?: OficioIcons.local(oficio.categoria))
                 .target(ivIcono)
-                .placeholder(R.drawable.ic_cat_construccion)
-                .error(R.drawable.ic_cat_construccion)
+                .placeholder(OficioIcons.local(oficio.categoria))
+                .error(OficioIcons.local(oficio.categoria))
                 .build()
             imageLoader?.enqueue(request)
 
