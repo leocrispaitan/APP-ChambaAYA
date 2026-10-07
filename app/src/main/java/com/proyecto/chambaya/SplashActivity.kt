@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +25,17 @@ class SplashActivity : AppCompatActivity() {
 
         // Si la vez anterior se cerró sola, se muestra el error antes de avanzar.
         if (mostrarCrashSiExiste()) return
+        // Entrada moderna: el grupo central aparece con fundido + subida suave.
+        findViewById<View>(R.id.splashCenterGroup)?.let { grupo ->
+            grupo.alpha = 0f
+            grupo.translationY = 36f
+            grupo.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(550L)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+        }
         handler.postDelayed(openMainRunnable, SPLASH_DURATION_MS)
     }
 

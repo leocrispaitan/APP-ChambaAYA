@@ -53,6 +53,7 @@
     <!-- Home / Chambas Screen -->
     <string name="home_location_label">Ubicación</string>
     <string name="home_location_value">Ayacucho, Perú</string>
+    <string name="splash_tagline">El trabajo te encuentra</string>
     <string name="home_search_hint">Buscar chambas…</string>
     <string name="home_special_title">Destacados para ti</string>
     <string name="home_see_all">Ver todo</string>

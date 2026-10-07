@@ -305,6 +305,7 @@
     <string name="nav_trabajos">My jobs</string>
     <string name="home_location_label">Location</string>
     <string name="home_location_value">Ayacucho, Peru</string>
+    <string name="splash_tagline">Work finds you</string>
     <string name="home_search_hint">Find chambas…</string>
     <string name="home_special_title">Featured for you</string>
     <string name="home_see_all">See all</string>
