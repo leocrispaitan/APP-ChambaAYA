@@ -13,6 +13,7 @@ import coil.load
 import com.google.android.material.imageview.ShapeableImageView
 import com.proyecto.chambaya.R
 import com.proyecto.chambaya.data.model.precioTexto
+import com.proyecto.chambaya.ui.profile.OficioIcons
 
 /**
  * Chambas cercanas ordenadas por distancia. Tap → fijar en el mapa + ruta
@@ -56,7 +57,7 @@ class MapPlaceAdapter(
                 ivPhoto.load(null) // cancela cualquier carga en curso de la vista reciclada
                 ivPhoto.setBackgroundColor(Color.parseColor("#1E293B"))
                 ivIcon.visibility = View.VISIBLE
-                ivIcon.setImageResource(R.drawable.ic_cat_construccion)
+                ivIcon.setImageResource(OficioIcons.local(pub.category))
             }
             itemView.setOnClickListener { onLocate(pin) }
         }

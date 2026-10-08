@@ -24,26 +24,36 @@ object OficioIcons {
     fun local(categoria: String): Int {
         val c = OficioCatalog.normalizar(categoria)
         return when {
+            c.contains("mudanza") || c.contains("carga") -> R.drawable.category_mudanzas_carga
+            c.contains("cocina") || c.contains("ayudante") -> R.drawable.category_ayudante_cocina
+            c.contains("evento") -> R.drawable.category_atencion_eventos
+            c.contains("adultos mayores") -> R.drawable.category_cuidado_adultos_mayores
+            c.contains("ninos") -> R.drawable.category_cuidado_ninos
+            c.contains("mascotas") -> R.drawable.category_cuidado_mascotas
+            c.contains("venta") || c.contains("promocion") -> R.drawable.category_ventas_promocion
+            c.contains("volanteo") -> R.drawable.category_volanteo
+            c.contains("lavado de autos") -> R.drawable.category_lavado_autos
+            c.contains("tienda") -> R.drawable.category_apoyo_tienda
+            c.contains("empaque") || c.contains("almacen") -> R.drawable.category_empaque_almacen
+            c.contains("mandados") || c.contains("compras") -> R.drawable.category_mandados_compras
+            c.contains("grass") || c.contains("cesped") -> R.drawable.category_control_grass
             c.contains("construccion") || c.contains("albanil") -> R.drawable.ic_skill_masonry
             c.contains("pintura") || c.contains("pintor") -> R.drawable.ic_skill_paint_roller
             c.contains("jardin") -> R.drawable.ic_skill_gardening
-            c.contains("grass") || c.contains("cesped") -> R.drawable.ic_pin_park
             c.contains("limpieza") -> R.drawable.ic_cat_limpieza
             c.contains("tecnico") || c.contains("electricidad") ||
                 c.contains("gasfiteria") || c.contains("plomeria") ||
-                c.contains("mecanica") || c.contains("lavado de autos") ->
+                c.contains("mecanica") ->
                 R.drawable.ic_cat_tecnico
             c.contains("transporte") || c.contains("delivery") ||
-                c.contains("reparto") || c.contains("mudanza") || c.contains("carga") ->
+                c.contains("reparto") ->
                 R.drawable.ic_cat_delivery
-            c.contains("mozo") || c.contains("cocina") -> R.drawable.ic_pin_restaurant
-            c.contains("evento") -> R.drawable.ic_calendar
-            c.contains("ninos") || c.contains("adultos mayores") -> R.drawable.ic_role_worker
-            c.contains("mascotas") -> R.drawable.ic_pin_park
-            c.contains("venta") || c.contains("tienda") || c.contains("compras") -> R.drawable.ic_pin_shopping
-            c.contains("volanteo") || c.contains("promocion") -> R.drawable.ic_nav_publish
-            c.contains("empaque") || c.contains("almacen") -> R.drawable.ic_lugar_local
-            c.contains("mandados") -> R.drawable.ic_home_location
+            c.contains("mozo") -> R.drawable.category_mozo
+            c.contains("cocina") -> R.drawable.category_ayudante_cocina
+            c.contains("adulto mayor") -> R.drawable.category_cuidado_adultos_mayores
+            c.contains("ninos") -> R.drawable.category_cuidado_ninos
+            c.contains("mascotas") -> R.drawable.category_cuidado_mascotas
+            c.contains("evento") -> R.drawable.category_atencion_eventos
             c.contains("ayudante") || c.contains("general") -> R.drawable.ic_skill_helper
             c.contains("otro trabajo") -> R.drawable.ic_profile_wrench
             else -> R.drawable.ic_profile_wrench
