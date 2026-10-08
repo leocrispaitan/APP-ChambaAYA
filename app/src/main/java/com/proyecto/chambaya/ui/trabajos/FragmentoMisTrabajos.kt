@@ -15,6 +15,8 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.PopupMenu
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -29,22 +31,26 @@ import com.proyecto.chambaya.data.model.ApplicationStatus
 import com.proyecto.chambaya.data.model.Job
 import com.proyecto.chambaya.data.model.JobApplication
 import com.proyecto.chambaya.data.model.JobStatus
+import com.proyecto.chambaya.data.model.Publication
+import com.proyecto.chambaya.data.model.PublicationStatus
 import com.proyecto.chambaya.data.model.PublicationType
 import com.proyecto.chambaya.data.repository.ApplicationRepository
 import com.proyecto.chambaya.data.repository.ChatRepository
 import com.proyecto.chambaya.data.repository.JobRepository
 import com.proyecto.chambaya.data.repository.ProfileRepository
+import com.proyecto.chambaya.data.repository.PublicationRepository
 import com.proyecto.chambaya.data.repository.RatingRepository
 import com.proyecto.chambaya.ui.jobs.JobDetailSheet
 import com.proyecto.chambaya.ui.jobs.RateSheet
 import com.proyecto.chambaya.ui.publish.CrearPublicacionActivity
 import com.proyecto.chambaya.ui.publish.MyApplicationsAdapter
 import com.proyecto.chambaya.ui.publish.MyAppRow
+import com.proyecto.chambaya.ui.publish.MisPublicacionesAdapter
 import kotlinx.coroutines.launch
 
 /**
- * Solo rol Trabajador: Solicitudes (mis postulaciones) + Historial
- * (línea de tiempo de trabajos con fechas de contratación, inicio y fin).
+ * Solo rol Trabajador: disponibilidad, historial, solicitudes y gestión de
+ * sus publicaciones.
  *
  * Replica el lenguaje visual de Publicar (barra de pestañas con indicador
  * deslizante y cambio por toque o deslizamiento).
@@ -67,6 +73,7 @@ class FragmentoMisTrabajos : Fragment() {
     private val jobRepository = JobRepository()
     private val ratingRepository = RatingRepository()
     private val profileRepository = ProfileRepository()
+    private val publicationRepository = PublicationRepository()
 
     // Solicitudes
     private var rvSolicitudes: RecyclerView? = null
@@ -89,6 +96,22 @@ class FragmentoMisTrabajos : Fragment() {
     private var entityCache: Map<String, String> = emptyMap()
     private var histLoading = false
 
+    // Publicaciones propias del trabajador.
+    private var rvMisPublicaciones: RecyclerView? = null
+    private var progressMisPublicaciones: ProgressBar? = null
+    private var emptyMisPublicaciones: View? = null
+    private var misPublicacionesAdapter: MisPublicacionesAdapter? = null
+    private var publicacionesListener: com.google.firebase.firestore.ListenerRegistration? = null
+
+    private val editarPublicacionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            seleccionar(SECCION_MIS_PUBLICACIONES, animar = false)
+            cargarMisPublicaciones()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -100,13 +123,25 @@ class FragmentoMisTrabajos : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        seccionActual = savedInstanceState?.getInt(KEY_SECCION_V2)
-            ?: when (savedInstanceState?.getInt(KEY_SECCION_V1, SECCION_PUBLICAR_TIEMPO)) {
-                0 -> SECCION_PUBLICAR_TIEMPO
-                1 -> SECCION_SOLICITUDES
-                2 -> SECCION_HISTORIAL
-                else -> SECCION_PUBLICAR_TIEMPO
-            }
+        seccionActual = when {
+            savedInstanceState?.containsKey(KEY_SECCION_V3) == true ->
+                savedInstanceState.getInt(KEY_SECCION_V3)
+            savedInstanceState?.containsKey(KEY_SECCION_V2) == true ->
+                when (savedInstanceState.getInt(KEY_SECCION_V2)) {
+                    0 -> SECCION_PUBLICAR_TIEMPO
+                    1 -> SECCION_HISTORIAL
+                    2 -> SECCION_SOLICITUDES
+                    else -> SECCION_MIS_PUBLICACIONES
+                }
+            savedInstanceState?.containsKey(KEY_SECCION_V1) == true ->
+                when (savedInstanceState.getInt(KEY_SECCION_V1, SECCION_PUBLICAR_TIEMPO)) {
+                    0 -> SECCION_PUBLICAR_TIEMPO
+                    1 -> SECCION_SOLICITUDES
+                    2 -> SECCION_HISTORIAL
+                    else -> SECCION_PUBLICAR_TIEMPO
+                }
+            else -> SECCION_PUBLICAR_TIEMPO
+        }
         colorActivo = requireContext().getColor(R.color.profile_tab_active)
         colorInactivo = requireContext().getColor(R.color.profile_tab_inactive)
 
@@ -120,6 +155,7 @@ class FragmentoMisTrabajos : Fragment() {
         ViewCompat.requestApplyInsets(barraTabs)
         tabs = listOf(
             view.findViewById(R.id.tabPublicarTiempo),
+            view.findViewById(R.id.tabMisPublicaciones),
             view.findViewById(R.id.tabHistorial),
             view.findViewById(R.id.tabSolicitudes),
         )
@@ -130,11 +166,13 @@ class FragmentoMisTrabajos : Fragment() {
         }
         iconos = listOf(
             view.findViewById(R.id.iconoPublicarTiempo),
+            view.findViewById(R.id.iconoMisPublicaciones),
             view.findViewById(R.id.iconoHistorial),
             view.findViewById(R.id.iconoSolicitudes),
         )
         paneles = listOf(
             view.findViewById(R.id.panelPublicarTiempo),
+            view.findViewById(R.id.panelMisPublicaciones),
             view.findViewById(R.id.panelHistorial),
             view.findViewById(R.id.panelSolicitudes),
         )
@@ -157,6 +195,7 @@ class FragmentoMisTrabajos : Fragment() {
         }
 
         configurarSolicitudes(view)
+        configurarMisPublicaciones(view)
         configurarHistorial(view)
 
         tabs.forEachIndexed { indice, tab ->
@@ -183,7 +222,7 @@ class FragmentoMisTrabajos : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(KEY_SECCION_V2, seccionActual)
+        outState.putInt(KEY_SECCION_V3, seccionActual)
     }
 
     override fun onResume() {
@@ -196,6 +235,11 @@ class FragmentoMisTrabajos : Fragment() {
         }
     }
 
+    override fun onPause() {
+        detachPublicaciones()
+        super.onPause()
+    }
+
     override fun onDestroyView() {
         rvSolicitudes = null
         progressSol = null
@@ -205,7 +249,213 @@ class FragmentoMisTrabajos : Fragment() {
         progressHist = null
         emptyHist = null
         histAdapter = null
+        detachPublicaciones()
+        rvMisPublicaciones = null
+        progressMisPublicaciones = null
+        emptyMisPublicaciones = null
+        misPublicacionesAdapter = null
         super.onDestroyView()
+    }
+
+    private fun configurarMisPublicaciones(view: View) {
+        rvMisPublicaciones = view.findViewById(R.id.rvMisPublicaciones)
+        progressMisPublicaciones = view.findViewById(R.id.progressMisPublicaciones)
+        emptyMisPublicaciones = view.findViewById(R.id.emptyMisPublicaciones)
+        misPublicacionesAdapter = MisPublicacionesAdapter(
+            onVer = { pub ->
+                JobDetailSheet.newInstance(pub.publicationId)
+                    .show(parentFragmentManager, "worker_publication_detail")
+            },
+            onToggle = { pub -> alternarPublicacion(pub) },
+            onMenu = { pub, anchor -> mostrarMenuPublicacion(pub, anchor) }
+        )
+        rvMisPublicaciones?.adapter = misPublicacionesAdapter
+        rvMisPublicaciones?.visibility = View.GONE
+        emptyMisPublicaciones?.findViewById<MaterialButton>(R.id.btnVacioAccion)?.apply {
+            text = getString(R.string.pub_disponibilidad_btn)
+            setOnClickListener {
+                startActivity(
+                    Intent(requireContext(), CrearPublicacionActivity::class.java)
+                        .putExtra(
+                            CrearPublicacionActivity.EXTRA_PUBLICATION_TYPE,
+                            PublicationType.WORKER_AVAILABILITY
+                        )
+                )
+            }
+        }
+    }
+
+    private fun cargarMisPublicaciones() {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        if (!isAdded || publicacionesListener != null) return
+        progressMisPublicaciones?.visibility = View.VISIBLE
+        rvMisPublicaciones?.visibility = View.GONE
+        emptyMisPublicaciones?.visibility = View.GONE
+        publicacionesListener = publicationRepository.listenByOwner(
+            uid = uid,
+            limit = 50,
+            onUpdate = { publicaciones ->
+                if (isAdded) pintarMisPublicaciones(publicaciones)
+            },
+            onError = { error ->
+                if (!isAdded) return@listenByOwner
+                progressMisPublicaciones?.visibility = View.GONE
+                if (misPublicacionesAdapter?.itemCount == 0) {
+                    emptyMisPublicaciones?.visibility = View.VISIBLE
+                }
+                Toast.makeText(
+                    requireContext(),
+                    error.message ?: getString(R.string.k_comun_no_actualizar),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun pintarMisPublicaciones(publicaciones: List<Publication>) {
+        progressMisPublicaciones?.visibility = View.GONE
+        if (publicaciones.isEmpty()) {
+            rvMisPublicaciones?.visibility = View.GONE
+            emptyMisPublicaciones?.visibility = View.VISIBLE
+            emptyMisPublicaciones?.findViewById<TextView>(R.id.tvVacioTitulo)
+                ?.setText(R.string.publicaciones_vacio_titulo)
+            emptyMisPublicaciones?.findViewById<TextView>(R.id.tvVacioSubtitulo)
+                ?.setText(R.string.publicaciones_vacio_sub)
+        } else {
+            emptyMisPublicaciones?.visibility = View.GONE
+            rvMisPublicaciones?.visibility = View.VISIBLE
+            misPublicacionesAdapter?.submitList(publicaciones)
+        }
+    }
+
+    private fun detachPublicaciones() {
+        publicacionesListener?.remove()
+        publicacionesListener = null
+    }
+
+    private fun alternarPublicacion(publicacion: Publication) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val nuevoEstado = when (publicacion.status) {
+            PublicationStatus.ACTIVE -> PublicationStatus.PAUSED
+            PublicationStatus.PAUSED, PublicationStatus.FINISHED -> PublicationStatus.ACTIVE
+            else -> return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val resultado = publicationRepository.changeStatus(
+                requireContext(), uid, publicacion.publicationId, nuevoEstado
+            )
+            if (resultado.isSuccess) {
+                val mensaje = if (nuevoEstado == PublicationStatus.PAUSED) {
+                    getString(R.string.k_detalle_pausada)
+                } else getString(R.string.k_pub_activa_nueva)
+                Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    resultado.exceptionOrNull()?.message ?: getString(R.string.k_comun_no_actualizar),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun mostrarMenuPublicacion(publicacion: Publication, anchor: View) {
+        val menu = PopupMenu(requireContext(), anchor)
+        menu.menu.add(0, 1, 0, getString(R.string.k_comun_editar))
+        if (publicacion.status == PublicationStatus.ACTIVE) {
+            menu.menu.add(0, 2, 0, getString(R.string.item_pausar))
+        }
+        if (publicacion.status == PublicationStatus.PAUSED) {
+            menu.menu.add(0, 3, 0, getString(R.string.k_detalle_reactivar))
+        }
+        if (publicacion.status == PublicationStatus.FINISHED ||
+            publicacion.status == PublicationStatus.ARCHIVED
+        ) {
+            menu.menu.add(0, 3, 0, getString(R.string.k_pub_republicar))
+        }
+        if (publicacion.status != PublicationStatus.FINISHED) {
+            menu.menu.add(0, 4, 0, getString(R.string.sheet_detalle_finalizar))
+        }
+        if (publicacion.status != PublicationStatus.ARCHIVED) {
+            menu.menu.add(0, 6, 0, getString(R.string.k_pub_archivar))
+        }
+        menu.menu.add(0, 5, 0, getString(R.string.k_comun_eliminar))
+        menu.setOnMenuItemClickListener { item ->
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+                ?: return@setOnMenuItemClickListener false
+            when (item.itemId) {
+                1 -> {
+                    if (publicacion.status !in listOf(PublicationStatus.ACTIVE, PublicationStatus.PAUSED)) {
+                        Toast.makeText(requireContext(), getString(R.string.k_pub_solo_edit), Toast.LENGTH_SHORT).show()
+                    } else {
+                        editarPublicacionLauncher.launch(
+                            CrearPublicacionActivity.editarIntent(
+                                requireActivity(), publicacion.publicationId, publicacion.type
+                            )
+                        )
+                    }
+                    true
+                }
+                2, 3 -> { alternarPublicacion(publicacion); true }
+                4 -> {
+                    cambiarEstadoPublicacion(publicacion, uid, PublicationStatus.FINISHED, R.string.k_detalle_finalizada)
+                    true
+                }
+                5 -> { confirmarEliminarPublicacion(publicacion, uid); true }
+                6 -> {
+                    cambiarEstadoPublicacion(publicacion, uid, PublicationStatus.ARCHIVED, R.string.k_pub_archivada)
+                    true
+                }
+                else -> false
+            }
+        }
+        menu.show()
+    }
+
+    private fun cambiarEstadoPublicacion(
+        publicacion: Publication,
+        uid: String,
+        estado: String,
+        mensajeRes: Int
+    ) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val resultado = publicationRepository.changeStatus(
+                requireContext(), uid, publicacion.publicationId, estado
+            )
+            if (resultado.isSuccess) {
+                Toast.makeText(requireContext(), getString(mensajeRes), Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    resultado.exceptionOrNull()?.message ?: getString(R.string.k_comun_no_actualizar),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun confirmarEliminarPublicacion(publicacion: Publication, uid: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.k_pub_eliminar_titulo)
+            .setMessage(R.string.k_pub_eliminar_msg)
+            .setPositiveButton(R.string.k_comun_eliminar) { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val resultado = publicationRepository.delete(
+                        requireContext(), uid, publicacion.publicationId
+                    )
+                    if (resultado.isSuccess) {
+                        Toast.makeText(
+                            requireContext(), getString(R.string.k_pub_eliminada), Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(), getString(R.string.k_comun_no_eliminar), Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton(R.string.k_comun_cancelar, null)
+            .show()
     }
 
     // ── Solicitudes ───────────────────────────────────────────────
@@ -470,6 +720,9 @@ class FragmentoMisTrabajos : Fragment() {
         val anterior = seccionActual
         seccionActual = nueva
         aplicarEstado(animar, anterior)
+        if (nueva == SECCION_SOLICITUDES) cargarSolicitudes()
+        if (nueva == SECCION_MIS_PUBLICACIONES) cargarMisPublicaciones()
+        else detachPublicaciones()
     }
 
     private fun aplicarEstado(animar: Boolean, anterior: Int = seccionActual) {
@@ -555,8 +808,10 @@ class FragmentoMisTrabajos : Fragment() {
     private companion object {
         const val KEY_SECCION_V1 = "mistrabajos_seccion"
         const val KEY_SECCION_V2 = "mistrabajos_seccion_v2"
+        const val KEY_SECCION_V3 = "mistrabajos_seccion_v3"
         const val SECCION_PUBLICAR_TIEMPO = 0
-        const val SECCION_HISTORIAL = 1
-        const val SECCION_SOLICITUDES = 2
+        const val SECCION_MIS_PUBLICACIONES = 1
+        const val SECCION_HISTORIAL = 2
+        const val SECCION_SOLICITUDES = 3
     }
 }

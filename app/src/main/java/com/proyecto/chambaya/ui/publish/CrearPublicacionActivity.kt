@@ -475,9 +475,14 @@ class CrearPublicacionActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_EDIT_ID = "edit_publication_id"
         const val EXTRA_PUBLICATION_TYPE = "publication_type"
-        fun editarIntent(activity: Activity, publicationId: String): Intent {
+        fun editarIntent(
+            activity: Activity,
+            publicationId: String,
+            publicationType: String = PublicationType.JOB_OFFER
+        ): Intent {
             return Intent(activity, CrearPublicacionActivity::class.java)
                 .putExtra(EXTRA_EDIT_ID, publicationId)
+                .putExtra(EXTRA_PUBLICATION_TYPE, publicationType)
         }
     }
 }

@@ -75,6 +75,25 @@
                 android:importantForAccessibility="no"
                 android:src="@drawable/ic_tab_publicar" />
         </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/tabMisPublicaciones"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/publicar_tab_publicaciones"
+            android:focusable="true"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/iconoMisPublicaciones"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_tab_mis_publicaciones" />
+        </FrameLayout>
     </LinearLayout>
 
     <FrameLayout
@@ -301,6 +320,36 @@
                 layout="@layout/item_publicar_vacio"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/panelMisPublicaciones"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvMisPublicaciones"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="8dp"
+                android:paddingBottom="24dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <ProgressBar
+                android:id="@+id/progressMisPublicaciones"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/emptyMisPublicaciones"
+                layout="@layout/item_publicar_vacio"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
         </FrameLayout>
     </com.proyecto.chambaya.ui.publish.ContenedorDeslizable>
 
