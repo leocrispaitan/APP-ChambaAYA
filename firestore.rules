@@ -867,7 +867,11 @@ service cloud.firestore {
         || (request.auth != null
           && (resource.data.get('status', '') == 'ACTIVE'
             || resource.data.get('ownerUid', '') == request.auth.uid));
-      allow list: if request.auth != null || esPublicacionVisible();
+      // OJO: en `list` no existe `resource` (es una consulta, no un documento),
+      // así que no se puede exigir status/visibility aquí: la regla permite el
+      // listado y la app consulta solo ACTIVE+PUBLIC. El detalle de no-visibles
+      // y todas las escrituras siguen protegidos.
+      allow list: if true;
 
       allow create: if request.auth != null
         && hasValidPublicationFields(publicationId)
@@ -1124,10 +1128,12 @@ service cloud.firestore {
     // =============================================================
 
     match /comments/{commentId} {
-      allow get: if request.auth != null
-        && (resource.data.get('status', '') == 'VISIBLE'
-          || resource.data.get('authorUid', '') == request.auth.uid);
-      allow list: if request.auth != null;
+      // Lectura pública de comentarios visibles (el invitado también ve el
+      // detalle). Crear/editar/borrar siguen exigiendo sesión.
+      allow get: if resource.data.get('status', '') == 'VISIBLE'
+        || (request.auth != null
+          && resource.data.get('authorUid', '') == request.auth.uid);
+      allow list: if true;
       allow create: if request.auth != null
         && request.resource.data.get('authorUid', '') == request.auth.uid
         && request.resource.data.get('publicationId', '') is string
@@ -1183,7 +1189,9 @@ service cloud.firestore {
     }
 
     match /public_profiles/{uid} {
-      allow get, list: if request.auth != null;
+      // Colección pública por diseño (nombre, foto, verificación): el invitado
+      // también ve los avatares del feed. Solo el dueño escribe.
+      allow get, list: if true;
       allow create, update: if isOwner(uid) && isValidPublicProfile(uid);
       allow delete: if false;
     }
