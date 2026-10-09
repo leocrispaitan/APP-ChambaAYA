@@ -9,12 +9,18 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
 
 class SplashActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private val openMainRunnable = Runnable {
-        startActivity(Intent(this, BienvenidaActivity::class.java))
+        val destino = if (FirebaseAuth.getInstance().currentUser != null) {
+            MainActivity::class.java
+        } else {
+            BienvenidaActivity::class.java
+        }
+        startActivity(Intent(this, destino))
         finish()
     }
 
