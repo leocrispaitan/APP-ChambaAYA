@@ -14,6 +14,7 @@ import com.proyecto.chambaya.data.model.NotificationType
 import com.proyecto.chambaya.data.model.conversationIdFor
 import com.proyecto.chambaya.data.model.toChatMessage
 import com.proyecto.chambaya.data.model.toConversation
+import com.proyecto.chambaya.data.model.UserRoles
 import com.proyecto.chambaya.R
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +44,7 @@ class ChatRepository(
             require(myUid.isNotBlank() && otherUid.isNotBlank() && myUid != otherUid) {
                 "Conversación no válida."
             }
+            requireTieneRol(myUid)
             if (blocks.isBlocked(myUid, otherUid)) {
                 throw IllegalStateException("Desbloquea a este usuario para chatear.")
             }
@@ -133,6 +135,7 @@ class ChatRepository(
                 val clean = text.trim().take(ChatLimits.TEXT_MAX)
                 require(clean.isNotEmpty()) { context.getString(R.string.kr_chat_escribe) }
                 require(senderUid.isNotBlank() && conversationId.isNotBlank()) { context.getString(R.string.k_rate_sesion) }
+                requireTieneRol(senderUid)
                 val convRef = firestore.collection(COLLECTION).document(conversationId)
                 val conv = Tasks.await(convRef.get()).takeIf { it.exists() }?.toConversation()
                     ?: throw IllegalArgumentException(context.getString(R.string.kr_chat_gone))
@@ -232,6 +235,18 @@ class ChatRepository(
                 .map { (key, _) -> key.removePrefix(prefix) }
                 .filter(String::isNotBlank)
                 .toSet()
+        }
+    }
+
+    /** La cuenta debe tener un rol elegido antes de poder abrir o enviar chats. */
+    private fun requireTieneRol(uid: String) {
+        val user = Tasks.await(firestore.collection("users").document(uid).get())
+        val roles = (user.get("roles") as? List<*>)
+            ?.filterIsInstance<String>()
+            .orEmpty()
+        val roleLegacy = user.getString("activeRole") ?: user.getString("role")
+        require(user.exists() && (roles.any(UserRoles::isValid) || UserRoles.isValid(roleLegacy))) {
+            "Inicia sesión con un rol de trabajador o contratante para usar Mensajes."
         }
     }
 }

@@ -329,6 +329,8 @@ class PublicationRepository(
                 val featured = Tasks.await(
                     firestore.collection(COLLECTION)
                         .whereEqualTo("featured", true)
+                        .whereEqualTo("status", PublicationStatus.ACTIVE)
+                        .whereEqualTo("visibility", PublicationVisibility.PUBLIC)
                         .get()
                 ).documents.map { it.toPublication() }
                 val recent = Tasks.await(
@@ -380,9 +382,9 @@ class PublicationRepository(
     ): com.google.firebase.firestore.ListenerRegistration {
         val collection = firestore.collection(COLLECTION)
         val featuredQuery = collection
-            // Filtrar el tipo en el cliente evita depender de un índice
-            // compuesto featured + type que puede no estar desplegado aún.
             .whereEqualTo("featured", true)
+            .whereEqualTo("status", PublicationStatus.ACTIVE)
+            .whereEqualTo("visibility", PublicationVisibility.PUBLIC)
         val recentQuery = collection
             .whereEqualTo("status", PublicationStatus.ACTIVE)
             .whereEqualTo("visibility", PublicationVisibility.PUBLIC)

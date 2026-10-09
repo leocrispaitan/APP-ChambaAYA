@@ -854,12 +854,20 @@ service cloud.firestore {
     }
 
     match /publications/{publicationId} {
-      // Feed: cualquiera autenticado puede listar ACTIVE+PUBLIC.
-      // El detalle de una pausada/finalizada solo lo ve su dueño.
-      allow get: if request.auth != null
-        && (resource.data.get('status', '') == 'ACTIVE'
-          || resource.data.get('ownerUid', '') == request.auth.uid);
-      allow list: if request.auth != null;
+      // El invitado solo puede leer publicaciones activas y públicas.
+      // Firestore exige que las consultas de invitado incluyan ambos filtros.
+      function esPublicacionVisible() {
+        return resource.data.get('status', '') == 'ACTIVE'
+          && resource.data.get('visibility', '') == 'PUBLIC';
+      }
+
+      // El detalle de publicaciones privadas/inactivas sigue siendo exclusivo
+      // del dueño autenticado; el resto conserva la lectura autenticada previa.
+      allow get: if esPublicacionVisible()
+        || (request.auth != null
+          && (resource.data.get('status', '') == 'ACTIVE'
+            || resource.data.get('ownerUid', '') == request.auth.uid));
+      allow list: if request.auth != null || esPublicacionVisible();
 
       allow create: if request.auth != null
         && hasValidPublicationFields(publicationId)

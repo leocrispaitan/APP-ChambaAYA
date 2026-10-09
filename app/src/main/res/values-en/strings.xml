@@ -20,6 +20,14 @@
     <string name="welcome_skip">Skip</string>
     <string name="welcome_next">Next</string>
     <string name="welcome_get_started">Get Started</string>
+    <string name="guest_account_title">Sign in to continue</string>
+    <string name="guest_account_message">Sign in or create an account to use this option.</string>
+    <string name="guest_publish_message">As a guest, you can explore jobs. You need an account with the employer role to publish.</string>
+    <string name="guest_messages_message">Sign in or create an account with a worker or employer role to use Messages.</string>
+    <string name="guest_login">Sign in</string>
+    <string name="guest_register">Create account and choose a role</string>
+    <string name="guest_profile_title">Your profile is waiting</string>
+    <string name="guest_profile_message">Sign in or create an account to complete your profile and access worker or employer features.</string>
     <string name="welcome_account_prompt">Already have an account? </string>
     <string name="welcome_account_prompt_login">Already have an account? Login &gt;</string>
     <string name="access_options_title">Find the best\njobs in Ayacucho</string>

@@ -127,6 +127,10 @@ class FragmentoMiPerfil : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (auth.currentUser == null) {
+            mostrarPerfilInvitado(view)
+            return
+        }
         iconLoader = OficioIcons.nuevoImageLoader(requireContext())
 
         setupTopBar(view)
@@ -141,6 +145,30 @@ class FragmentoMiPerfil : Fragment() {
         val cacheado = ProfileCache.perfil ?: perfil
         perfil = cacheado
         if (cacheado != null) pintarPerfil(view, cacheado) else cargarPerfil()
+    }
+
+    private fun mostrarPerfilInvitado(root: View) {
+        val contenedor = root as? androidx.constraintlayout.widget.ConstraintLayout ?: return
+        for (index in 0 until contenedor.childCount) {
+            contenedor.getChildAt(index).visibility = View.GONE
+        }
+        val acceso = layoutInflater.inflate(R.layout.layout_perfil_invitado, contenedor, false)
+        val params = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ).apply {
+            startToStart = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+            endToEnd = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+            topToTop = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+            bottomToBottom = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID
+        }
+        contenedor.addView(acceso, params)
+        acceso.findViewById<View>(R.id.btnGuestLogin).setOnClickListener {
+            startActivity(Intent(requireContext(), com.proyecto.chambaya.LoginActivity::class.java))
+        }
+        acceso.findViewById<View>(R.id.btnGuestRegister).setOnClickListener {
+            startActivity(Intent(requireContext(), com.proyecto.chambaya.RegistroActivity::class.java))
+        }
     }
 
     override fun onResume() {

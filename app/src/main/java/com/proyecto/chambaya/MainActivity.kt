@@ -12,6 +12,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.proyecto.chambaya.data.repository.ProfileRepository
@@ -155,6 +156,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupBottomNavigation() {
         bottomNavigation.setOnItemSelectedListener { item ->
+            if (FirebaseAuth.getInstance().currentUser == null) {
+                when (item.itemId) {
+                    R.id.nav_publish -> {
+                        solicitarAccesoCuenta(getString(R.string.guest_publish_message))
+                        return@setOnItemSelectedListener false
+                    }
+                    R.id.nav_chat -> {
+                        solicitarAccesoCuenta(getString(R.string.guest_messages_message))
+                        return@setOnItemSelectedListener false
+                    }
+                }
+            }
             animateBottomNavSelection(item.itemId)
 
             when (item.itemId) {
@@ -229,8 +242,28 @@ class MainActivity : AppCompatActivity() {
         bottomNavigation.selectedItemId = tabId
     }
 
+    /** Muestra el acceso a login y registro cuando el invitado intenta una acción privada. */
+    fun solicitarAccesoCuenta(mensaje: String = getString(R.string.guest_account_message)) {
+        if (isFinishing || isDestroyed) return
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.guest_account_title)
+            .setMessage(mensaje)
+            .setPositiveButton(R.string.guest_login) { _, _ ->
+                startActivity(android.content.Intent(this, LoginActivity::class.java))
+            }
+            .setNeutralButton(R.string.guest_register) { _, _ ->
+                startActivity(android.content.Intent(this, RegistroActivity::class.java))
+            }
+            .setNegativeButton(R.string.k_comun_cancelar, null)
+            .show()
+    }
+
     /** Va a Publicar (contratante) o a Mis chambas (trabajador) según el rol. */
     fun irAPublicar(seccion: Int) {
+        if (FirebaseAuth.getInstance().currentUser == null) {
+            solicitarAccesoCuenta(getString(R.string.guest_publish_message))
+            return
+        }
         val esContratante = ProfileCache.perfil?.roles?.contains(
             com.proyecto.chambaya.data.model.UserRoles.CONTRATANTE
         ) == true

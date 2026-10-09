@@ -19,6 +19,14 @@
     <string name="lang_quechua_native">Runasimi</string>
     <string name="lang_selected">Seleccionado</string>
     <string name="welcome_get_started">Empezar</string>
+    <string name="guest_account_title">Inicia sesión para continuar</string>
+    <string name="guest_account_message">Inicia sesión o crea una cuenta para usar esta opción.</string>
+    <string name="guest_publish_message">En modo invitado puedes explorar chambas, pero necesitas una cuenta y un rol contratante para publicar.</string>
+    <string name="guest_messages_message">Inicia sesión o crea una cuenta con rol de trabajador o contratante para usar Mensajes.</string>
+    <string name="guest_login">Iniciar sesión</string>
+    <string name="guest_register">Crear cuenta y elegir rol</string>
+    <string name="guest_profile_title">Tu perfil te espera</string>
+    <string name="guest_profile_message">Inicia sesión o crea una cuenta para completar tu perfil y acceder a las opciones de trabajador o contratante.</string>
     <string name="welcome_account_prompt">¿Ya tienes cuenta? </string>
     <string name="welcome_account_prompt_login">¿Ya tienes una cuenta? Iniciar sesión &gt;</string>
     <string name="access_options_title">Encuentra las mejores\nchambas en Ayacucho</string>
